@@ -1,0 +1,2952 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>SM Weekly Report — FnB 2026</title>
+<style>
+:root{
+  --bg:#060c18;--surface:#0a1422;--surface2:#0d1a2e;--border:#1a2a3a;
+  --accent:#F5A623;--text:#e8f0f8;--muted:#5a7a9a;
+  --green:#22c55e;--yellow:#f59e0b;--red:#ef4444;
+  --font:'Inter',-apple-system,sans-serif;--mono:'JetBrains Mono',monospace;
+  --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;font-size:13px}
+.app-header{background:linear-gradient(135deg,#0a1422,#0d1a2e);padding:12px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.app-header-row{display:flex;align-items:center;gap:10px}
+.app-icon{width:36px;height:36px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.app-title{font-size:14px;font-weight:800}
+.app-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.ts-bar{display:flex;gap:10px;margin-top:7px;font-size:9px;color:var(--muted);font-family:var(--mono)}
+.ts-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent);margin-right:3px;vertical-align:middle}
+.step-tabs{display:flex;overflow-x:auto;padding:0 12px;background:var(--surface);border-bottom:1px solid var(--border);scrollbar-width:none}
+.step-tabs::-webkit-scrollbar{display:none}
+.step-tab{padding:10px 14px;font-size:11px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer;flex-shrink:0;transition:all .2s}
+.step-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.top-progress{height:3px;background:var(--border)}
+.top-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),#e8953a);transition:width .4s}
+.step-content{padding:14px;display:none}
+.step-content.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px}
+.card-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px}
+.fl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px}
+input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 11px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;transition:border .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)88}
+select option{background:var(--surface2)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.form-full{margin-bottom:8px}
+.brand-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.brand-card{padding:0;border-radius:8px;border:2px solid var(--border);cursor:pointer;transition:all .2s;background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center;height:38px}
+.brand-card.selected{border-color:var(--accent);box-shadow:0 0 12px var(--accent)44}
+.brand-logo-img{width:100%;height:38px;object-fit:fill;display:block}
+.brand-name-fallback{font-size:10px;font-weight:800;color:#333;padding:4px}
+.week-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+.week-btn{padding:8px 4px;border-radius:8px;border:1px solid var(--border);cursor:pointer;text-align:center;background:var(--surface2);transition:all .2s;font-size:10px;font-weight:700;color:var(--muted)}
+.week-btn.active{border-color:var(--accent);background:#1a1200;color:var(--accent)}
+.week-btn-sub{font-size:8px;font-weight:400;color:var(--muted);margin-top:2px}
+.countdown-banner{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin-bottom:10px;border:1px solid}
+.countdown-banner.ok{background:#052a10;border-color:var(--green)}
+.countdown-banner.warn{background:#2a1500;border-color:var(--yellow)}
+.countdown-banner.urgent{background:#2a0505;border-color:var(--red)}
+.countdown-days{font-size:26px;font-weight:900;font-family:var(--mono);min-width:44px;text-align:center}
+.countdown-info{flex:1}
+.countdown-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.7}
+.countdown-sub{font-size:11px;margin-top:2px;font-family:var(--mono)}
+/* HEALTH - satu badge saja */
+.health-banner{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid;margin-bottom:10px}
+.health-icon{font-size:22px;flex-shrink:0}
+.health-info{flex:1}
+.health-label{font-size:13px;font-weight:800}
+.health-sub{font-size:10px;opacity:.7;margin-top:2px}
+.health-meta{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
+.health-chip{font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:8px;background:var(--surface2)}
+.phase-header{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface2);border-radius:8px;margin-bottom:4px;cursor:pointer;border:1px solid var(--border)}
+.phase-title{font-size:11px;font-weight:700}
+.phase-pct{font-size:11px;font-family:var(--mono);color:var(--accent)}
+.pitem{padding:7px 0;border-bottom:1px solid var(--border)44}
+.pitem:last-child{border-bottom:none}
+.pitem.disabled{opacity:.35}
+.pitem-row{display:grid;grid-template-columns:1fr auto 52px;gap:6px;align-items:center;margin-bottom:4px}
+.pitem-label{font-size:11px;line-height:1.3}
+.pitem-bobot{font-size:9px;color:var(--muted);font-family:var(--mono)}
+.pitem-input{padding:5px 7px;font-size:12px;font-family:var(--mono);text-align:right}
+.pitem-bar{height:4px;background:var(--border);border-radius:2px;margin-top:3px}
+.pitem-fill{height:100%;border-radius:2px;transition:width .3s}
+.tes-row{display:flex;gap:6px;margin-top:4px}
+.tes-btn{flex:1;padding:6px;border-radius:6px;font-size:10px;font-weight:700;border:1px solid;cursor:pointer;font-family:var(--font);transition:all .15s}
+.tes-btn.pass-on{background:#0d2a1a;border-color:var(--green);color:var(--green)}
+.tes-btn.fail-on{background:#2a0d0d;border-color:var(--red);color:var(--red)}
+.tes-btn.off{background:var(--surface2);border-color:var(--border);color:var(--muted)}
+/* Optional toggle (FSS/Gas) */
+.opt-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:7px;margin:6px 0;border:1px solid var(--border)}
+.opt-toggle-label{font-size:11px;font-weight:700}
+.opt-toggle-sub{font-size:9px;color:var(--muted);margin-top:1px}
+.opt-btns{display:flex;gap:4px}
+.opt-btn{padding:5px 12px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font);border:1px solid;transition:all .15s}
+.opt-btn.yes{background:#0d2a1a;border-color:var(--green);color:var(--green)}
+.opt-btn.no{background:#2a0d0d;border-color:var(--red);color:var(--red)}
+.opt-btn.inactive{background:var(--surface2);border-color:var(--border);color:var(--muted)}
+/* Milestone (Fase 5) */
+.ms-row{display:flex;align-items:center;justify-content:space-between;padding:8px 4px;border-bottom:1px solid var(--border)44}
+.ms-label{font-size:11px}
+.ms-btns{display:flex;gap:4px}
+.ms-btn{padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font);border:1px solid;transition:all .15s}
+.ms-btn.sudah{background:#0d2a1a;border-color:var(--green);color:var(--green)}
+.ms-btn.belum{background:#2a1500;border-color:var(--yellow);color:var(--yellow)}
+.ms-btn.inactive{background:var(--surface2);border-color:var(--border);color:var(--muted)}
+/* WP detail */
+.wp-detail{margin-top:8px;padding:8px;background:var(--surface2);border-radius:7px;border:1px solid var(--border)}
+.wp-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px}
+/* Issue table */
+.issue-table{width:100%;border-collapse:collapse;font-size:11px}
+.issue-table th{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;padding:5px 6px;border-bottom:1px solid var(--border);text-align:left}
+.issue-table td{padding:5px 4px;border-bottom:1px solid var(--border)44;vertical-align:top}
+.issue-table td input,.issue-table td select{font-size:10px;padding:4px 6px}
+.del-btn{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:2px}
+/* Foto */
+.foto-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.foto-slot{border:1.5px dashed var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)}
+.foto-slot.filled{border-style:solid;border-color:var(--accent)66}
+.foto-slot-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);padding:5px 8px;letter-spacing:.06em;background:var(--surface);border-bottom:1px solid var(--border)}
+.foto-slot img{width:100%;height:80px;object-fit:cover;display:block}
+.foto-slot-empty{height:80px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:22px;cursor:pointer}
+.foto-cap{padding:5px;border-radius:0;border:none;border-top:1px solid var(--border);font-size:10px}
+/* Carry over */
+.co-item{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;margin-bottom:6px}
+/* Critical dates */
+.crit-row{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;padding:7px 8px;background:var(--surface2);border-radius:7px;margin-bottom:4px;border:1px solid var(--border)}
+.crit-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;white-space:nowrap;cursor:pointer}
+.crit-badge.ok{background:#052a10;color:var(--green)}
+.crit-badge.warn{background:#2a1500;color:var(--yellow)}
+.crit-badge.over{background:#2a0505;color:var(--red)}
+.crit-badge.done{background:#0d1a2e;color:var(--muted)}
+/* Summary */
+.summary-box{background:var(--surface2);border:1px solid var(--accent)33;border-radius:10px;padding:12px;margin-bottom:10px}
+.summary-text{font-size:12px;line-height:1.8;color:var(--text);white-space:pre-wrap}
+/* Buttons */
+.btn{width:100%;padding:13px;border-radius:var(--radius);font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:var(--font);margin-top:8px;transition:all .2s}
+.btn-next{background:transparent;border:1.5px solid var(--accent);color:var(--accent)}
+.btn-save{background:var(--surface2);border:1px solid var(--border);color:var(--text)}
+.btn-submit{background:linear-gradient(135deg,var(--green),#16a34a);color:#fff}
+.add-btn{background:none;border:1px dashed var(--border);color:var(--muted);padding:7px;border-radius:7px;width:100%;font-size:11px;cursor:pointer;font-family:var(--font);margin-top:4px}
+.add-btn:hover{border-color:var(--accent);color:var(--accent)}
+.cl-progress{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:6px;padding:4px 8px;background:var(--surface2);border-radius:6px;display:inline-block}
+.cl-progress.done{color:var(--green)}
+input[type=checkbox]{accent-color:var(--green)}
+.sect-divider{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);padding:8px 0 4px;border-bottom:1px solid var(--border)44;margin-bottom:8px}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-header-row">
+    <div class="app-icon">📋</div>
+    <div>
+      <div class="app-title">SM Weekly Report</div>
+      <div class="app-sub">PT. Foods Beverages Indonesia</div>
+    </div>
+  </div>
+  <div class="ts-bar">
+    <span><span class="ts-dot"></span><span id="ts-save">Belum disimpan</span></span>
+    <span style="margin-left:8px"><span class="ts-dot" style="background:var(--green)"></span><span id="ts-session">Sesi baru</span></span>
+  </div>
+</div>
+
+<div class="top-progress"><div class="top-progress-fill" id="top-fill" style="width:0%"></div></div>
+
+<div class="step-tabs">
+  <div class="step-tab active" id="tab-0" onclick="goTab(0)">1. Info</div>
+  <div class="step-tab" id="tab-1" onclick="goTab(1)">2. Progress</div>
+  <div class="step-tab" id="tab-2" onclick="goTab(2)">3. Kendala</div>
+  <div class="step-tab" id="tab-3" onclick="goTab(3)">4. Rencana</div>
+  <div class="step-tab" id="tab-4" onclick="goTab(4)">5. Foto</div>
+  <div class="step-tab" id="tab-5" onclick="goTab(5)">6. Submit</div>
+</div>
+
+<!-- TAB 0: INFO -->
+<div class="step-content active" id="tab-content-0">
+  <div class="card">
+    <div class="card-title">🏷️ Brand</div>
+    <div class="brand-grid" id="brand-grid"></div>
+    <input type="hidden" id="brand" value=""/>
+  </div>
+  <div class="card">
+    <div class="card-title">📋 Informasi Project</div>
+    <div class="form-full">
+      <div class="fl">Nama Project / Lokasi</div>
+      <!-- DROPDOWN PROJECT: diisi otomatis dari localStorage SM -->
+      <select id="projectSel" onchange="handleProjectSel(this)" style="width:100%;margin-bottom:4px">
+        <option value="">-- Pilih SM dulu --</option>
+      </select>
+      <!-- Input manual: muncul hanya saat pilih "+ Project Baru" -->
+      <input type="text" id="namaProjectManual" placeholder="Ketik nama project baru..." style="display:none;margin-top:4px" oninput="syncProjectManual(this.value)"/>
+      <!-- Hidden field tetap sebagai value aktual -->
+      <input type="hidden" id="namaProject" value=""/>
+      <!-- Badge project terkunci -->
+      <div id="project-locked-note" style="display:none;font-size:9px;color:var(--yellow);margin-top:3px;font-family:var(--mono)">🔒 Nama project terkunci — pastikan ejaan konsisten tiap minggu</div>
+    </div>
+    <div class="form-full" style="margin-top:4px">
+      <div class="fl">🏗️ Tipe Project</div>
+      <select id="tipeProjectSel" onchange="handleTipeChange(this.value)" style="width:100%">
+        <option value="">-- Pilih Tipe --</option>
+        <option value="New Store">New Store</option>
+        <option value="Relayout">Relayout</option>
+        <option value="Relokasi">Relokasi</option>
+        <option value="Touch Up">Touch Up</option>
+        <option value="Touch Up + Hotdak">Touch Up + Hotdak</option>
+        <option value="Bongkaran Bare">Bongkaran Bare</option>
+      </select>
+      <div id="tipe-info" style="font-size:9px;color:var(--muted);margin-top:4px;font-family:var(--mono)"></div>
+    </div>
+    <div class="form-row">
+      <div>
+        <div class="fl">Project Manager</div>
+        <select id="pmSel" onchange="handlePMSel(this)">
+          <option value="">-- Pilih PM --</option>
+          <option value="Maulidin">Maulidin</option>
+          <option value="Dede Sulaiman">Dede Sulaiman</option>
+        </select>
+        <input type="hidden" id="namaPM" value=""/>
+      </div>
+      <div>
+        <div class="fl">Site Manager</div>
+        <select id="namaSMSel" onchange="handleSMSel(this)" disabled>
+          <option value="">-- Pilih PM dulu --</option>
+        </select>
+        <input type="text" id="namaSMManual" placeholder="Nama SM..." style="display:none;margin-top:5px" oninput="document.getElementById('namaSM').value=this.value;autoSave()"/>
+        <input type="hidden" id="namaSM" value=""/>
+      </div>
+      <div>
+        <div class="fl">Kontraktor</div>
+        <select id="kontraktorSel" onchange="handleKontrSel(this)">
+          <option value="">-- Pilih --</option>
+          <option value="PT. Hutama Yasa Kreasi">PT. Hutama Yasa Kreasi</option>
+          <option value="PT. Inkrea">PT. Inkrea</option>
+          <option value="PT. Cakra Bangun Sukses">PT. Cakra Bangun Sukses</option>
+          <option value="PT. Mitra Bangun Asri">PT. Mitra Bangun Asri</option>
+          <option value="__other__">Lainnya...</option>
+        </select>
+        <input type="text" id="kontraktorManual" placeholder="Nama kontraktor..." style="display:none;margin-top:5px" oninput="document.getElementById('kontraktor').value=this.value;autoSave()"/>
+        <input type="hidden" id="kontraktor" value=""/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div><div class="fl">SPK Mulai</div><input type="date" id="spkStart" onchange="autoSave()"/><div id="spkStart-locked-note" style="display:none;font-size:9px;color:var(--yellow);margin-top:2px;font-family:var(--mono)">🔒 Terkunci mulai W2</div></div>
+      <div><div class="fl">SPK Selesai</div><input type="date" id="spkEnd" onchange="checkOverrun();autoSave()"/><div id="spkEnd-locked-note" style="display:none;font-size:9px;color:var(--yellow);margin-top:2px;font-family:var(--mono)">🔒 Terkunci mulai W2</div></div>
+    </div>
+    <div class="form-row">
+      <div><div class="fl">Periode Laporan (Mulai)</div><input type="date" id="periodeStart" onchange="autoUpdatePeriode();autoSave()"/></div>
+      <div><div class="fl">Periode Laporan (Selesai)</div><input type="date" id="periodeEnd" onchange="autoSave()"/></div>
+    </div>
+    <div class="form-full" style="background:var(--surface2);border-radius:7px;padding:7px 10px;margin-bottom:8px;font-size:10px;color:var(--muted);font-family:var(--mono)" id="periode-display">Periode: —</div>
+    <div class="form-full">
+      <div class="fl" id="lbl-target-opening">Tanggal Opening</div>
+      <input type="date" id="targetOpening" onchange="updateCountdown();lockOpeningDate();autoSave()"/>
+      <div id="opening-locked-note" style="display:none;font-size:9px;color:var(--yellow);margin-top:3px;font-family:var(--mono)">🔒 Terkunci sejak Week-1 — hubungi PM untuk mengubah</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">📅 Laporan Minggu Ke-</div>
+    <div class="week-grid" id="week-grid"><div style="color:var(--muted);font-size:11px;padding:8px">Pilih brand terlebih dahulu</div></div>
+    <div id="week-extra-wrap" style="display:none;margin-top:6px">
+      <div class="fl">Minggu ke- (manual)</div>
+      <input type="number" min="1" max="30" placeholder="6, 7, 8..." id="week-extra-input" oninput="setWeekManual(this.value)" style="font-size:13px"/>
+    </div>
+    <!-- RIWAYAT MINGGU -->
+    <div id="week-history-wrap" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+      <div class="fl" style="margin-bottom:6px">📖 Riwayat Draft Tersimpan</div>
+      <div id="week-history-bar" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <div style="font-size:9px;color:var(--muted);margin-top:5px;font-family:var(--mono)">Tap minggu untuk lihat / edit data tersebut</div>
+    </div>
+  </div>
+  <div id="countdown-banner" class="countdown-banner ok" style="display:none">
+    <div class="countdown-days" id="cd-days">—</div>
+    <div class="countdown-info">
+      <div class="countdown-lbl" id="cd-lbl">Hari menuju Opening</div>
+      <div class="countdown-sub" id="cd-sub"></div>
+    </div>
+  </div>
+  <button class="btn btn-next" onclick="goTab(1)">Lanjut ke Progress →</button>
+</div>
+
+<!-- TAB 1: PROGRESS -->
+<div class="step-content" id="tab-content-1">
+  <!-- Single health banner -->
+  <div class="health-banner" id="health-banner" style="border-color:var(--border);background:var(--surface)">
+    <div class="health-icon" id="h-icon">—</div>
+    <div class="health-info">
+      <div class="health-label" id="h-label">Project Health</div>
+      <div class="health-sub" id="h-sub">Pilih brand & minggu untuk evaluasi</div>
+      <div class="health-meta">
+        <span class="health-chip">Kumulatif: <strong id="hi-cumul">—</strong></span>
+        <span class="health-chip">Mingguan: <strong id="hi-weekly" style="color:var(--green)">—</strong></span>
+        <span class="health-chip">Target: <strong id="hi-target">—</strong></span>
+        <span class="health-chip">Dev: <strong id="hi-dev">—</strong></span>
+      </div>
+    </div>
+  </div>
+  <div id="phase-list"></div>
+  <button class="btn btn-next" onclick="goTab(2)">Lanjut ke Kendala →</button>
+</div>
+
+<!-- TAB 2: KENDALA -->
+<div class="step-content" id="tab-content-2">
+  <div class="card">
+    <div class="card-title">🔴 Issue & Kendala</div>
+    <table class="issue-table">
+      <thead><tr>
+        <th style="width:35%">Issue</th><th style="width:22%">Kategori</th>
+        <th style="width:20%">PIC</th><th style="width:16%">Target</th><th style="width:7%"></th>
+      </tr></thead>
+      <tbody id="issue-tbody"></tbody>
+    </table>
+    <button class="add-btn" onclick="addIssue()">+ Tambah Issue</button>
+  </div>
+  <div class="card">
+    <div class="card-title">🔄 Carry Over Minggu Lalu</div>
+    <div id="co-list"></div>
+    <button class="add-btn" onclick="addCO()">+ Tambah Carry Over</button>
+  </div>
+  <div class="card">
+    <div class="card-title">🚨 Eskalasi ke PM</div>
+    <div class="form-row" style="align-items:center;gap:12px">
+      <div style="flex-shrink:0">
+        <div class="fl">Ada Eskalasi?</div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button id="eskBtn-ya"  class="opt-btn inactive" onclick="setEskalasi('Ya')">Ya</button>
+          <button id="eskBtn-tdk" class="opt-btn no"       onclick="setEskalasi('Tidak')">Tidak</button>
+        </div>
+      </div>
+      <div id="esk-detail-wrap" style="flex:1;display:none">
+        <div class="fl">Detail Eskalasi</div>
+        <textarea id="eskalasiDetail" rows="3" style="width:100%;margin-top:4px;font-size:11px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text);resize:vertical" placeholder="Jelaskan kondisi, pihak yang dieskalasi, dan tindakan yang diambil..." oninput="autoSave()"></textarea>
+      </div>
+    </div>
+  </div>
+  <button class="btn btn-next" onclick="goTab(3)">Lanjut ke Rencana →</button>
+</div>
+
+<!-- TAB 3: RENCANA -->
+<div class="step-content" id="tab-content-3">
+  <div class="card">
+    <div class="card-title">📌 Rencana Minggu Ini</div>
+    <div id="rencana-list"></div>
+    <button class="add-btn" onclick="addRencana()">+ Tambah Rencana</button>
+  </div>
+  <div class="card" id="mbo-card">
+    <div class="card-title">🏭 ETA On-site MBO</div>
+    <div class="form-row">
+      <div>
+        <div class="fl">ETA MBO Tahap 1</div>
+        <input type="date" id="etaMBO1" onchange="autoSave()" style="width:100%"/>
+        <div style="font-size:9px;color:var(--muted);margin-top:3px">Material/equipment utama</div>
+      </div>
+      <div>
+        <div class="fl">ETA MBO Tahap 2</div>
+        <input type="date" id="etaMBO2" onchange="autoSave()" style="width:100%"/>
+        <div style="font-size:9px;color:var(--muted);margin-top:3px">Suplai lanjutan / sisa</div>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-top:4px">Estimasi kedatangan material/equipment MBO ke lokasi</div>
+  </div>
+  <div class="card">
+    <div class="card-title">📅 Critical Date Tracker</div>
+    <div id="crit-list"></div>
+  </div>
+  <button class="btn btn-next" onclick="goTab(4)">Lanjut ke Foto →</button>
+</div>
+
+<!-- TAB 4: FOTO -->
+<div class="step-content" id="tab-content-4">
+  <div class="card">
+    <div class="card-title">📷 Foto Progress</div>
+    <p style="font-size:10px;color:var(--muted);margin-bottom:10px">Upload foto per area. Klik + untuk tambah slot foto tambahan.</p>
+    <div class="foto-grid" id="foto-grid"></div>
+    <div class="foto-grid" id="foto-grid-extra" style="margin-top:8px"></div>
+    <button class="add-btn" style="margin-top:8px" onclick="addExtraFotoSlot()">+ Tambah Slot Foto</button>
+  </div>
+  <button class="btn btn-next" onclick="goTab(5)">Lanjut ke Submit →</button>
+</div>
+
+<!-- TAB 5: SUBMIT -->
+<div class="step-content" id="tab-content-5">
+  <!-- Aktual Opening — diisi di akhir setelah semua selesai -->
+  <div class="card">
+    <div class="card-title" id="lbl-aktual-title">🏁 Aktual Opening (isi setelah semua fase selesai)</div>
+    <div class="form-full">
+      <div class="fl" id="lbl-aktual-opening">Tanggal Aktual Opening</div>
+      <input type="date" id="aktualOpening" onchange="autoSave()"/>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:10px">
+    <div class="card-title">📊 Breakdown Progress Per Tahapan</div>
+    <div id="tahapan-progress-ui" style="margin-top:4px">
+      <div style="color:var(--muted);font-size:10px;text-align:center;padding:8px">Pilih brand & isi progress untuk melihat breakdown</div>
+    </div>
+  </div>
+  <div class="summary-box">
+    <div class="card-title" style="margin-bottom:8px">📝 Summary Otomatis</div>
+    <div class="summary-text" id="summary-text">Klik Generate untuk membuat summary.</div>
+    <button class="btn btn-save" style="margin-top:8px;font-size:11px" onclick="generateSummary()">🔄 Generate Summary</button>
+    <button class="btn btn-save" style="margin-top:6px;font-size:11px" onclick="copySummary()">📋 Copy ke WhatsApp</button>
+    <button class="btn btn-save" style="margin-top:6px;font-size:11px;background:#1e6b3f" onclick="exportPPT()">📊 Export PPT</button>
+  </div>
+  <button class="btn btn-save" onclick="saveLocal()">💾 Simpan Lokal</button>
+  <button class="btn btn-submit" onclick="submitToSheets()">📤 Submit ke Google Sheets</button>
+  <div class="card" style="margin-top:12px">
+    <div class="card-title">🔧 Backup & Restore</div>
+    <button class="btn btn-save" style="margin-top:0" onclick="exportJSON()">📤 Export JSON</button>
+    <label class="btn btn-save" style="display:block;text-align:center;margin-top:6px;cursor:pointer">
+      📥 Import JSON<input type="file" accept=".json" style="display:none" onchange="importJSON(event)"/>
+    </label>
+    <div style="margin-top:8px">
+      <div class="fl">Google Sheets Script URL</div>
+      <input type="url" id="sheets-url" placeholder="https://script.google.com/..." style="font-size:10px" value="https://script.google.com/macros/s/AKfycbwgPdwm6OFUYPwJHc4USqNduHzsReijyI7gM3kHIoE3CDwj3hGhNxDHIJa5IsRvRqYuWw/exec"/>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px;border-color:#ef4444">
+    <div class="card-title" style="color:#ef4444">⚠️ Manajemen Data Project</div>
+    <p style="font-size:10px;color:var(--muted);margin-bottom:10px">Gunakan tombol ini jika project sudah selesai atau ingin menghapus data dari memori browser.</p>
+    <button class="btn" style="width:100%;background:#7f1d1d;border:1px solid #ef4444;color:#fca5a5;font-size:11px" onclick="hapusProjectIni()">🗑️ Selesai & Hapus Project Ini</button>
+  </div>
+</div>
+
+<script>
+
+var BRAND_COLORS = {
+  chatime:{primary:'#7B2FBE',name:'Chatime'},
+  gindaco:{primary:'#CC0000',name:'Gindaco'},
+  gogocurry:{primary:'#F5C500',name:'Go Go Curry'},
+  '88seoul':{primary:'#E8613C',name:'88Seoul'},
+  mollytea:{primary:'#2d8a4e',name:'Molly Tea'},
+};
+var BRAND_LOGOS = {
+  'chatime': 'data:image/jpeg;base64,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',
+  'gindaco': 'data:image/jpeg;base64,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',
+  'gogocurry': 'data:image/jpeg;base64,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',
+  '88seoul': 'data:image/jpeg;base64,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',
+  'mollytea': 'data:image/jpeg;base64,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',
+};
+// ── BASE_PHASES (DRY: shared across all brands) ──────────────
+function BASE_PHASES(fss_bobot, gas_bobot) {
+  return [
+    {
+      id:'fase1', label:'Fase 1 — Persiapan & Wet Works',
+      items:[
+        {id:'f1_mob',label:'Mobilisasi & Marking',bobot:1},
+        {id:'f1_hrd',label:'Hording & Fleksi',bobot:2},
+        {id:'f1_wp',label:'Waterproofing',bobot:6,isWP:true},
+        {id:'f1_tr',label:'Tes Rendam Waterproofing',bobot:1,isTes:true},
+        {id:'f1_tg',label:'Peninggian Lantai',bobot:4},
+        {id:'f1_ker',label:'Keramik Area Basah',bobot:5},
+        {id:'f1_rng',label:'Rangka Dinding',bobot:4},
+      ]
+    },
+    {
+      id:'fase2', label:'Fase 2 — MEP & Above Ceiling',
+      items:[
+        {id:'f2_rpl',label:'Rangka Plafon',bobot:4},
+        {id:'f2_tb',label:'Tes Beban Plafon',bobot:1,isTes:true},
+        {id:'f2_lis',label:'Instalasi Listrik',bobot:6},
+        {id:'f2_tm',label:'Tes Merger',bobot:1,isTes:true},
+        {id:'f2_hvc',label:'HVAC',bobot:7},
+        {id:'f2_ac',label:'Tes Flow AC',bobot:1,isTes:true},
+        {id:'f2_sp',label:'Sprinkler & Detektor',bobot:5,optKey:'sprinkler'},
+        {id:'f2_fss',label:'Fire Suppression System (FSS)',bobot:fss_bobot,optKey:'fss'},
+        {id:'f2_ab',label:'Instalasi Pipa Air Bersih',bobot:3},
+        {id:'f2_tt',label:'Tes Tekan Air Bersih',bobot:1,isTes:true},
+        {id:'f2_ak',label:'Instalasi Pipa Air Kotor',bobot:2},
+        {id:'f2_tgk',label:'Tes Gelontor Air Kotor',bobot:1,isTes:true},
+        {id:'f2_gas',label:'Instalasi Gas',bobot:gas_bobot,optKey:'gas'},
+        {id:'f2_ikn',label:'Interkoneksi',bobot:4,depAny:["gas","fss"]},
+        {id:'f2_exh',label:'Sistem Exhaust + Fresh Air',bobot:3,optKey:'exhaust'},
+        {id:'f2_fog',label:'Tes Fogging Exhaust + Fresh Air',bobot:1,isTes:true,optKey:'exhaust'},
+      ]
+    },
+    {
+      id:'fase3', label:'Fase 3 — Close Ceiling & Finishing Awal',
+      items:[
+        {id:'f3_pl',label:'Penutupan Plafon',bobot:6,syarat:'Syarat: MEP 100% & semua tes pass'},
+        {id:'f3_ker',label:'Keramik Area Kering',bobot:7},
+        {id:'f3_dn',label:'Dinding & Partisi',bobot:9},
+        {id:'f3_af21',label:'Tes Bakar AF21 (Plywood)',bobot:1,isTes:true},
+        {id:'f3_prd',label:'Produksi Furniture (Off-site)',bobot:4},
+        {id:'f3_fxt',label:'Install Fixture & Furniture',bobot:8},
+      ]
+    },
+    {
+      id:'fase4', label:'Fase 4 — Finishing',
+      items:[
+        {id:'f4_arm',label:'Pemasangan Armature',bobot:5},
+        {id:'f4_plm',label:'Install Plumbing Equipment',bobot:3},
+        {id:'f4_pmp',label:'Setting Pompa',bobot:2},
+        {id:'f4_flt',label:'Pasang Filter (by teknisi/vendor)',bobot:0,isMilestone:true},
+        {id:'f4_rd', label:'Rolling Door',bobot:2,optKey:'rollingdoor'},
+        {id:'f4_sig',label:'Signage & Branding',bobot:3},
+        {id:'f4_cl',label:'General Cleaning',bobot:1},
+      ]
+    },
+    {
+      id:'fase5', label:'Fase 5 — Handover & Serah Terima', isMilestonePhase:true,
+      items:[
+        {id:'f5_aon',label:'Air On',isMilestone:true},
+        {id:'f5_lon',label:'Listrik On',isMilestone:true},
+        {id:'f5_sn',label:'Ceklist Praopening',isMilestone:true},
+        {id:'f5_ht',label:'Serah Terima ke Ops',isMilestone:true},
+      ]
+    },
+  ];
+}
+
+// ── PHASES_CONFIG: brand-specific bobots only ─────────────────
+//   fss_bobot: chatime=5, gindaco=5, gogocurry=6, 88seoul=4, mollytea=4
+//   gas_bobot: chatime=5, gindaco=5, gogocurry=6, 88seoul=6, mollytea=4
+var PHASES_CONFIG = {
+  'chatime'   : BASE_PHASES(5, 5),
+  'gindaco'   : BASE_PHASES(5, 5),
+  'gogocurry' : BASE_PHASES(6, 6),
+  '88seoul'   : BASE_PHASES(4, 6),
+  'mollytea'  : BASE_PHASES(4, 4),
+};
+
+// ── FASE 0: Relayout only — Pembongkaran & Clearance Bare ──────
+function FASE_0_RELAYOUT(){
+  return {
+    id:'fase0', label:'Fase 0 — Pembongkaran & Clearance Bare',
+    items:[
+      {id:'f0_mob', label:'Mobilisasi & Setup Proteksi',    bobot:2},
+      {id:'f0_fxt', label:'Bongkar Fixture & Furniture',    bobot:5},
+      {id:'f0_dn',  label:'Bongkar Dinding & Partisi',      bobot:4},
+      {id:'f0_pl',  label:'Bongkar Plafon & MEP Overhead',  bobot:5},
+      {id:'f0_pg',  label:'Angkut & Buang Puing',           bobot:3},
+      {id:'f0_ins', label:'Inspeksi & Verifikasi Bare',     bobot:1},
+    ]
+  };
+}
+
+// ── FASE TOUCH UP (2–3 minggu) ─────────────────────────────────
+function BASE_PHASES_TOUCHUP(includeHotdak){
+  if(includeHotdak){
+    // Touch Up + Hotdak — total bobot = 100
+    // tu_wph DIHAPUS; tambah Furniture & Fixture, Pasang Kaca Tempered, Setting Equipment
+    return [
+      { id:'fase1', label:'Fase 1 — Persiapan & Proteksi', items:[
+        {id:'tu_mob', label:'Mobilisasi & Setup',              bobot:5},
+        {id:'tu_pro', label:'Proteksi & Hording Area',         bobot:5},
+      ]},
+      { id:'fase2', label:'Fase 2 — Pekerjaan Sipil & MEP Minor', items:[
+        {id:'tu_spl', label:'Pekerjaan Sipil Minor',           bobot:18},
+        {id:'tu_mep', label:'Perbaikan MEP Minor',             bobot:16},
+        {id:'tu_pnt', label:'Pengecatan & Finishing Dinding',  bobot:12},
+        {id:'tu_fur', label:'Perapihan Furniture',             bobot:10},
+        {id:'tu_fxt', label:'Furniture & Fixture',             bobot:10},
+        {id:'tu_pkt', label:'Pasang Kaca Tempered',            bobot:8},
+        {id:'tu_seq', label:'Setting Equipment',               bobot:2},
+        {id:'tu_sig', label:'Signage & Branding',              bobot:8},
+      ]},
+      { id:'fase3', label:'Fase 3 — Finishing, Cleaning & Handover', items:[
+        {id:'tu_cl',  label:'General Cleaning',                bobot:6},
+        {id:'tu_sn',  label:'Ceklist',                         bobot:0, isMilestone:true},
+        {id:'tu_ht',  label:'Serah Terima ke Ops',             bobot:0, isMilestone:true},
+      ]},
+    ];
+  } else {
+    // Touch Up Normal — total bobot = 100
+    // tambah tu_fur "Perapihan Furniture", tu_sn ubah label ke "Ceklist"
+    return [
+      { id:'fase1', label:'Fase 1 — Persiapan & Proteksi', items:[
+        {id:'tu_mob', label:'Mobilisasi & Setup',              bobot:5},
+        {id:'tu_pro', label:'Proteksi & Hording Area',         bobot:5},
+      ]},
+      { id:'fase2', label:'Fase 2 — Pekerjaan Sipil & MEP Minor', items:[
+        {id:'tu_spl', label:'Pekerjaan Sipil Minor',           bobot:22},
+        {id:'tu_mep', label:'Perbaikan MEP Minor',             bobot:20},
+        {id:'tu_pnt', label:'Pengecatan & Finishing Dinding',  bobot:14},
+        {id:'tu_fur', label:'Perapihan Furniture',             bobot:12},
+        {id:'tu_sig', label:'Signage & Branding',              bobot:12},
+      ]},
+      { id:'fase3', label:'Fase 3 — Finishing, Cleaning & Handover', items:[
+        {id:'tu_cl',  label:'General Cleaning',                bobot:10},
+        {id:'tu_sn',  label:'Ceklist',                         bobot:0, isMilestone:true},
+        {id:'tu_ht',  label:'Serah Terima ke Ops',             bobot:0, isMilestone:true},
+      ]},
+    ];
+  }
+}
+
+// ── FASE BONGKARAN BARE (2 minggu) ────────────────────────────
+// FIX-7: hapus bb_me4 (Sprinkler & FSS), tambah bb_sp5 (Bongkar Peninggian Lantai)
+// Total bobot = 100
+function BASE_PHASES_BONGKARAN(){
+  return [
+    { id:'fase1', label:'Fase 1 — Persiapan & Proteksi', items:[
+      {id:'bb_mob', label:'Mobilisasi & Koordinasi',                  bobot:5},
+      {id:'bb_pro', label:'Setup Proteksi & Hording',                 bobot:5},
+    ]},
+    { id:'fase2', label:'Fase 2 — Bongkar MEP', items:[
+      {id:'bb_me1', label:'Bongkar Armature & Instalasi Listrik',     bobot:12},
+      {id:'bb_me2', label:'Bongkar HVAC & Ducting',                   bobot:10},
+      {id:'bb_me3', label:'Bongkar Instalasi Plumbing',               bobot:8},
+    ]},
+    { id:'fase3', label:'Fase 3 — Bongkar Sipil', items:[
+      {id:'bb_sp1', label:'Bongkar Fixture & Furniture',              bobot:12},
+      {id:'bb_sp2', label:'Bongkar Dinding & Partisi',                bobot:10},
+      {id:'bb_sp3', label:'Bongkar Plafon',                           bobot:8},
+      {id:'bb_sp4', label:'Bongkar Keramik',                          bobot:8},
+      {id:'bb_sp5', label:'Bongkar Peninggian Lantai',                bobot:8},
+    ]},
+    { id:'fase4', label:'Fase 4 — Buang Puing & Serah Terima', items:[
+      {id:'bb_pg',    label:'Angkut & Buang Puing',                   bobot:8},
+      {id:'bb_bersih',label:'Bersih & Final Inspeksi',                bobot:6},
+      {id:'bb_bast',  label:'BAST (Serah Terima)',                    bobot:0, isMilestone:true},
+    ]},
+  ];
+}
+
+// ── ACTIVE PHASES: resolves tipe + brand ──────────────────────
+function getActivePhases(){
+  if(!selBrand) return [];
+  var baseForBrand = PHASES_CONFIG[selBrand] || PHASES_CONFIG.gindaco;
+  switch(selTipeProject){
+    case 'Touch Up':         return BASE_PHASES_TOUCHUP(false);
+    case 'Touch Up + Hotdak':return BASE_PHASES_TOUCHUP(true);
+    case 'Bongkaran Bare':   return BASE_PHASES_BONGKARAN();
+    case 'Relayout':         return [FASE_0_RELAYOUT()].concat(baseForBrand);
+    default:                 return baseForBrand; // New Store, Relokasi, ''
+  }
+}
+
+// ── WEEK TARGETS PER BRAND ──
+// Proportional distribution: W1 fixed, remaining split evenly
+// Chatime(4w): W1=15, step=(100-15)/3=28.3 → 15,43,72,100
+// Others(5w):  W1=13, step=(100-13)/4=21.75 → 13,35,57,79,100
+var WEEK_TARGETS_BY_BRAND = {
+  chatime:   {1:15, 2:43, 3:72, 4:100},
+  gindaco:   {1:13, 2:35, 3:57, 4:79, 5:100},
+  gogocurry: {1:13, 2:35, 3:57, 4:79, 5:100},
+  '88seoul': {1:13, 2:35, 3:57, 4:79, 5:100},
+  mollytea:  {1:13, 2:35, 3:57, 4:79, 5:100},
+};
+var MAX_WEEKS_BY_BRAND = {chatime:4, gindaco:5, gogocurry:5, '88seoul':5, mollytea:5};
+function getWeekTargets(){
+  if(selTipeProject==='Touch Up'||selTipeProject==='Bongkaran Bare') return {1:50,2:100};
+  if(selTipeProject==='Touch Up + Hotdak') return {1:33,2:66,3:100};
+  return WEEK_TARGETS_BY_BRAND[selBrand]||WEEK_TARGETS_BY_BRAND.gindaco;
+}
+function getMaxWeeks(){
+  if(selTipeProject==='Touch Up'||selTipeProject==='Bongkaran Bare') return 2;
+  if(selTipeProject==='Touch Up + Hotdak') return 3;
+  return MAX_WEEKS_BY_BRAND[selBrand]||5;
+}
+
+// ── TIPE PROJECT HANDLERS ──────────────────────────────────────
+var TIPE_INFO_MAP = {
+  'New Store'       : '🏪 Fase standar 5 fasa | Timeline brand (Chatime 4W, lainnya 5W)',
+  'Relayout'        : '🔄 Tambah Fase 0 Pembongkaran | Timeline brand normal',
+  'Relokasi'        : '📦 Fase standar + Pemindahan Equipment H-10 | Timeline brand normal',
+  'Touch Up'        : '🔧 3 fasa ramping | Maks 2 minggu | W1:50% W2:100%',
+  'Touch Up + Hotdak': '🔧🏗️ 3 fasa + Waterproofing Hotdak | Maks 3 minggu | W1:33% W2:66% W3:100%',
+  'Bongkaran Bare'  : '🏚️ Bongkar total 4 fasa | Maks 2 minggu | Target → BAST',
+};
+function handleTipeChange(val){
+  selTipeProject = val;
+  // Update info text
+  var infoEl = document.getElementById('tipe-info');
+  if(infoEl) infoEl.textContent = TIPE_INFO_MAP[val]||'';
+  // Auto-add Pemindahan Equipment for Relokasi
+  if(val==='Relokasi'){
+    var exists = critDates.some(function(cd){ return cd.label==='Pemindahan Equipment (H-10)'; });
+    if(!exists) critDates.push({label:'Pemindahan Equipment (H-10)', date:'', done:false});
+    renderCritDates();
+  } else {
+    // Remove if previously injected and tipe changed
+    var had = critDates.some(function(cd){ return cd.label==='Pemindahan Equipment (H-10)'; });
+    if(had){
+      critDates = critDates.filter(function(cd){ return cd.label!=='Pemindahan Equipment (H-10)'; });
+      renderCritDates();
+    }
+  }
+  updateMBOVisibility();
+  updateOpeningLabel();
+  // Re-render week grid (max weeks may change)
+  if(selBrand){ renderWeekGrid(); renderPhaseList(); updateOverall(); }
+  autoSave();
+}
+function updateMBOVisibility(){
+  var mboCard = document.getElementById('mbo-card');
+  if(!mboCard) return;
+  var hideTipes = ['Touch Up','Touch Up + Hotdak','Bongkaran Bare'];
+  mboCard.style.display = hideTipes.indexOf(selTipeProject)>=0 ? 'none' : '';
+}
+function updateOpeningLabel(){
+  var isBAST = (selTipeProject==='Bongkaran Bare');
+  var lblTarget = document.getElementById('lbl-target-opening');
+  var lblAktual = document.getElementById('lbl-aktual-opening');
+  var lblAktualTitle = document.getElementById('lbl-aktual-title');
+  var lblCd   = document.getElementById('cd-lbl');
+  if(lblTarget)      lblTarget.textContent     = isBAST ? 'Tanggal Target BAST' : 'Tanggal Opening';
+  if(lblAktual)      lblAktual.textContent     = isBAST ? 'Tanggal Aktual BAST' : 'Tanggal Aktual Opening';
+  if(lblAktualTitle) lblAktualTitle.textContent= isBAST ? '🏁 Aktual BAST (isi setelah semua fase selesai)' : '🏁 Aktual Opening (isi setelah semua fase selesai)';
+  if(lblCd)          lblCd.textContent         = isBAST ? 'Hari menuju BAST' : 'Hari menuju Opening';
+}
+
+// ── PRORATE WEEK-1 ──
+function getDaysElapsed() {
+  var spkStart = g('spkStart');
+  if (!spkStart) return 7;
+  var start = new Date(spkStart); start.setHours(0,0,0,0);
+  var today  = new Date();        today.setHours(0,0,0,0);
+  var diff   = Math.ceil((today - start) / 86400000) + 1;
+  return Math.min(Math.max(diff, 1), 7);
+}
+function isProrateActive() {
+  if (selWeek !== 1) return false;
+  return getDaysElapsed() < 7;
+}
+function getProrateTarget() {
+  var baseTarget = (getWeekTargets()[1] || 10);
+  var days = getDaysElapsed();
+  return Math.round((baseTarget * (days / 7)) * 10) / 10;
+}
+
+
+var FOTO_SLOTS     = ['Facade','Dining Area','Kitchen','Ceiling','MEP','Signage','Area Basah','Overall'];
+var CRIT_DATES_DEF = ['Approval Drawing','Listrik Nyala','Air On','Serah Terima Ruangan','Gas On'];
+var ISSUE_KATEGORI = ['Sipil', 'MEP', 'Vendor', 'Mall/Landlord', 'Internal', 'Approval'];
+
+// ── STATE ──
+var checklistState = {};  // global — persisted via getState/loadLocal
+var selBrand='', selWeek=0, selTipeProject='';
+var itemPct={}, itemStatus={}, wpData={};
+var optionalActive={fss:true, gas:true, exhaust:false, sprinkler:true};
+var isRestoringData = false; // race-condition guard for loadLocal/autoSave
+var prevProgress = 0; // progress minggu lalu (untuk delta mingguan)
+var issueItems=[], coItems=[], rencanaItems=[''], fotoData={}, extraFotoCount=0;
+var eskalasiVal='Tidak'; // 'Ya' atau 'Tidak'
+var critDates = CRIT_DATES_DEF.map(function(l){return {label:l,date:'',done:false};});
+// ── DYNAMIC LOCAL STORAGE KEY ─────────────────────────────────
+var LS_PREFIX = 'fnb_sm_v3';
+
+function sanitizeKey(str){
+  return str ? str.toLowerCase().replace(/[^a-z0-9]/g,'_').substring(0,30) : '';
+}
+
+function getCurrentKey(){
+  var sm      = (document.getElementById('namaSM')||{}).value||'';
+  var project = g('namaProject')||'';
+  var smPart  = sanitizeKey(sm);
+  var prPart  = sanitizeKey(project);
+  var wPart   = selWeek ? '_w'+selWeek : '';
+  if(smPart && prPart) return LS_PREFIX+'_'+smPart+'_'+prPart+wPart;
+  if(smPart)           return LS_PREFIX+'_'+smPart+wPart;
+  return LS_PREFIX+'_session';
+}
+
+// Key untuk minggu tertentu (tanpa ubah selWeek)
+function getKeyForWeek(w){
+  var sm      = (document.getElementById('namaSM')||{}).value||'';
+  var project = g('namaProject')||'';
+  var smPart  = sanitizeKey(sm);
+  var prPart  = sanitizeKey(project);
+  var wPart   = w ? '_w'+w : '';
+  if(smPart && prPart) return LS_PREFIX+'_'+smPart+'_'+prPart+wPart;
+  if(smPart)           return LS_PREFIX+'_'+smPart+wPart;
+  return LS_PREFIX+'_session';
+}
+var sessionStart=new Date();
+
+function g(id){var el=document.getElementById(id);return el?el.value:'';}
+function s(id,v){var el=document.getElementById(id);if(el) el.value=v||'';}
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', function(){
+  renderBrandGrid();
+  renderIssueTable();
+  renderCOList();
+  renderRencanaList();
+  renderFotoGrid();
+  renderExtraFotoGrid();
+  renderCritDates();
+  updateTimestamp();
+  loadLocal();
+  setInterval(function(){ if(selBrand) saveLocal(true); }, 30000);
+  populateLoadDraft();
+  lockSPKDates();
+  renderWeekHistoryBar();
+});
+
+// ── TABS ──
+var curTab=0;
+function goTab(n){
+  document.getElementById('tab-content-'+curTab).classList.remove('active');
+  document.getElementById('tab-'+curTab).classList.remove('active');
+  curTab=n;
+  document.getElementById('tab-content-'+n).classList.add('active');
+  document.getElementById('tab-'+n).classList.add('active');
+  document.getElementById('top-fill').style.width=Math.round((n/5)*100)+'%';
+  window.scrollTo(0,0);
+}
+
+// ── BRAND ──
+function renderBrandGrid(){
+  var grid=document.getElementById('brand-grid'); if(!grid) return; grid.innerHTML='';
+  ['chatime','gindaco','gogocurry','88seoul','mollytea'].forEach(function(b){
+    var div=document.createElement('div');
+    div.className='brand-card'+(selBrand===b?' selected':'');
+    div.onclick=function(){setBrand(b);};
+    if(BRAND_LOGOS[b]){
+      var img=document.createElement('img');
+      img.src=BRAND_LOGOS[b]; img.className='brand-logo-img'; img.alt=b;
+      div.appendChild(img);
+    } else {
+      var nm=document.createElement('span');
+      nm.className='brand-name-fallback';
+      nm.textContent=(BRAND_COLORS[b]||{}).name||b;
+      div.appendChild(nm);
+    }
+    grid.appendChild(div);
+  });
+}
+function setBrand(b){
+  selBrand=b; document.getElementById('brand').value=b;
+  renderBrandGrid(); renderWeekGrid(); renderPhaseList(); autoSave();
+}
+
+// ── WEEK ──
+function renderWeekGrid(){
+  var grid=document.getElementById('week-grid'); if(!grid) return; grid.innerHTML='';
+  if(!selBrand){grid.innerHTML='<div style="color:var(--muted);font-size:11px;padding:8px">Pilih brand terlebih dahulu</div>';return;}
+  var targets=getWeekTargets(), maxW=getMaxWeeks();
+  for(var w=1;w<=maxW;w++){
+    var div=document.createElement('div');
+    div.className='week-btn'+(selWeek===w?' active':'');
+    div.id='wb-'+w;
+    div.innerHTML='Minggu '+w+'<div class="week-btn-sub">Target '+(targets[w]||100)+'%</div>';
+    (function(wk){div.onclick=function(){setWeek(wk);};})(w);
+    grid.appendChild(div);
+  }
+  var more=document.createElement('div');
+  more.className='week-btn'+(selWeek>maxW?' active':'');
+  more.innerHTML=selWeek>maxW?('Minggu '+selWeek+'<div class="week-btn-sub">Manual</div>'):'+ Lainnya';
+  more.onclick=function(){
+    var wrap=document.getElementById('week-extra-wrap');
+    if(wrap) wrap.style.display=wrap.style.display==='none'?'block':'none';
+  };
+  grid.appendChild(more);
+}
+function setWeek(w){
+  // Simpan data minggu lama sebelum ganti
+  if(selWeek && selWeek !== w) autoSave();
+
+  var prevWeek = selWeek;
+  selWeek = w;
+  document.querySelectorAll('.week-btn').forEach(function(b){b.classList.remove('active');});
+  var el=document.getElementById('wb-'+w); if(el) el.classList.add('active');
+
+  // Coba load data minggu baru dari localStorage (kalau ada)
+  var newKey = getCurrentKey();
+  var existing = null;
+  try{ var raw=localStorage.getItem(newKey); if(raw) existing=JSON.parse(raw); }catch(e){}
+
+  if(existing && existing.namaProject){
+    // Ada data tersimpan untuk minggu ini — tanya SM mau load atau mulai baru
+    if(confirm('Ada data tersimpan untuk Minggu '+w+' ('+existing.namaProject+').\n\nLoad data tersebut?')){
+      loadWeekData(existing);
+    }
+  }
+
+  lockOpeningDate();
+  lockSPKDates();
+  updateOverall();
+  autoSave();
+  renderWeekHistoryBar(); // refresh riwayat bar
+}
+function setWeekManual(v){
+  var n=parseInt(v); if(isNaN(n)||n<1) return;
+  if(selWeek && selWeek !== n) autoSave();
+  selWeek=n; renderWeekGrid(); lockOpeningDate(); lockSPKDates(); updateOverall(); autoSave();
+  renderWeekHistoryBar();
+}
+
+// Load data dari object (hasil JSON.parse) ke form — tanpa reload halaman
+function loadWeekData(data){
+  isRestoringData = true;
+  try{
+    if(data.brand && data.brand !== selBrand){ selBrand=data.brand; renderBrandGrid(); }
+    if(data.tipeProject){
+      selTipeProject=data.tipeProject;
+      var tpSel=document.getElementById('tipeProjectSel'); if(tpSel) tpSel.value=data.tipeProject;
+      var infoEl=document.getElementById('tipe-info'); if(infoEl) infoEl.textContent=TIPE_INFO_MAP[data.tipeProject]||'';
+    }
+    // namaProject di-restore via hidden field; sync dropdown ditangani di blok namaSM di bawah
+    ['spkStart','spkEnd','targetOpening','aktualOpening','periodeStart','periodeEnd'].forEach(function(k){if(data[k]) s(k,data[k]);});
+    if(data.namaProject) s('namaProject', data.namaProject);
+    if(data.prevProgress!==undefined) prevProgress=data.prevProgress;
+    if(data.itemPct)     itemPct=data.itemPct;
+    if(data.itemStatus)  itemStatus=data.itemStatus;
+    if(data.wpData)      wpData=data.wpData;
+    if(data.optionalActive) optionalActive=Object.assign({fss:true,gas:true,exhaust:false,sprinkler:true},data.optionalActive);
+    if(data.issueItems){ issueItems=data.issueItems; renderIssueTable(); }
+    if(data.eskalasiVal) setEskalasi(data.eskalasiVal);
+    if(data.eskalasiDetail){ var ed=document.getElementById('eskalasiDetail'); if(ed) ed.value=data.eskalasiDetail; }
+    if(data.coItems){ coItems=data.coItems; renderCOList(); }
+    if(data.rencanaItems){ rencanaItems=data.rencanaItems; renderRencanaList(); }
+    if(data.etaMBO1) s('etaMBO1',data.etaMBO1);
+    if(data.etaMBO2) s('etaMBO2',data.etaMBO2);
+    if(data.critDates){ critDates=data.critDates; renderCritDates(); }
+    if(data.checklistState) checklistState=data.checklistState;
+    if(data.extraFotoCount){ extraFotoCount=data.extraFotoCount; renderExtraFotoGrid(); }
+    if(data.fotoData){ fotoData=data.fotoData; renderFotoGrid(); }
+    updateCountdown(); updatePeriodeDisplay(); lockOpeningDate(); lockSPKDates();
+    if(selBrand){ renderWeekGrid(); renderPhaseList(); updateOverall(); }
+    updateMBOVisibility(); updateOpeningLabel();
+  }catch(e){ console.error('loadWeekData error',e); }
+  isRestoringData = false;
+}
+
+// ── SM / KONTRAKTOR ──
+// ── PM → SM DEPENDENT DROPDOWN ──────────────────────────────
+var PM_SM_MAP = {
+  'Maulidin'     : ['Edi Setiawan','Deni Setiawan','Setiahandy Bastian'],
+  'Dede Sulaiman': ['Agus Darmawan','Indratama','Satrijo Jatmiko','Zulfikar Purbaya']
+};
+var selPM = '';
+
+function handlePMSel(sel){
+  selPM = sel.value;
+  document.getElementById('namaPM').value = selPM;
+  var smSel = document.getElementById('namaSMSel');
+  var smMan = document.getElementById('namaSMManual');
+  var smHid = document.getElementById('namaSM');
+  // Reset SM
+  smSel.innerHTML = '<option value="">-- Pilih SM --</option>';
+  smHid.value = '';
+  if(smMan) smMan.style.display='none';
+  if(!selPM){ smSel.disabled=true; return; }
+  smSel.disabled = false;
+  if(PM_SM_MAP[selPM]){
+    PM_SM_MAP[selPM].forEach(function(sm){
+      var o=document.createElement('option'); o.value=sm; o.textContent=sm;
+      smSel.appendChild(o);
+    });
+  }
+  // Add Lainnya option
+  var oLain=document.createElement('option'); oLain.value='__other__'; oLain.textContent='Lainnya...';
+  smSel.appendChild(oLain);
+  autoSave();
+}
+
+// ── PROJECT DROPDOWN: populate dari localStorage SM ──────────
+function populateProjectDropdown(smName){
+  var sel = document.getElementById('projectSel');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">-- Pilih Project --</option>';
+
+  if(!smName){
+    sel.innerHTML = '<option value="">-- Pilih SM dulu --</option>';
+    sel.disabled = true;
+    return;
+  }
+  sel.disabled = false;
+
+  // Kumpulkan semua project unik milik SM ini dari localStorage
+  var prefix = LS_PREFIX+'_'+sanitizeKey(smName)+'_';
+  var projects = {}; // key = namaProject, val = {savedAt, key}
+
+  try{
+    for(var i=0;i<localStorage.length;i++){
+      var lk = localStorage.key(i);
+      if(lk && lk.indexOf(prefix)===0){
+        var raw = localStorage.getItem(lk);
+        if(raw){
+          try{
+            var d = JSON.parse(raw);
+            if(d && d.namaProject){
+              var np = d.namaProject;
+              // Ambil yang paling baru per project name
+              if(!projects[np] || new Date(d.savedAt||0) > new Date(projects[np].savedAt||0)){
+                projects[np] = {savedAt: d.savedAt||'', key: lk, data: d};
+              }
+            }
+          }catch(e){}
+        }
+      }
+    }
+  }catch(e){}
+
+  var names = Object.keys(projects).sort();
+  names.forEach(function(nm){
+    var o = document.createElement('option');
+    var dt = projects[nm].savedAt ? new Date(projects[nm].savedAt) : null;
+    var dtStr = dt ? dt.toLocaleDateString('id-ID',{day:'2-digit',month:'short'}) : '';
+    o.value = nm;
+    o.textContent = nm + (dtStr ? '  ['+dtStr+']' : '');
+    o.dataset.projectKey = projects[nm].key;
+    sel.appendChild(o);
+  });
+
+  // Tambah opsi project baru
+  var oNew = document.createElement('option');
+  oNew.value = '__new__';
+  oNew.textContent = '+ Project Baru...';
+  sel.appendChild(oNew);
+}
+
+function handleProjectSel(sel){
+  var manual = document.getElementById('namaProjectManual');
+  var hidden = document.getElementById('namaProject');
+  var note   = document.getElementById('project-locked-note');
+
+  if(sel.value === '__new__'){
+    // Mode project baru: tampil input manual
+    if(manual){ manual.style.display='block'; manual.value=''; manual.focus(); }
+    if(hidden) hidden.value = '';
+    if(note)   note.style.display = 'none';
+    renderWeekHistoryBar();
+    autoSave();
+    return;
+  }
+
+  if(!sel.value){
+    if(manual){ manual.style.display='none'; manual.value=''; }
+    if(hidden) hidden.value = '';
+    if(note)   note.style.display = 'none';
+    return;
+  }
+
+  // Project existing dipilih: kunci nama, load data terbaru project tsb
+  var projectName = sel.value;
+  if(manual){ manual.style.display='none'; }
+  if(hidden) hidden.value = projectName;
+  if(note)   note.style.display = 'block';
+
+  // Load data project ini (week tertinggi atau terbaru)
+  var smName = (document.getElementById('namaSM')||{}).value||'';
+  if(smName && projectName){
+    loadLatestProjectData(smName, projectName);
+  }
+
+  renderWeekHistoryBar();
+  autoSave();
+}
+
+function syncProjectManual(val){
+  var hidden = document.getElementById('namaProject');
+  if(hidden) hidden.value = val;
+  renderWeekHistoryBar();
+  autoSave();
+}
+
+// Load data terbaru untuk project tertentu (week tertinggi)
+function loadLatestProjectData(smName, projectName){
+  var prefix = LS_PREFIX+'_'+sanitizeKey(smName)+'_'+sanitizeKey(projectName)+'_w';
+  var found = [];
+  try{
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(k && k.indexOf(prefix)===0){
+        var wStr=k.replace(prefix,'');
+        var wNum=parseInt(wStr);
+        if(!isNaN(wNum)){
+          var raw=localStorage.getItem(k);
+          if(raw){
+            try{ var d=JSON.parse(raw); found.push({week:wNum,data:d,key:k}); }catch(e){}
+          }
+        }
+      }
+    }
+  }catch(e){}
+  if(!found.length) return;
+
+  // Sort by week desc, ambil tertinggi
+  found.sort(function(a,b){ return b.week - a.week; });
+  var latest = found[0];
+
+  // Set week ke minggu tertinggi + 1 (next week) atau biarkan SM pilih
+  // Tapi tetap load data statis (SPK, kontraktor, brand, opening)
+  var d = latest.data;
+  if(d.kontraktor){
+    document.getElementById('kontraktor').value = d.kontraktor;
+    var kSel=document.getElementById('kontraktorSel');
+    if(kSel){
+      var kFound=false;
+      for(var ki=0;ki<kSel.options.length;ki++){
+        if(kSel.options[ki].value===d.kontraktor){kSel.value=d.kontraktor;kFound=true;break;}
+      }
+      if(!kFound){ kSel.value='__other__';
+        var km=document.getElementById('kontraktorManual');
+        if(km){km.value=d.kontraktor;km.style.display='block';}
+      } else {
+        var km2=document.getElementById('kontraktorManual');
+        if(km2) km2.style.display='none';
+      }
+    }
+  }
+  if(d.spkStart)      s('spkStart',d.spkStart);
+  if(d.spkEnd)        s('spkEnd',d.spkEnd);
+  if(d.targetOpening){ s('targetOpening',d.targetOpening); updateCountdown(); }
+  if(d.brand && !selBrand){ selBrand=d.brand; renderBrandGrid(); }
+  if(d.tipeProject){
+    selTipeProject=d.tipeProject;
+    var tp=document.getElementById('tipeProjectSel'); if(tp) tp.value=d.tipeProject;
+    var ti=document.getElementById('tipe-info'); if(ti) ti.textContent=TIPE_INFO_MAP[d.tipeProject]||'';
+  }
+
+  // Saran: lanjut ke minggu berikutnya
+  var nextWeek = latest.week + 1;
+  var maxW = getMaxWeeks ? getMaxWeeks(selBrand) : 5;
+  if(nextWeek <= maxW){
+    showProjectLoadBanner(projectName, latest.week, nextWeek);
+  } else {
+    showProjectLoadBanner(projectName, latest.week, null);
+  }
+}
+
+function showProjectLoadBanner(project, lastWeek, nextWeek){
+  var old=document.getElementById('proj-load-banner'); if(old) old.remove();
+  var b=document.createElement('div');
+  b.id='proj-load-banner';
+  b.style.cssText='background:rgba(30,60,90,0.3);border:1px solid #3b82f6;border-radius:8px;padding:8px 12px;margin:6px 0;font-size:10px;color:var(--text)';
+  var nextInfo = nextWeek ? ' → Lanjut ke <strong>W'+nextWeek+'</strong>?' : ' (project sudah selesai)';
+  var btnNext = nextWeek
+    ? '<div style="display:flex;gap:6px;margin-top:6px">'
+      +'<button onclick="setWeek('+nextWeek+');var e=document.getElementById(\'proj-load-banner\');if(e)e.remove();" style="flex:1;padding:4px;font-size:10px;background:#1e3a5f;border:1px solid #3b82f6;color:#93c5fd;border-radius:5px;cursor:pointer">Ya, lanjut W'+nextWeek+'</button>'
+      +'<button onclick="var e=document.getElementById(\'proj-load-banner\');if(e)e.remove();" style="flex:1;padding:4px;font-size:10px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:5px;cursor:pointer">Pilih sendiri</button>'
+      +'</div>'
+    : '';
+  b.innerHTML='<span style="color:#3b82f6">📂 Project dimuat:</span> <strong>'+project+'</strong><br/>'
+    +'Data terakhir: W'+lastWeek+nextInfo+btnNext;
+  var projEl=document.getElementById('projectSel');
+  if(projEl && projEl.parentNode) projEl.parentNode.appendChild(b);
+}
+
+// ── AUTO-LOAD: last project data when SM dipilih ─────────────
+function getSMKeys(smName){
+  var prefix = LS_PREFIX+'_'+sanitizeKey(smName)+'_';
+  var matches = [];
+  try{
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(k && k.indexOf(prefix)===0){
+        var raw=localStorage.getItem(k);
+        if(raw){
+          try{
+            var d=JSON.parse(raw);
+            if(d && d.namaProject) matches.push({key:k,data:d});
+          }catch(e){}
+        }
+      }
+    }
+  }catch(e){}
+  // Sort by savedAt desc
+  matches.sort(function(a,b){
+    return new Date(b.data.savedAt||0)-new Date(a.data.savedAt||0);
+  });
+  return matches;
+}
+
+function autoLoadSMData(smName){
+  if(!smName) return;
+  var matches = getSMKeys(smName);
+  if(matches.length===0) return;
+  var latest = matches[0].data;
+
+  // namaProject tidak di-prefill — SM harus pilih dari dropdown project
+  if(latest.kontraktor){
+    s('kontraktor',latest.kontraktor);
+    var kSel=document.getElementById('kontraktorSel');
+    if(kSel){
+      var kFound2=false;
+      for(var ki2=0;ki2<kSel.options.length;ki2++){
+        if(kSel.options[ki2].value===latest.kontraktor){kSel.value=latest.kontraktor;kFound2=true;break;}
+      }
+      if(!kFound2){
+        kSel.value='__other__'; s('kontraktor',latest.kontraktor);
+        var km=document.getElementById('kontraktorManual');
+        if(km){km.value=latest.kontraktor;km.style.display='block';}
+      } else {
+        s('kontraktor',latest.kontraktor);
+        var km2=document.getElementById('kontraktorManual');
+        if(km2){km2.style.display='none';}
+      }
+    }
+  }
+  if(latest.spkStart)     s('spkStart',latest.spkStart);
+  if(latest.spkEnd)       s('spkEnd',latest.spkEnd);
+  if(latest.targetOpening){ s('targetOpening',latest.targetOpening); updateCountdown(); }
+  if(latest.brand && !selBrand){ selBrand=latest.brand; renderBrandGrid(); }
+
+  // Banner sekarang ditangani oleh handleProjectSel via populateProjectDropdown
+}
+
+function showAutoLoadBanner(project, sm, total){
+  var old=document.getElementById('autoload-banner');
+  if(old) old.remove();
+  var banner=document.createElement('div');
+  banner.id='autoload-banner';
+  banner.style.cssText='background:rgba(30,90,60,0.25);border:1px solid #22c55e;border-radius:8px;padding:8px 12px;margin:8px 0;font-size:10px;color:var(--text)';
+  banner.innerHTML=
+    '<span style="color:#22c55e">✅ Auto-load:</span> Data terakhir <strong>'+sm+'</strong> ditemukan '+
+    '('+total+' project).<br/>Project dimuat: <strong>'+project+'</strong>'+
+    '<button onclick="clearAutoLoad()" style="float:right;background:none;border:1px solid #ef4444;color:#ef4444;font-size:9px;padding:2px 6px;cursor:pointer;border-radius:4px;margin-top:2px">✕ Hapus</button>';
+  // Inject after project input
+  var projEl=document.getElementById('namaProject');
+  if(projEl && projEl.parentNode) projEl.parentNode.appendChild(banner);
+}
+
+function clearAutoLoad(){
+  ['namaProject','kontraktor','spkStart','spkEnd','targetOpening'].forEach(function(k){s(k,'');});
+  var kSel=document.getElementById('kontraktorSel');
+  if(kSel) kSel.value='';
+  var kMan=document.getElementById('kontraktorManual');
+  if(kMan){kMan.value='';kMan.style.display='none';}
+  var b=document.getElementById('autoload-banner'); if(b) b.remove();
+  autoSave();
+}
+
+function handleSMSel(sel){
+  var m=document.getElementById('namaSMManual'),h=document.getElementById('namaSM');
+  if(sel.value==='__other__'){m.style.display='block';h.value='';populateProjectDropdown('');}
+  else{
+    m.style.display='none'; h.value=sel.value;
+    autoSave();
+    if(sel.value){
+      // Reset project dulu
+      var pSel=document.getElementById('projectSel');
+      var pMan=document.getElementById('namaProjectManual');
+      var pHid=document.getElementById('namaProject');
+      var pNote=document.getElementById('project-locked-note');
+      if(pSel) pSel.value='';
+      if(pMan){ pMan.style.display='none'; pMan.value=''; }
+      if(pHid) pHid.value='';
+      if(pNote) pNote.style.display='none';
+      // Populate dropdown project untuk SM ini
+      setTimeout(function(){ populateProjectDropdown(sel.value); renderWeekHistoryBar(); },100);
+    }
+  }
+}
+function handleKontrSel(sel){
+  var m=document.getElementById('kontraktorManual'),h=document.getElementById('kontraktor');
+  if(sel.value==='__other__'){m.style.display='block';h.value='';}
+  else{m.style.display='none';h.value=sel.value;autoSave();}
+}
+
+// ── COUNTDOWN ──
+function updateCountdown(){
+  var toVal=g('targetOpening'), banner=document.getElementById('countdown-banner');
+  if(!toVal){banner.style.display='none';return;}
+  var target=new Date(toVal); target.setHours(0,0,0,0);
+  var today=new Date(); today.setHours(0,0,0,0);
+  var diff=Math.ceil((target-today)/86400000);
+  banner.style.display='flex';
+  document.getElementById('cd-days').textContent=Math.abs(diff);
+  var dEl=document.getElementById('cd-days');
+  if(diff>14){banner.className='countdown-banner ok';dEl.style.color='var(--green)';document.getElementById('cd-lbl').textContent='Hari menuju Opening';document.getElementById('cd-sub').textContent='H-'+diff+' - On schedule';}
+  else if(diff>0){banner.className='countdown-banner warn';dEl.style.color='var(--yellow)';document.getElementById('cd-lbl').textContent='Hari menuju Opening';document.getElementById('cd-sub').textContent='H-'+diff+' - Urgency tinggi!';}
+  else if(diff===0){banner.className='countdown-banner urgent';dEl.style.color='var(--red)';document.getElementById('cd-lbl').textContent='HARI INI OPENING!';document.getElementById('cd-sub').textContent='D-Day!';}
+  else{banner.className='countdown-banner urgent';dEl.style.color='var(--red)';document.getElementById('cd-lbl').textContent='Hari sejak target terlewat';document.getElementById('cd-sub').textContent='Overrun '+Math.abs(diff)+' hari!';}
+}
+function checkOverrun(){
+  var spkEnd=g('spkEnd'); if(!spkEnd) return;
+  var end=new Date(spkEnd); end.setHours(0,0,0,0);
+  var today=new Date(); today.setHours(0,0,0,0);
+  if(today>end) updateOverall();
+}
+
+// ── BOBOT EFEKTIF (proporsional redistribusi) ──
+function getEffectiveTotalBobot(phases){
+  var total=0;
+  phases.forEach(function(phase){
+    if(phase.isMilestonePhase) return;
+    phase.items.forEach(function(item){
+      if(item.bobot>0){
+        var active;
+        if(item.depAny) active=item.depAny.some(function(k){return optionalActive[k];});
+        else active=!item.optKey||optionalActive[item.optKey];
+        if(active) total+=item.bobot;
+      }
+    });
+  });
+  return total||1;
+}
+function getEffectiveTarget(){
+  // Overrun check
+  var spkEnd=g('spkEnd');
+  if(spkEnd){var end=new Date(spkEnd);end.setHours(0,0,0,0);var today=new Date();today.setHours(0,0,0,0);if(today>end) return 100;}
+  // Week-1 prorate
+  if (isProrateActive()) return getProrateTarget();
+  var targets=getWeekTargets(); return targets[selWeek]||20;
+}
+
+// ── PHASE RENDERING ──
+function renderPhaseList(){
+  var el=document.getElementById('phase-list'); if(!el) return; el.innerHTML='';
+  if(!selBrand){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:30px;font-size:12px">Pilih brand terlebih dahulu</div>';return;}
+  var phases=getActivePhases();
+  phases.forEach(function(phase){
+    var card=document.createElement('div'); card.className='card'; card.style.marginBottom='8px';
+    // Header
+    var hdr=document.createElement('div'); hdr.className='phase-header';
+    if(phase.isMilestonePhase){
+      hdr.innerHTML='<span class="phase-title">'+phase.label+'</span><span class="phase-pct" style="color:var(--muted);font-size:9px">Sudah / Belum</span>';
+    } else {
+      hdr.innerHTML='<span class="phase-title">'+phase.label+'</span><span class="phase-pct" id="phh-'+phase.id+'">'+calcPhasePct(phase)+'%</span>';
+    }
+    var body=document.createElement('div'); body.id='pb-'+phase.id;
+    // MilestonePhase stays open by default
+    if(phase.isMilestonePhase) body.style.display='block';
+    hdr.onclick=(function(b){return function(){b.style.display=b.style.display==='none'?'block':'none';};})(body);
+    card.appendChild(hdr); card.appendChild(body);
+
+    // Optional toggles for FSS & Gas
+    var shownOptKeys={};
+    phase.items.forEach(function(it){if(it.optKey&&!shownOptKeys[it.optKey]){shownOptKeys[it.optKey]=it;}});
+    // Also check depAny items for toggle needs (handled by optKey of dep items)
+    Object.keys(shownOptKeys).forEach(function(oKey){
+      var it=shownOptKeys[oKey];
+      var tr=document.createElement('div'); tr.className='opt-toggle-row';
+      var infoDiv=document.createElement('div');
+      var lbl=document.createElement('div'); lbl.className='opt-toggle-label'; lbl.textContent=it.label;
+      var sub=document.createElement('div'); sub.className='opt-toggle-sub'; sub.textContent='Bobot '+it.bobot+' (didistribusi otomatis jika Tidak)';
+      infoDiv.appendChild(lbl); infoDiv.appendChild(sub);
+      var btnWrap=document.createElement('div'); btnWrap.className='opt-btns';
+      var bYes=document.createElement('button'); bYes.className='opt-btn'+(optionalActive[oKey]?' yes':' inactive'); bYes.textContent='Ada';
+      var bNo=document.createElement('button');  bNo.className='opt-btn'+(!optionalActive[oKey]?' no':' inactive');  bNo.textContent='Tidak';
+      (function(k,y,n){
+        y.onclick=function(){optionalActive[k]=true; y.className='opt-btn yes'; n.className='opt-btn inactive'; renderPhaseList(); updateOverall(); autoSave();};
+        n.onclick=function(){optionalActive[k]=false; n.className='opt-btn no'; y.className='opt-btn inactive'; renderPhaseList(); updateOverall(); autoSave();};
+      })(oKey,bYes,bNo);
+      btnWrap.appendChild(bYes); btnWrap.appendChild(bNo);
+      tr.appendChild(infoDiv); tr.appendChild(btnWrap); body.appendChild(tr);
+    });
+
+    // Items
+    phase.items.forEach(function(item){
+      // depAny: show if ANY of the listed optKeys are active
+      var isOptActive;
+      if (item.depAny) {
+        isOptActive = item.depAny.some(function(k){ return optionalActive[k]; });
+      } else {
+        isOptActive = !item.optKey || optionalActive[item.optKey];
+      }
+      var pct=item.isTes?(itemStatus[item.id]==='pass'?100:0):(itemPct[item.id]||0);
+      var barColor=pct>=80?'var(--green)':pct>=40?'var(--yellow)':'var(--red)';
+
+      // Milestone items (Fase 5) → Sudah/Belum
+      if(item.isMilestone){
+        var msRow=document.createElement('div'); msRow.className='ms-row';
+        var msLbl=document.createElement('span'); msLbl.className='ms-label'; msLbl.textContent=item.label;
+        var msBtns=document.createElement('div'); msBtns.className='ms-btns';
+        var bS=document.createElement('button'); bS.className='ms-btn'+(itemStatus[item.id]==='pass'?' sudah':' inactive'); bS.textContent='Sudah';
+        var bB=document.createElement('button'); bB.className='ms-btn'+(itemStatus[item.id]!=='pass'?' belum':' inactive'); bB.textContent='Belum';
+        (function(id,s2,b2){
+          s2.onclick=function(){itemStatus[id]='pass';s2.className='ms-btn sudah';b2.className='ms-btn inactive';autoSave();};
+          b2.onclick=function(){itemStatus[id]='';b2.className='ms-btn belum';s2.className='ms-btn inactive';autoSave();};
+        })(item.id,bS,bB);
+        msBtns.appendChild(bS); msBtns.appendChild(bB);
+        msRow.appendChild(msLbl); msRow.appendChild(msBtns); body.appendChild(msRow);
+        return;
+      }
+
+      // Optional items that are inactive — show greyed out (but still visible for revision)
+      var row=document.createElement('div');
+      row.className='pitem'+(isOptActive?'':' disabled');
+
+      if(item.isTes){
+        var st=itemStatus[item.id]||'belum';
+        var stTxt=st==='pass'?'✓ PASS':st==='fail'?'✗ FAIL':'○ Belum';
+        var stColor=st==='pass'?'var(--green)':st==='fail'?'var(--red)':'var(--muted)';
+        row.innerHTML='<div class="pitem-row"><span class="pitem-label" style="color:var(--yellow)">🧪 '+item.label+'</span><span class="pitem-bobot" style="color:'+stColor+'">'+stTxt+'</span><span></span></div>';
+        var tesRow=document.createElement('div'); tesRow.className='tes-row';
+        var pBtn=document.createElement('button'); pBtn.className='tes-btn '+(st==='pass'?'pass-on':'off'); pBtn.textContent='Pass';
+        var fBtn=document.createElement('button'); fBtn.className='tes-btn '+(st==='fail'?'fail-on':'off'); fBtn.textContent='Fail';
+        var bBtn=document.createElement('button'); bBtn.className='tes-btn '+(st==='belum'||!st?'off':'off'); bBtn.textContent='Belum';
+        bBtn.style.cssText='flex:1;padding:6px;border-radius:6px;font-size:10px;font-weight:700;border:1px solid var(--border);cursor:pointer;font-family:var(--font);background:var(--surface2);color:var(--muted)';
+        if(!isOptActive){pBtn.disabled=true;fBtn.disabled=true;bBtn.disabled=true;}
+        (function(id,p,f,b,rowEl){
+          p.onclick=function(){
+            itemStatus[id]='pass';
+            p.className='tes-btn pass-on'; f.className='tes-btn off';
+            b.style.background='var(--surface2)'; b.style.color='var(--muted)';
+            rowEl.querySelector('.pitem-bobot').textContent='✓ PASS';
+            rowEl.querySelector('.pitem-bobot').style.color='var(--green)';
+            updateOverall(); autoSave();
+          };
+          f.onclick=function(){
+            itemStatus[id]='fail';
+            f.className='tes-btn fail-on'; p.className='tes-btn off';
+            b.style.background='var(--surface2)'; b.style.color='var(--muted)';
+            rowEl.querySelector('.pitem-bobot').textContent='✗ FAIL';
+            rowEl.querySelector('.pitem-bobot').style.color='var(--red)';
+            updateOverall(); autoSave();
+          };
+          b.onclick=function(){
+            itemStatus[id]='belum';
+            p.className='tes-btn off'; f.className='tes-btn off';
+            b.style.background='var(--surface2)'; b.style.color='var(--muted)';
+            rowEl.querySelector('.pitem-bobot').textContent='○ Belum';
+            rowEl.querySelector('.pitem-bobot').style.color='var(--muted)';
+            updateOverall(); autoSave();
+          };
+        })(item.id,pBtn,fBtn,bBtn,row);
+        tesRow.appendChild(pBtn); tesRow.appendChild(fBtn); tesRow.appendChild(bBtn);
+        row.appendChild(tesRow);
+      } else {
+        var ri=document.createElement('div'); ri.className='pitem-row';
+        var lblSpan=document.createElement('span'); lblSpan.className='pitem-label';
+        lblSpan.innerHTML=item.label+(item.bobot?'<br><span class="pitem-bobot">bobot '+item.bobot+'</span>':'');
+        if(item.syarat){var sy=document.createElement('div');sy.style.cssText='font-size:9px;color:var(--yellow);margin-top:2px';sy.textContent=item.syarat;lblSpan.appendChild(sy);}
+        var inp=document.createElement('input'); inp.className='pitem-input'; inp.type='number'; inp.min=0; inp.max=100;
+        inp.value=pct||''; inp.placeholder='0'; inp.disabled=!isOptActive;
+        (function(id,phRef){inp.oninput=function(){itemPct[id]=parseInt(this.value)||0;updateOverall();autoSave();var ph2=document.getElementById('phh-'+phRef.id);if(ph2)ph2.textContent=calcPhasePct(phRef)+'%';};})(item.id,phase);
+        var pctLbl=document.createElement('span'); pctLbl.style.cssText='font-size:11px;color:var(--muted)'; pctLbl.textContent='%';
+        ri.appendChild(lblSpan); ri.appendChild(inp); ri.appendChild(pctLbl); row.appendChild(ri);
+        var bar=document.createElement('div'); bar.className='pitem-bar';
+        var fill=document.createElement('div'); fill.className='pitem-fill'; fill.style.cssText='width:'+(isOptActive?pct:0)+'%;background:'+barColor;
+        bar.appendChild(fill); row.appendChild(bar);
+        // WP detail
+        if(item.isWP){
+          var wpDiv=document.createElement('div'); wpDiv.className='wp-detail';
+          var wpTitle=document.createElement('div'); wpTitle.className='fl'; wpTitle.style.marginBottom='6px'; wpTitle.textContent='Detail Waterproofing';
+          wpDiv.appendChild(wpTitle);
+          // Bahan selector
+          var bahanRow=document.createElement('div'); bahanRow.style.cssText='margin-bottom:8px';
+          var bahanLbl=document.createElement('div'); bahanLbl.className='fl'; bahanLbl.textContent='Jenis Bahan';
+          var bahanSel=document.createElement('select'); bahanSel.style.cssText='font-size:11px;padding:6px 8px';
+          var bahanOpts=['-- Pilih Bahan --','Membran Bakar','Coating Sika','Lainnya'];
+          bahanOpts.forEach(function(o){var op=document.createElement('option');op.value=o;op.textContent=o;if(wpData[item.id+'_jenis']===o)op.selected=true;bahanSel.appendChild(op);});
+          (function(id){bahanSel.onchange=function(){wpData[id+'_jenis']=this.value;autoSave();};})(item.id);
+          bahanRow.appendChild(bahanLbl); bahanRow.appendChild(bahanSel); wpDiv.appendChild(bahanRow);
+          // Layer & durasi
+          var wpGrid=document.createElement('div'); wpGrid.className='wp-grid';
+          // Kolom 1: Jumlah Layer
+          var colLayer=document.createElement('div');
+          var flLayer=document.createElement('div'); flLayer.className='fl'; flLayer.textContent='Jumlah Layer';
+          var iLayer=document.createElement('input'); iLayer.type='number'; iLayer.placeholder='2'; iLayer.value=wpData[item.id+'_layer']||'';
+          (function(id){iLayer.oninput=function(){wpData[id+'_layer']=this.value;autoSave();};})(item.id);
+          colLayer.appendChild(flLayer); colLayer.appendChild(iLayer); wpGrid.appendChild(colLayer);
+          // Kolom 2: Durasi Tes — pilihan per-24-jam
+          var colDur=document.createElement('div');
+          var flDur=document.createElement('div'); flDur.className='fl'; flDur.textContent='Durasi Tes';
+          var selDur=document.createElement('select'); selDur.style.cssText='font-size:11px;padding:6px 8px';
+          [['','-- Pilih --'],['1x24 jam','1x24 jam'],['2x24 jam','2x24 jam'],['3x24 jam','3x24 jam'],['lainnya','Lainnya']].forEach(function(opt){
+            var o=document.createElement('option'); o.value=opt[0]; o.textContent=opt[1];
+            if(wpData[item.id+'_durasi']===opt[0]) o.selected=true;
+            selDur.appendChild(o);
+          });
+          (function(id){selDur.onchange=function(){wpData[id+'_durasi']=this.value;autoSave();};})(item.id);
+          var noteDur=document.createElement('div'); noteDur.style.cssText='font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)';
+          noteDur.textContent='Standar min. 1x24 jam';
+          colDur.appendChild(flDur); colDur.appendChild(selDur); colDur.appendChild(noteDur); wpGrid.appendChild(colDur);
+          wpDiv.appendChild(wpGrid); row.appendChild(wpDiv);
+        }
+      }
+      body.appendChild(row);
+    });
+    el.appendChild(card);
+  });
+  updateOverall();
+}
+
+function calcPhasePct(phase){
+  if(!phase.items||phase.isMilestonePhase) return 0;
+  var total=0, bobot=0;
+  phase.items.forEach(function(item){
+    if(item.bobot>0){
+      var active=!item.optKey||optionalActive[item.optKey];
+      if(!active) return;
+      bobot+=item.bobot;
+      var pct=item.isTes?(itemStatus[item.id]==='pass'?100:0):(itemPct[item.id]||0);
+      total+=(pct/100)*item.bobot;
+    }
+  });
+  return bobot>0?Math.round(total/bobot*100):0;
+}
+
+function updateOverall(){
+  var phases=getActivePhases();
+  var effTotal=getEffectiveTotalBobot(phases), total=0;
+  phases.forEach(function(phase){
+    if(phase.isMilestonePhase) return;
+    phase.items.forEach(function(item){
+      if(item.bobot>0){
+        var active;
+        if(item.depAny) active=item.depAny.some(function(k){return optionalActive[k];});
+        else active=!item.optKey||optionalActive[item.optKey];
+        if(!active) return;
+        var pct=item.isTes?(itemStatus[item.id]==='pass'?100:0):(itemPct[item.id]||0);
+        total+=(pct/100)*(item.bobot/effTotal)*100;
+      }
+    });
+  });
+  total=Math.round(total*10)/10;
+  var target=getEffectiveTarget();
+  var dev=Math.round((total-target)*10)/10;
+  var devStr=(dev>=0?'+':'')+dev+'%';
+  // Update chips
+  var hProg=document.getElementById('hi-prog'), hTgt=document.getElementById('hi-target'), hDev=document.getElementById('hi-dev');
+  if(hProg) hProg.textContent=total+'%';
+  if(hTgt) hTgt.textContent=target+'%';
+  if(hDev){hDev.textContent=devStr; hDev.style.color=dev>=-5?'var(--green)':dev>=-17?'var(--yellow)':'var(--red)';}
+  // ── HEALTH LOGIC (revised) ──
+  var critApproval = issueItems.some(function(it){ return it.issue && (it.kategori==='Approval'||it.kategori==='Mall/Landlord'); });
+  var prorate      = isProrateActive();
+  var daysElapsed  = getDaysElapsed();
+
+  var icon, label, sub, bgColor, borderColor;
+
+  if (critApproval) {
+    // Predictive alert: approval/landlord issue → langsung critical
+    icon='🔴'; label='Critical — Risiko Approval'; sub='Issue Approval/Mall terdeteksi — perlu eskalasi PM';
+    bgColor='#2a0505'; borderColor='var(--red)';
+
+  } else if (selWeek === 1) {
+    // Week-1 special logic — toleransi lebih besar
+    if (dev >= -10) {
+      icon='🔵'; label='Early Stage'; sub='Mobilisasi & persiapan awal berjalan normal';
+      bgColor='#050e2a'; borderColor='#3b82f6';
+    } else {
+      icon='⚠️'; label='Week-1 Delay'; sub='Persiapan awal tertinggal — cek mobilisasi';
+      bgColor='#2a1500'; borderColor='var(--yellow)';
+    }
+
+  } else if (dev >= -5) {
+    icon='✅'; label='On Track'; sub='Progress sesuai target';
+    bgColor='#052a10'; borderColor='var(--green)';
+
+  } else if (dev >= -10) {
+    icon='⚠️'; label='Minor Delay'; sub='Deviasi ringan — perlu akselerasi';
+    bgColor='#2a1500'; borderColor='var(--yellow)';
+
+  } else {
+    icon='🔴'; label='Critical Delay'; sub='Deviasi signifikan — intervensi PM diperlukan';
+    bgColor='#2a0505'; borderColor='var(--red)';
+  }
+
+  // Prorate note
+  var prorateNote = prorate
+    ? ('Hari efektif: ' + daysElapsed + '/7 hari — target prorate aktif')
+    : '';
+
+  // Update banner
+  var banner = document.getElementById('health-banner');
+  if (banner) banner.style.cssText = 'border-color:'+borderColor+';background:'+bgColor+';display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid;margin-bottom:10px';
+
+  var hIcon  = document.getElementById('h-icon');
+  var hLabel = document.getElementById('h-label');
+  var hSub   = document.getElementById('h-sub');
+  if (hIcon)  hIcon.textContent  = icon;
+  if (hLabel) { hLabel.textContent = label; hLabel.style.color = borderColor; }
+  if (hSub)   hSub.textContent   = sub;
+
+  // Weekly delta
+  var weeklyDelta = Math.round((total - prevProgress) * 10) / 10;
+  var weeklyStr   = (weeklyDelta >= 0 ? '+' : '') + weeklyDelta + '%';
+
+  // Update chips
+  var hProg  = document.getElementById('hi-prog');
+  var hTgt   = document.getElementById('hi-target');
+  var hDevEl = document.getElementById('hi-dev');
+  var hWeek  = document.getElementById('hi-weekly');
+  var hCumul = document.getElementById('hi-cumul');
+
+  if (hProg)  hProg.textContent  = total + '%';
+  if (hCumul) hCumul.textContent = total + '%';
+  if (hWeek) {
+    hWeek.textContent = weeklyStr;
+    hWeek.style.color = weeklyDelta >= 0 ? 'var(--green)' : 'var(--yellow)';
+  }
+  if (hTgt) {
+    hTgt.textContent = target + '%' + (prorate ? '*' : '');
+    hTgt.title = prorate ? ('Target prorate: ' + target + '% (basis ' + (getWeekTargets()[1]||10) + '% x ' + daysElapsed + '/7 hari)') : '';
+  }
+  if (hDevEl) {
+    hDevEl.textContent = devStr;
+    hDevEl.style.color = dev >= -5 ? 'var(--green)' : dev >= -10 ? 'var(--yellow)' : 'var(--red)';
+  }
+
+  // Prorate note — tampilkan/sembunyikan di bawah health banner
+  var prorateEl = document.getElementById('prorate-note');
+  if (!prorateEl) {
+    prorateEl = document.createElement('div');
+    prorateEl.id = 'prorate-note';
+    prorateEl.style.cssText = 'font-size:9px;color:#3b82f6;font-family:var(--mono);padding:4px 10px;background:#050e2a;border:1px solid #3b82f644;border-radius:7px;margin-bottom:8px';
+    var bannerParent = banner && banner.parentNode;
+    if (bannerParent) bannerParent.insertBefore(prorateEl, banner.nextSibling);
+  }
+  prorateEl.style.display = prorate ? 'block' : 'none';
+  if (prorate) prorateEl.textContent = '📅 ' + prorateNote;
+  updateTahapanUI();
+}
+
+// ── BREAKDOWN PROGRESS PER TAHAPAN — DINAMIS per tipe project ──
+// FIX-4: kategori & item ID menyesuaikan selTipeProject
+function getKategoriConfig(){
+  var t = selTipeProject;
+  if(t === 'Touch Up'){
+    return [
+      {label:'Persiapan',          ids:['tu_mob','tu_pro']},
+      {label:'Sipil & Arsitektur', ids:['tu_spl','tu_pnt']},
+      {label:'MEP Minor',          ids:['tu_mep']},
+      {label:'Furniture & Signage',ids:['tu_fur','tu_sig']},
+      {label:'Finishing',          ids:['tu_cl']},
+    ];
+  }
+  if(t === 'Touch Up + Hotdak'){
+    return [
+      {label:'Persiapan',               ids:['tu_mob','tu_pro']},
+      {label:'Sipil & Arsitektur',      ids:['tu_spl','tu_pnt']},
+      {label:'MEP Minor',               ids:['tu_mep']},
+      {label:'Furniture, Kaca & Equip', ids:['tu_fur','tu_fxt','tu_pkt','tu_seq']},
+      {label:'Signage & Finishing',     ids:['tu_sig','tu_cl']},
+    ];
+  }
+  if(t === 'Bongkaran Bare'){
+    return [
+      {label:'Persiapan',           ids:['bb_mob','bb_pro']},
+      {label:'Bongkar MEP',         ids:['bb_me1','bb_me2','bb_me3']},
+      {label:'Bongkar Sipil',       ids:['bb_sp1','bb_sp2','bb_sp3','bb_sp4','bb_sp5']},
+      {label:'Clearance & Serah Terima',ids:['bb_pg','bb_bersih']},
+    ];
+  }
+  // Default: New Store / Relokasi / Relayout
+  return [
+    {label:'Persiapan',          ids: KAT_PERSIAPAN},
+    {label:'Sipil & Arsitektur', ids: KAT_SIPIL},
+    {label:'ME',                 ids: KAT_ME},
+    {label:'Plumbing & Gas',     ids: KAT_PLUMBING},
+    {label:'HVAC',               ids: KAT_HVAC},
+    {label:'Furniture & Fixture',ids: KAT_FIXTURE},
+  ];
+}
+
+function updateTahapanUI(){
+  var el = document.getElementById('tahapan-progress-ui');
+  if(!el) return;
+  if(!selBrand){ el.innerHTML='<div style="color:var(--muted);font-size:10px;text-align:center;padding:8px">Pilih brand terlebih dahulu</div>'; return; }
+
+  var kategori = getKategoriConfig();
+  var html = '';
+  kategori.forEach(function(kat){
+    var pct = getKategoriPct(kat.ids);
+    var color = pct>=80 ? 'var(--green)' : pct>=40 ? 'var(--yellow)' : 'var(--red)';
+    html +=
+      '<div style="margin-bottom:8px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'+
+          '<span style="font-size:10px;color:var(--text)">'+kat.label+'</span>'+
+          '<span style="font-size:10px;font-family:var(--mono);color:'+color+';font-weight:700">'+pct+'%</span>'+
+        '</div>'+
+        '<div class="pitem-bar">'+
+          '<div class="pitem-fill" style="width:'+pct+'%;background:'+color+'"></div>'+
+        '</div>'+
+      '</div>';
+  });
+  el.innerHTML = html;
+}
+
+// ── ISSUE TRACKER ──
+function renderIssueTable(){
+  var tbody=document.getElementById('issue-tbody'); if(!tbody) return; tbody.innerHTML='';
+  if(issueItems.length===0){
+    var tr=document.createElement('tr'),td=document.createElement('td');
+    td.colSpan=5; td.style.cssText='text-align:center;color:var(--muted);font-size:10px;padding:10px';
+    td.textContent='Belum ada issue.'; tr.appendChild(td); tbody.appendChild(tr); return;
+  }
+  issueItems.forEach(function(it,idx){
+    var tr=document.createElement('tr');
+    var td1=document.createElement('td'), i1=document.createElement('input');
+    i1.type='text'; i1.value=it.issue||''; i1.placeholder='Deskripsi...';
+    (function(i){i1.oninput=function(){issueItems[i].issue=this.value;updateOverall();autoSave();};})(idx);
+    td1.appendChild(i1); tr.appendChild(td1);
+    var td2=document.createElement('td'), sel=document.createElement('select');
+    var o0=document.createElement('option'); o0.value=''; o0.textContent='--'; sel.appendChild(o0);
+    ISSUE_KATEGORI.forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=k;if(it.kategori===k)o.selected=true;sel.appendChild(o);});
+    (function(i){sel.onchange=function(){issueItems[i].kategori=this.value;updateOverall();autoSave();};})(idx);
+    td2.appendChild(sel); tr.appendChild(td2);
+    var td3=document.createElement('td'), i3=document.createElement('input');
+    i3.type='text'; i3.value=it.pic||''; i3.placeholder='PIC...';
+    (function(i){i3.oninput=function(){issueItems[i].pic=this.value;autoSave();};})(idx);
+    td3.appendChild(i3); tr.appendChild(td3);
+    var td4=document.createElement('td'), i4=document.createElement('input');
+    i4.type='date'; i4.value=it.targetClose||'';
+    (function(i){i4.onchange=function(){issueItems[i].targetClose=this.value;autoSave();};})(idx);
+    td4.appendChild(i4); tr.appendChild(td4);
+    var td5=document.createElement('td'), btn=document.createElement('button');
+    btn.className='del-btn'; btn.textContent='🗑';
+    (function(i){btn.onclick=function(){issueItems.splice(i,1);renderIssueTable();autoSave();};})(idx);
+    td5.appendChild(btn); tr.appendChild(td5); tbody.appendChild(tr);
+  });
+}
+function addIssue(){issueItems.push({issue:'',kategori:'',pic:'',targetClose:''});renderIssueTable();}
+function setEskalasi(val){
+  eskalasiVal=val;
+  document.getElementById('eskBtn-ya').className ='opt-btn '+(val==='Ya'?'yes':'inactive');
+  document.getElementById('eskBtn-tdk').className='opt-btn '+(val==='Tidak'?'no':'inactive');
+  document.getElementById('esk-detail-wrap').style.display=(val==='Ya')?'block':'none';
+  autoSave();
+}
+
+// ── CARRY OVER ──
+function renderCOList(){
+  var el=document.getElementById('co-list'); if(!el) return; el.innerHTML='';
+  coItems.forEach(function(item,i){
+    var row=document.createElement('div'); row.className='co-item';
+    var inp=document.createElement('input'); inp.type='text'; inp.value=item||''; inp.placeholder='Item carry over...';
+    (function(idx){inp.oninput=function(){coItems[idx]=this.value;updateOverall();autoSave();};})(i);
+    var btn=document.createElement('button'); btn.className='del-btn'; btn.textContent='🗑';
+    (function(idx){btn.onclick=function(){coItems.splice(idx,1);renderCOList();autoSave();};})(i);
+    row.appendChild(inp); row.appendChild(btn); el.appendChild(row);
+  });
+}
+function addCO(){coItems.push('');renderCOList();}
+
+// ── RENCANA ──
+function renderRencanaList(){
+  var el=document.getElementById('rencana-list'); if(!el) return; el.innerHTML='';
+  rencanaItems.forEach(function(item,i){
+    var row=document.createElement('div'); row.style.marginBottom='6px';
+    var inp=document.createElement('input'); inp.type='text'; inp.value=item||''; inp.placeholder='Rencana pekerjaan minggu depan...';
+    (function(idx){inp.oninput=function(){rencanaItems[idx]=this.value;autoSave();};})(i);
+    row.appendChild(inp); el.appendChild(row);
+  });
+}
+function addRencana(){rencanaItems.push('');renderRencanaList();}
+
+// ── CRITICAL DATES ──
+function renderCritDates(){
+  var el=document.getElementById('crit-list'); if(!el) return; el.innerHTML='';
+  var today=new Date(); today.setHours(0,0,0,0);
+  critDates.forEach(function(cd,i){
+    var row=document.createElement('div'); row.className='crit-row';
+    var lbl=document.createElement('div'); lbl.style.fontSize='11px'; lbl.textContent=cd.label;
+    var inp=document.createElement('input'); inp.type='date'; inp.value=cd.date||''; inp.style.cssText='font-size:10px;padding:4px 6px;width:110px';
+    (function(idx){inp.onchange=function(){critDates[idx].date=this.value;renderCritDates();autoSave();};})(i);
+    var badge=document.createElement('div');
+    if(cd.done){badge.className='crit-badge done';badge.textContent='Done';}
+    else if(cd.date){
+      var d=new Date(cd.date); d.setHours(0,0,0,0);
+      var diff=Math.ceil((d-today)/86400000);
+      if(diff<0){badge.className='crit-badge over';badge.textContent='Overdue '+Math.abs(diff)+'h';}
+      else if(diff<=7){badge.className='crit-badge warn';badge.textContent='H-'+diff;}
+      else{badge.className='crit-badge ok';badge.textContent='H-'+diff;}
+    } else {badge.className='crit-badge warn';badge.textContent='Belum';}
+    badge.style.cursor='pointer';
+    (function(idx){badge.onclick=function(){critDates[idx].done=!critDates[idx].done;renderCritDates();autoSave();};})(i);
+    row.appendChild(lbl); row.appendChild(inp); row.appendChild(badge); el.appendChild(row);
+  });
+}
+
+// ── FOTO ──
+function addExtraFotoSlot(){
+  extraFotoCount++;
+  renderExtraFotoGrid();
+  autoSave();
+}
+
+function renderExtraFotoGrid(){
+  var grid=document.getElementById('foto-grid-extra'); if(!grid) return; grid.innerHTML='';
+  for(var i=0;i<extraFotoCount;i++){
+    var slotKey='extra_'+i;
+    var slot=document.createElement('div');
+    slot.className='foto-slot'+(fotoData[slotKey]&&fotoData[slotKey].url?' filled':'');
+    var lbl=document.createElement('div'); lbl.className='foto-slot-label';
+    var capInp=document.createElement('input');
+    capInp.style.cssText='width:100%;font-size:9px;padding:3px 6px;background:var(--surface);border:none;border-bottom:1px solid var(--border);color:var(--muted)';
+    capInp.placeholder='Label foto...';
+    capInp.value=(fotoData[slotKey]&&fotoData[slotKey].label)||('Foto Tambahan '+(i+1));
+    (function(k,c){capInp.oninput=function(){if(!fotoData[k])fotoData[k]={};fotoData[k].label=this.value;autoSave();};})(slotKey,capInp);
+    lbl.appendChild(capInp);
+    slot.appendChild(lbl);
+    if(fotoData[slotKey]&&fotoData[slotKey].url){
+      var img=document.createElement('img'); img.src=fotoData[slotKey].url; slot.appendChild(img);
+      var cap=document.createElement('input'); cap.className='foto-cap'; cap.placeholder='Caption...'; cap.value=fotoData[slotKey].caption||'';
+      (function(k){cap.oninput=function(){if(fotoData[k])fotoData[k].caption=this.value;autoSave();};})(slotKey);
+      slot.appendChild(cap);
+      // Remove button
+      var rmBtn=document.createElement('button'); rmBtn.textContent='✕ Hapus'; rmBtn.style.cssText='width:100%;padding:4px;background:var(--surface2);border:none;border-top:1px solid var(--border);color:var(--red);font-size:9px;cursor:pointer';
+      (function(k){rmBtn.onclick=function(){delete fotoData[k];renderExtraFotoGrid();autoSave();};})(slotKey);
+      slot.appendChild(rmBtn);
+    } else {
+      var empty=document.createElement('div'); empty.className='foto-slot-empty'; empty.textContent='+';
+      var fi=document.createElement('input'); fi.type='file'; fi.accept='image/*';
+      (function(k){fi.onchange=function(e){
+        var file=e.target.files[0]; if(!file) return;
+        var reader=new FileReader();
+        reader.onload=function(ev){
+          var canvas=document.createElement('canvas'),img2=new Image();
+          img2.onload=function(){
+            var scale=Math.min(600/img2.width,600/img2.height,1);
+            canvas.width=Math.round(img2.width*scale); canvas.height=Math.round(img2.height*scale);
+            canvas.getContext('2d').drawImage(img2,0,0,canvas.width,canvas.height);
+            if(!fotoData[k]) fotoData[k]={};
+            fotoData[k].url=canvas.toDataURL('image/jpeg',0.4); fotoData[k].caption='';
+            renderExtraFotoGrid();
+          }; img2.src=ev.target.result;
+        }; reader.readAsDataURL(file);
+      };})(slotKey);
+      empty.onclick=function(){fi.click();}; slot.appendChild(empty); slot.appendChild(fi);
+    }
+    grid.appendChild(slot);
+  }
+}
+
+function renderFotoGrid(){
+  var grid=document.getElementById('foto-grid'); if(!grid) return; grid.innerHTML='';
+  FOTO_SLOTS.forEach(function(slotLabel,i){
+    var slot=document.createElement('div');
+    slot.className='foto-slot'+(fotoData[i]&&fotoData[i].url?' filled':'');
+    var lbl=document.createElement('div'); lbl.className='foto-slot-label'; lbl.textContent=slotLabel;
+    slot.appendChild(lbl);
+    if(fotoData[i]&&fotoData[i].url){
+      var img=document.createElement('img'); img.src=fotoData[i].url; slot.appendChild(img);
+      var cap=document.createElement('input'); cap.className='foto-cap'; cap.placeholder='Caption...'; cap.value=fotoData[i].caption||'';
+      (function(idx){cap.oninput=function(){if(fotoData[idx])fotoData[idx].caption=this.value;autoSave();};})(i);
+      slot.appendChild(cap);
+      var rmBtn=document.createElement('button');
+      rmBtn.textContent='🗑 Hapus Foto';
+      rmBtn.style.cssText='width:100%;font-size:10px;padding:4px;background:#e53e3e;color:#fff;border:none;cursor:pointer;border-radius:0 0 6px 6px';
+      (function(idx){rmBtn.onclick=function(){delete fotoData[idx];renderFotoGrid();autoSave();};})(i);
+      slot.appendChild(rmBtn);
+    } else {
+      var empty=document.createElement('div'); empty.className='foto-slot-empty'; empty.textContent='+';
+      var fi=document.createElement('input'); fi.type='file'; fi.accept='image/*';
+      (function(idx){fi.onchange=function(e){
+        var file=e.target.files[0]; if(!file) return;
+        var reader=new FileReader();
+        reader.onload=function(ev){
+          var canvas=document.createElement('canvas'), img2=new Image();
+          img2.onload=function(){
+            var scale=Math.min(600/img2.width,600/img2.height,1);
+            canvas.width=Math.round(img2.width*scale); canvas.height=Math.round(img2.height*scale);
+            canvas.getContext('2d').drawImage(img2,0,0,canvas.width,canvas.height);
+            fotoData[idx]={url:canvas.toDataURL('image/jpeg',0.4),caption:''}; renderFotoGrid();
+          }; img2.src=ev.target.result;
+        }; reader.readAsDataURL(file);
+      };})(i);
+      empty.onclick=function(){fi.click();}; slot.appendChild(empty); slot.appendChild(fi);
+    }
+    grid.appendChild(slot);
+  });
+}
+
+// ── SUMMARY ──
+function generateSummary(){
+  if(!selBrand){
+    var el=document.getElementById('summary-text');
+    if(el) el.textContent='⚠️ Pilih brand terlebih dahulu di tab Info.';
+    return '';
+  }
+  var NL='\n', SEP='';
+  var project = g('namaProject')||'Project';
+  var sm      = g('namaSM')||'SM';
+  var week    = selWeek||1;
+  var ps      = g('periodeStart'), pe=g('periodeEnd');
+  var fmt     = function(d){ return d?new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}):'—'; };
+  var periode = ps ? (fmt(ps)+' – '+fmt(pe)) : '—';
+
+  // Progress calculation
+  var phases   = getActivePhases();
+  var effTotal = getEffectiveTotalBobot(phases), total=0;
+  phases.forEach(function(phase){
+    if(phase.isMilestonePhase) return;
+    phase.items.forEach(function(item){
+      if(item.bobot>0){
+        var active = item.depAny ? item.depAny.some(function(k){return optionalActive[k];}) : (!item.optKey||optionalActive[item.optKey]);
+        if(!active) return;
+        var pct=item.isTes?(itemStatus[item.id]==='pass'?100:0):(itemPct[item.id]||0);
+        total+=(pct/100)*(item.bobot/effTotal)*100;
+      }
+    });
+  });
+  total=Math.round(total*10)/10;
+  var target   = getEffectiveTarget();
+  var dev      = Math.round((total-target)*10)/10;
+  var devStr   = (dev>=0?'+':'')+dev+'%';
+  var delta    = Math.round((total-prevProgress)*10)/10;
+  var deltaStr = (delta>=0?'+':'')+delta+'%';
+
+  // Status (hanya deviasi — tanpa laju)
+  var status;
+  if(week===1 && dev>=-10) status='Early Stage / Mobilisasi';
+  else if(dev>=-5)  status='On Track';
+  else if(dev>=-10) status='Minor Delay';
+  else              status='Critical Delay';
+
+  // Testing status
+  var tesItems=[];
+  phases.forEach(function(phase){
+    phase.items.forEach(function(item){
+      if(item.isTes){
+        var active = item.depAny ? item.depAny.some(function(k){return optionalActive[k];}) : (!item.optKey||optionalActive[item.optKey]);
+        if(!active) return;
+        tesItems.push(item.label+': '+(itemStatus[item.id]==='pass'?'PASS':itemStatus[item.id]==='fail'?'FAIL':'—'));
+      }
+    });
+  });
+
+  // Issues
+  var issueList = issueItems.filter(function(it){return it.issue&&it.issue.trim();});
+  var critIssues = issueList.filter(function(it){return it.kategori==='Approval'||it.kategori==='Mall/Landlord';});
+
+  // Rencana
+  var rencanaList = rencanaItems.filter(function(r){return r.trim();});
+
+  // Opening countdown
+  var daysToOpen = '—';
+  if(g('targetOpening')){
+    var d=new Date(g('targetOpening')); d.setHours(0,0,0,0);
+    var today2=new Date(); today2.setHours(0,0,0,0);
+    var diff2=Math.ceil((d-today2)/86400000);
+    daysToOpen = diff2>0?'H-'+diff2:diff2===0?'Hari ini':'Overrun '+Math.abs(diff2)+' hari';
+  }
+
+  var SEP2='';
+  var statusEmoji = status.includes('Critical')?'🔴':status.includes('Minor')?'⚠️':status.includes('Early')?'🔵':'✅';
+  var devEmoji = dev>=0?'✅':dev>=-5?'⚠️':'🔴';
+
+  var txt = '';
+  txt += '📋 *WEEKLY REPORT — FnB PROJECT*'+NL;
+  txt += SEP2+NL+NL;
+  txt += '🏪 *'+project+'*'+NL;
+  if(selTipeProject) txt += '🏗️ Tipe  : *'+selTipeProject+'*'+NL;
+  txt += '👤 SM  : '+sm+NL;
+  txt += '📅 Tgl : '+new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})+' | Minggu ke-'+week+NL;
+  txt += '_Periode: '+periode+'_'+NL+NL;
+
+  txt += SEP2+NL;
+  txt += '📊 *PROGRESS*'+NL;
+  txt += '• Kumulatif : *'+total+'%*'+NL;
+  txt += '• Mingguan  : '+deltaStr+' ('+prevProgress+'% → '+total+'%)'+NL;
+  txt += '• Target    : '+target+'%'+(isProrateActive()?' _(prorate W'+week+')_':'')+NL;
+  txt += '• Deviasi   : *'+devStr+'* '+devEmoji+NL;
+  txt += '• Status    : '+statusEmoji+' *'+status+'*'+NL;
+
+  // Testing — hanya tampil jika ada yang pass/fail
+  var tesDone = tesItems.filter(function(t){return t.indexOf('PASS')>-1||t.indexOf('FAIL')>-1;});
+  if(tesDone.length>0){
+    txt += NL+SEP2+NL;
+    txt += '🔬 *TESTING*'+NL;
+    tesDone.forEach(function(t){ txt += '• '+t+NL; });
+  }
+
+  // Handover — hanya tampil jika ada yang sudah selesai
+  var fase5=phases.find(function(p){return p.isMilestonePhase;});
+  if(fase5){
+    var msItems=fase5.items.map(function(it){
+      var done=itemStatus[it.id]==='pass';
+      return {label:it.label,done:done};
+    });
+    var msDone=msItems.filter(function(m){return m.done;});
+    var msBelum=msItems.filter(function(m){return !m.done;});
+    if(msDone.length>0){
+      txt += NL+SEP2+NL;
+      txt += '📋 *HANDOVER STATUS*'+NL;
+      msDone.forEach(function(m){ txt += '• ✓ '+m.label+NL; });
+      msBelum.forEach(function(m){ txt += '• ○ '+m.label+NL; });
+    }
+  }
+
+  // Issues
+  txt += NL+SEP2+NL;
+  txt += '🚧 *ISSUE & KENDALA*'+NL;
+  if(issueList.length>0){
+    issueList.forEach(function(it){
+      txt += '• ['+( it.kategori||'—')+'] '+it.issue+(it.pic?' → PIC: '+it.pic:'')+NL;
+    });
+    if(critIssues.length>0){
+      txt += '⚠️ _Perlu eskalasi: '+critIssues.map(function(it){return it.issue;}).join(', ')+'_'+NL;
+    }
+  } else {
+    txt += '• Tidak ada issue 🎉'+NL;
+  }
+
+  // Rencana
+  if(rencanaList.length>0){
+    txt += NL+SEP2+NL;
+    var mbo1 = g('etaMBO1'), mbo2 = g('etaMBO2');
+    if(mbo1){
+      var mbo1Date = new Date(mbo1).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+      txt += '🏭 *ETA MBO Tahap 1 : '+mbo1Date+'*'+NL;
+    }
+    if(mbo2){
+      var mbo2Date = new Date(mbo2).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+      txt += '🏭 *ETA MBO Tahap 2 : '+mbo2Date+'*'+NL;
+    }
+    txt += '📌 *RENCANA MINGGU INI*'+NL;
+    rencanaList.forEach(function(r,i){ txt += (i+1)+'. '+r+NL; });
+  }
+
+  // Target Opening / BAST — H-minus alert
+  var isBAST2 = (selTipeProject==='Bongkaran Bare');
+  txt += NL+SEP2+NL;
+  txt += (isBAST2?'🏁 *TARGET BAST : ':'🏁 *TARGET OPENING : ')+fmt(g('targetOpening'))+'*';
+  if(g('targetOpening')){
+    var openD=new Date(g('targetOpening')); openD.setHours(0,0,0,0);
+    var todayA=new Date(); todayA.setHours(0,0,0,0);
+    var diffA=Math.ceil((openD-todayA)/86400000);
+    var hMinus;
+    if(diffA>0)        hMinus='⏰ H-'+diffA+(isBAST2?' menuju BAST':' menuju Opening');
+    else if(diffA===0) hMinus='🚀 D-Day — '+(isBAST2?'BAST Hari ini!':'Hari ini Opening!');
+    else               hMinus='🔴 Overrun '+Math.abs(diffA)+' hari dari target';
+    txt += NL+hMinus;
+  }
+  txt += NL;
+
+  txt += NL+'_Generated by SM Report FnB 2026 — '+sm+'_';
+
+  var el=document.getElementById('summary-text'); if(el) el.textContent=txt;
+  return txt;
+}
+function copySummary(){
+  var txt=generateSummary();
+  if(!txt) return;
+  // Fallback copy for Android WebView / content:// URLs
+  try {
+    var ta=document.createElement('textarea');
+    ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    var ok=document.execCommand('copy');
+    document.body.removeChild(ta);
+    if(ok){ alert('✅ Summary tersalin! Buka WhatsApp lalu paste.'); return; }
+  } catch(e){}
+  // Modern clipboard API
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){
+      alert('✅ Summary tersalin! Buka WhatsApp lalu paste.');
+    }).catch(function(){
+      showCopyModal(txt);
+    });
+  } else { showCopyModal(txt); }
+}
+function showCopyModal(txt){
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  var box=document.createElement('div');
+  box.style.cssText='background:#1e1e2e;border-radius:12px;padding:16px;width:100%;max-width:500px';
+  box.innerHTML='<div style="color:#cdd6f4;font-weight:bold;margin-bottom:8px">📋 Salin teks berikut ke WhatsApp:</div>';
+  var ta=document.createElement('textarea');
+  ta.value=txt;
+  ta.style.cssText='width:100%;height:220px;font-size:11px;background:#313244;color:#cdd6f4;border:none;border-radius:8px;padding:8px;resize:none;box-sizing:border-box';
+  var btn=document.createElement('button');
+  btn.textContent='✕ Tutup';
+  btn.style.cssText='margin-top:10px;width:100%;padding:10px;background:#7B2FBE;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer';
+  btn.onclick=function(){document.body.removeChild(overlay);};
+  box.appendChild(ta); box.appendChild(btn);
+  overlay.appendChild(box); document.body.appendChild(overlay);
+  ta.select();
+}
+
+// ── SAVE / LOAD ──
+function updateTimestamp(){
+  var el=document.getElementById('ts-session');
+  if(el) el.textContent='Sesi: '+sessionStart.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+}
+
+// Auto-fill periode akhir = periodeStart + 6 hari
+function autoUpdatePeriode(){
+  var start = g('periodeStart'); if(!start) return;
+  var d = new Date(start); d.setDate(d.getDate()+6);
+  s('periodeEnd', d.toISOString().split('T')[0]);
+  updatePeriodeDisplay();
+  autoSave();
+}
+function updatePeriodeDisplay(){
+  var ps=g('periodeStart'), pe=g('periodeEnd');
+  var el=document.getElementById('periode-display'); if(!el) return;
+  if(!ps){ el.textContent='Periode: —'; return; }
+  var fmt=function(d){ return new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); };
+  el.textContent = 'Periode: ' + fmt(ps) + (pe?' – '+fmt(pe):'');
+}
+
+// Lock Tanggal Opening setelah Week-1
+function lockOpeningDate(){
+  var inp=document.getElementById('targetOpening');
+  var note=document.getElementById('opening-locked-note');
+  if(!inp) return;
+  var locked = (selWeek > 1) && inp.value;
+  inp.readOnly = locked ? true : false;
+  inp.style.opacity = locked ? '0.6' : '1';
+  if(note) note.style.display = locked ? 'block' : 'none';
+}
+
+function lockSPKDates(){
+  ['spkStart','spkEnd'].forEach(function(id){
+    var inp = document.getElementById(id);
+    var note = document.getElementById(id+'-locked-note');
+    if(!inp) return;
+    var locked = (selWeek > 1) && inp.value;
+    inp.readOnly = locked ? true : false;
+    inp.style.opacity = locked ? '0.6' : '1';
+    if(note) note.style.display = locked ? 'block' : 'none';
+  });
+}
+
+// Interkoneksi visibility: show only when gas=ADA or fss=ADA
+function isInterkoneksiActive(){
+  return optionalActive['gas'] || optionalActive['fss'];
+}
+function getState(){
+  return {brand:selBrand,week:selWeek,tipeProject:selTipeProject,pm:selPM,namaProject:g('namaProject'),namaSM:g('namaSM'),kontraktor:g('kontraktor'),spkStart:g('spkStart'),spkEnd:g('spkEnd'),targetOpening:g('targetOpening'),aktualOpening:g('aktualOpening'),periodeStart:g('periodeStart'),periodeEnd:g('periodeEnd'),prevProgress:prevProgress,itemPct:itemPct,itemStatus:itemStatus,wpData:wpData,optionalActive:optionalActive,issueItems:issueItems,coItems:coItems,rencanaItems:rencanaItems,eskalasiVal:eskalasiVal,eskalasiDetail:g('eskalasiDetail')||'',etaMBO1:g('etaMBO1'),etaMBO2:g('etaMBO2'),critDates:critDates,checklistState:checklistState,extraFotoCount:extraFotoCount,fotoData:fotoData,savedAt:new Date().toISOString()};
+}
+function autoSave(){if(isRestoringData) return;try{var _k=getCurrentKey();localStorage.setItem(_k,JSON.stringify(getState()));localStorage.setItem('fnb_last_key',_k);}catch(e){}}
+function saveLocal(silent){
+  try{
+    var _k=getCurrentKey();localStorage.setItem(_k,JSON.stringify(getState()));localStorage.setItem('fnb_last_key',_k);
+    var d=new Date(), el=document.getElementById('ts-save');
+    if(el) el.textContent='Tersimpan: '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+    if(!silent) alert('Data tersimpan!');
+  }catch(e){if(!silent) alert('Gagal simpan.');}
+}
+function loadLocal(){
+  isRestoringData = true;
+  try{
+    var _lk=localStorage.getItem('fnb_last_key')||getCurrentKey();
+    var raw=localStorage.getItem(_lk); if(!raw){isRestoringData=false;return;}
+    var data=JSON.parse(raw);
+    if(data.brand){selBrand=data.brand;renderBrandGrid();}
+    if(data.tipeProject){
+      selTipeProject = data.tipeProject;
+      var tpSel = document.getElementById('tipeProjectSel');
+      if(tpSel) tpSel.value = data.tipeProject;
+      var infoEl = document.getElementById('tipe-info');
+      if(infoEl) infoEl.textContent = TIPE_INFO_MAP[data.tipeProject]||'';
+    }
+    if(data.pm){
+      selPM=data.pm;
+      var pmEl=document.getElementById('pmSel');
+      if(pmEl){ pmEl.value=data.pm; handlePMSel(pmEl); }
+    }
+    if(data.week) selWeek=data.week;
+    ['namaProject','spkStart','spkEnd','targetOpening','aktualOpening','periodeStart','periodeEnd'].forEach(function(k){if(data[k]) s(k,data[k]);});
+    if(data.prevProgress!==undefined) prevProgress=data.prevProgress;
+    updatePeriodeDisplay();
+    lockOpeningDate();
+    lockSPKDates();
+    if(data.namaSM){
+      s('namaSM',data.namaSM);
+      // Sync SM dropdown visual
+      var smSel=document.getElementById('namaSMSel');
+      var m=document.getElementById('namaSMManual');
+      if(smSel){
+        var found=false;
+        for(var oi=0;oi<smSel.options.length;oi++){
+          if(smSel.options[oi].value===data.namaSM){smSel.value=data.namaSM;found=true;break;}
+        }
+        if(!found && data.namaSM){
+          smSel.value='__other__';
+          if(m){m.value=data.namaSM;m.style.display='block';}
+        } else {
+          if(m){m.style.display='none';}
+        }
+      }
+      // Sync project dropdown untuk SM ini
+      populateProjectDropdown(data.namaSM);
+      // Set project dropdown ke project yang sedang diload
+      if(data.namaProject){
+        var pSel=document.getElementById('projectSel');
+        var pMan=document.getElementById('namaProjectManual');
+        var pNote=document.getElementById('project-locked-note');
+        if(pSel){
+          // Cari di options
+          var pFound=false;
+          for(var pi=0;pi<pSel.options.length;pi++){
+            if(pSel.options[pi].value===data.namaProject){pSel.value=data.namaProject;pFound=true;break;}
+          }
+          if(!pFound){
+            // Project belum ada di dropdown (mungkin baru) — tampil manual
+            pSel.value='__new__';
+            if(pMan){pMan.style.display='block';pMan.value=data.namaProject;}
+            if(pNote) pNote.style.display='none';
+          } else {
+            if(pMan) pMan.style.display='none';
+            if(pNote) pNote.style.display='block';
+          }
+        }
+      }
+    }
+    if(data.kontraktor){
+      s('kontraktor',data.kontraktor);
+      // Sync kontraktor dropdown visual
+      var kSel2=document.getElementById('kontraktorSel');
+      var k=document.getElementById('kontraktorManual');
+      if(kSel2){
+        var kFound=false;
+        for(var ki=0;ki<kSel2.options.length;ki++){
+          if(kSel2.options[ki].value===data.kontraktor){kSel2.value=data.kontraktor;kFound=true;break;}
+        }
+        if(!kFound && data.kontraktor){
+          kSel2.value='__other__';
+          // Only show manual input if kontraktor is truly "other" (not in dropdown list)
+          if(k){k.value=data.kontraktor;k.style.display='block';}
+        } else {
+          // Kontraktor found in dropdown — hide manual input
+          if(k){k.style.display='none';}
+        }
+      }
+    }
+    if(data.itemPct) itemPct=data.itemPct;
+    if(data.itemStatus) itemStatus=data.itemStatus;
+    if(data.wpData) wpData=data.wpData;
+    if(data.optionalActive) optionalActive=Object.assign({fss:true,gas:true,exhaust:false,sprinkler:true},data.optionalActive);
+    if(data.issueItems){issueItems=data.issueItems;renderIssueTable();}
+    if(data.eskalasiVal){setEskalasi(data.eskalasiVal);}
+    if(data.eskalasiDetail){var ed=document.getElementById('eskalasiDetail');if(ed)ed.value=data.eskalasiDetail;}
+    if(data.coItems){coItems=data.coItems;renderCOList();}
+    if(data.rencanaItems){rencanaItems=data.rencanaItems;renderRencanaList();}
+    if(data.etaMBO1){s('etaMBO1',data.etaMBO1);}
+    // Backward compat: migrate old single etaMBO to etaMBO1
+    if(!data.etaMBO1 && data.etaMBO){s('etaMBO1',data.etaMBO);}
+    if(data.etaMBO2){s('etaMBO2',data.etaMBO2);}
+    if(data.critDates){critDates=data.critDates;renderCritDates();}
+    if(data.checklistState) checklistState=data.checklistState;
+    if(data.extraFotoCount){extraFotoCount=data.extraFotoCount;renderExtraFotoGrid();}
+    if(data.fotoData){fotoData=data.fotoData;renderFotoGrid();}
+    if(data.savedAt){var d=new Date(data.savedAt),el=document.getElementById('ts-save');if(el) el.textContent='Terakhir: '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});}
+    if(selBrand){renderWeekGrid();renderPhaseList();updateOverall();}
+    updateCountdown();
+    updatePeriodeDisplay();
+    lockOpeningDate();
+    lockSPKDates();
+    updateMBOVisibility();
+    updateOpeningLabel();
+  }catch(e){}
+  isRestoringData = false;
+}
+function exportJSON(){
+  saveLocal(true);
+  var _ej=localStorage.getItem('fnb_last_key')||getCurrentKey();
+  var raw=localStorage.getItem(_ej)||'{}';
+  var blob=new Blob([raw],{type:'application/json'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='sm_report_'+(g('namaProject')||'project').replace(/\s/g,'_')+'.json'; a.click();
+}
+function importJSON(e){
+  var file=e.target.files[0]; if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(ev){try{var _ik=localStorage.getItem('fnb_last_key')||getCurrentKey();localStorage.setItem(_ik,ev.target.result);alert('Data berhasil diimport! Halaman akan reload.');location.reload();}catch(err){alert('Gagal import.');}};
+  reader.readAsText(file);
+}
+// ── HAPUS PROJECT ──────────────────────────────────────────────
+function hapusProjectIni(){
+  var project = g('namaProject');
+  var sm = (document.getElementById('namaSM')||{}).value||'';
+  var keyToDelete = getCurrentKey();
+  var msg = 'Hapus data project ini dari memori browser?';
+  if(project) msg += '\n\nProject: ' + project;
+  if(sm)      msg += '\nSM: ' + sm;
+  msg += '\n\n(Data di Google Sheets tidak terpengaruh)';
+  if(!confirm(msg)) return;
+  try{
+    localStorage.removeItem(keyToDelete);
+    localStorage.removeItem('fnb_last_key');
+    alert('✅ Data project dihapus. Halaman akan direset.');
+    location.reload();
+  }catch(e){ alert('Gagal hapus: '+e.message); }
+}
+
+// ── RIWAYAT MINGGU: tampilkan badge per week yang ada datanya ──
+function renderWeekHistoryBar(){
+  var wrap = document.getElementById('week-history-wrap');
+  var bar  = document.getElementById('week-history-bar');
+  if(!bar) return;
+
+  var sm      = (document.getElementById('namaSM')||{}).value||'';
+  var project = g('namaProject')||'';
+  if(!sm || !project){ if(wrap) wrap.style.display='none'; return; }
+
+  var smPart = sanitizeKey(sm);
+  var prPart = sanitizeKey(project);
+  var prefix = LS_PREFIX+'_'+smPart+'_'+prPart+'_w';
+
+  var found = [];
+  try{
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(k && k.indexOf(prefix)===0){
+        var wStr = k.replace(prefix,'');
+        var wNum = parseInt(wStr);
+        if(!isNaN(wNum)){
+          var raw=localStorage.getItem(k);
+          var savedAt='';
+          try{ var d=JSON.parse(raw); savedAt=d.savedAt||''; }catch(e){}
+          found.push({week:wNum, key:k, savedAt:savedAt});
+        }
+      }
+    }
+  }catch(e){}
+
+  if(found.length===0){ if(wrap) wrap.style.display='none'; return; }
+
+  found.sort(function(a,b){ return a.week-b.week; });
+
+  bar.innerHTML='';
+  found.forEach(function(item){
+    var btn=document.createElement('button');
+    var isCurrent=(item.week===selWeek);
+    var fmtDate='';
+    if(item.savedAt){ try{ fmtDate=new Date(item.savedAt).toLocaleDateString('id-ID',{day:'2-digit',month:'short'}); }catch(e){} }
+    btn.style.cssText='padding:6px 10px;border-radius:8px;font-size:10px;font-weight:700;cursor:pointer;'
+      +'font-family:var(--font);border:1.5px solid '+(isCurrent?'var(--accent)':'var(--border)')+';'
+      +'background:'+(isCurrent?'#1a1200':'var(--surface2)')+';'
+      +'color:'+(isCurrent?'var(--accent)':'var(--muted)')+';'
+      +'display:flex;flex-direction:column;align-items:center;gap:1px;';
+    btn.innerHTML='<span>W'+item.week+'</span>'+(fmtDate?'<span style="font-size:8px;font-weight:400;opacity:.7">'+fmtDate+'</span>':'');
+    btn.title='Load data Minggu '+item.week+(fmtDate?' (disimpan '+fmtDate+')':'');
+    if(!isCurrent){
+      (function(it){
+        btn.onclick=function(){
+          if(!confirm('Load data Minggu '+it.week+'?\n\nMinggu aktif akan berganti ke W'+it.week+'.')){return;}
+          // Save current week first
+          autoSave();
+          // Switch week
+          selWeek=it.week;
+          // Load data
+          try{
+            var raw2=localStorage.getItem(it.key);
+            if(raw2){ var d2=JSON.parse(raw2); loadWeekData(d2); }
+          }catch(e){}
+          renderWeekGrid();
+          renderWeekHistoryBar();
+          lockOpeningDate(); lockSPKDates();
+          localStorage.setItem('fnb_last_key', it.key);
+        };
+      })(item);
+    } else {
+      btn.style.cursor='default';
+      btn.title='Minggu aktif sekarang';
+    }
+    bar.appendChild(btn);
+  });
+
+  if(wrap) wrap.style.display='block';
+}
+
+// ── LOAD DRAFT PROJECT ─────────────────────────────────────────
+function populateLoadDraft(){
+  var sel = document.getElementById('loadDraftSel');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">-- Pilih draft tersimpan --</option>';
+  try{
+    var keys = [];
+    for(var i=0;i<localStorage.length;i++){
+      var k = localStorage.key(i);
+      if(k && k.indexOf(LS_PREFIX+'_')===0 && k!=='fnb_last_key'){
+        var raw = localStorage.getItem(k);
+        if(raw){
+          try{
+            var d = JSON.parse(raw);
+            if(d && d.namaProject){
+              keys.push({key:k, project:d.namaProject, sm:d.namaSM||'', brand:d.brand||'', week:d.week||1, savedAt:d.savedAt||''});
+            }
+          }catch(e){}
+        }
+      }
+    }
+    // Sort by savedAt desc
+    keys.sort(function(a,b){ return new Date(b.savedAt||0)-new Date(a.savedAt||0); });
+    keys.forEach(function(item){
+      var opt = document.createElement('option');
+      opt.value = item.key;
+      var label = item.project + ' — ' + (item.sm||'?') + ' | W'+item.week + (item.brand?' ['+item.brand.toUpperCase()+']':'');
+      opt.textContent = label;
+      sel.appendChild(opt);
+    });
+    if(keys.length===0){
+      var opt=document.createElement('option'); opt.value=''; opt.textContent='(Tidak ada draft tersimpan)'; sel.appendChild(opt);
+    }
+  }catch(e){}
+}
+
+function hapusDraftTerpilih(){
+  var sel = document.getElementById('loadDraftSel');
+  if(!sel || !sel.value){ alert('Pilih draft yang ingin dihapus dulu.'); return; }
+  var key = sel.value;
+  var label = sel.options[sel.selectedIndex].text;
+  if(!confirm('Hapus draft ini?\n\n' + label + '\n\n(Data di GSheet tidak terpengaruh)')) return;
+  try{
+    localStorage.removeItem(key);
+    // If deleted key was the active session, clear it
+    if(localStorage.getItem('fnb_last_key')===key) localStorage.removeItem('fnb_last_key');
+    populateLoadDraft();
+    alert('✅ Draft berhasil dihapus.');
+  }catch(e){ alert('Gagal hapus: '+e.message); }
+}
+
+function loadDraftProject(key){
+  if(!key) return;
+  try{
+    var raw = localStorage.getItem(key);
+    if(!raw){ alert('Draft tidak ditemukan.'); return; }
+    localStorage.setItem(raw ? 'fnb_last_key' : 'fnb_last_key', key);
+    localStorage.setItem('fnb_last_key', key);
+    alert('✅ Draft dimuat. Halaman akan reload.');
+    location.reload();
+  }catch(e){ alert('Gagal load draft: '+e.message); }
+}
+
+// ── GLOBAL: Hitung % per kategori disiplin (bobot-weighted) ─────
+// Untuk New Store / Relokasi / Relayout — dipakai getKategoriPct()
+// Touch Up & Bongkaran pakai getKategoriConfig() yang dinamis
+var KAT_PERSIAPAN = ['f1_mob','f1_hrd','f4_cl',
+                     'f0_mob',
+                     'tu_mob','tu_pro',
+                     'bb_mob','bb_pro'];
+var KAT_SIPIL     = ['f1_wp','f1_tr','f1_tg','f1_ker','f1_rng',
+                     'f2_rpl','f2_tb','f3_pl','f3_ker','f3_dn','f3_af21','f4_rd',
+                     'f0_fxt','f0_dn','f0_pl','f0_pg','f0_ins',
+                     'tu_spl','tu_pnt',
+                     'bb_sp1','bb_sp2','bb_sp3','bb_sp4','bb_sp5'];
+var KAT_ME        = ['f2_lis','f2_tm','f2_sp','f2_fss','f2_ikn','f4_arm',
+                     'tu_mep','bb_me1'];
+var KAT_PLUMBING  = ['f2_ab','f2_tt','f2_ak','f2_tgk','f2_gas','f4_plm','f4_pmp',
+                     'bb_me3'];
+var KAT_HVAC      = ['f2_hvc','f2_ac','f2_exh','f2_fog',
+                     'bb_me2'];
+var KAT_FIXTURE   = ['f3_fxt','f3_prd','f4_sig',
+                     'tu_sig','tu_fur','tu_fxt','tu_pkt','tu_seq',
+                     'bb_pg','bb_bersih'];
+
+function getKategoriPct(idArray){
+  if(!selBrand) return 0;
+  var phases = getActivePhases();
+  var totalBobot=0, aktualBobot=0;
+  phases.forEach(function(phase){
+    if(phase.isMilestonePhase) return;
+    phase.items.forEach(function(item){
+      if(idArray.indexOf(item.id)===-1) return;
+      if(item.bobot<=0) return;
+      var active = item.depAny
+        ? item.depAny.some(function(k){ return optionalActive[k]; })
+        : (!item.optKey || optionalActive[item.optKey]);
+      if(!active) return;
+      var pct = item.isTes
+        ? (itemStatus[item.id]==='pass' ? 100 : 0)
+        : (itemPct[item.id]||0);
+      totalBobot  += item.bobot;
+      aktualBobot += (pct/100) * item.bobot;
+    });
+  });
+  return totalBobot>0 ? Math.round(aktualBobot/totalBobot*100) : 0;
+}
+
+// ── SUBMIT TO SHEETS ───────────────────────────────────────────
+function submitToSheets(){
+  // Cek koneksi internet
+  if(!navigator.onLine){
+    alert('❌ Tidak ada koneksi internet.\nPastikan HP terhubung ke jaringan sebelum submit.');
+    return;
+  }
+  // Save current progress as prevProgress before submit
+  var phases2=getActivePhases();
+  var eff2=getEffectiveTotalBobot(phases2), tot2=0;
+  phases2.forEach(function(phase){
+    if(phase.isMilestonePhase) return;
+    phase.items.forEach(function(item){
+      if(item.bobot>0){
+        var active2=item.depAny?item.depAny.some(function(k){return optionalActive[k];}):(!item.optKey||optionalActive[item.optKey]);
+        if(!active2) return;
+        var pct2=item.isTes?(itemStatus[item.id]==='pass'?100:0):(itemPct[item.id]||0);
+        tot2+=(pct2/100)*(item.bobot/eff2)*100;
+      }
+    });
+  });
+  prevProgress = Math.round(tot2*10)/10;
+  autoSave();
+  var url=g('sheets-url')||localStorage.getItem('sheets_url');
+  if(!url){alert('Masukkan URL Google Apps Script.');return;}
+  localStorage.setItem('sheets_url',url);
+  var phases=getActivePhases();
+  var effTotal=getEffectiveTotalBobot(phases), total=0;
+  phases.forEach(function(phase){
+    if(phase.isMilestonePhase) return;
+    phase.items.forEach(function(item){
+      if(item.bobot>0){var active=!item.optKey||optionalActive[item.optKey];if(!active) return;var pct=item.isTes?(itemStatus[item.id]==='pass'?100:0):(itemPct[item.id]||0);total+=(pct/100)*(item.bobot/effTotal)*100;}
+    });
+  });
+  total=Math.round(total*10)/10;
+
+  var dev=Math.round((total-getEffectiveTarget())*10)/10;
+  var statusVal=selWeek===1&&dev>=-10?'Early Stage':dev>=-5?'On Track':dev>=-10?'Minor Delay':'Critical Delay';
+  // Note: statusVal menggunakan nilai yang konsisten dengan dashboard filter
+  var kendalaList=issueItems.filter(function(it){return it.issue&&it.issue.trim();});
+
+  var payload={
+    timestamp     : new Date().toISOString(),
+    brand         : selBrand,
+    tipeProject   : selTipeProject,
+    namaPM        : (document.getElementById('namaPM')||{}).value||'',
+    namaSM        : g('namaSM'),
+    sm            : g('namaSM'),
+    namaProject   : g('namaProject'),
+    kontraktor    : g('kontraktor'),
+    spkStart      : g('spkStart'),
+    spkEnd        : g('spkEnd'),
+    mingguKe      : selWeek,
+    periodeStart  : g('periodeStart'),
+    periodeEnd    : g('periodeEnd'),
+    targetOpening : g('targetOpening'),
+    aktualOpening : g('aktualOpening'),
+    etaMBO1       : g('etaMBO1'),
+    etaMBO2       : g('etaMBO2'),
+    target        : getEffectiveTarget(),
+    aktual        : total,
+    deviasi       : dev,
+    status        : statusVal,
+    carryOver     : coItems.filter(function(c){return c.trim();}).join('; '),
+    kendala       : kendalaList.map(function(it){return '['+it.kategori+'] '+it.issue+(it.pic?' (PIC:'+it.pic+')':'');}).join('\n'),
+    'Eskalasi PM'    : eskalasiVal,
+    'Detail Eskalasi': (document.getElementById('eskalasiDetail')||{}).value||'',
+    rencana       : rencanaItems.filter(function(r){return r.trim();}).join('\n'),
+    persiapan     : getKategoriPct(KAT_PERSIAPAN),
+    sipil         : getKategoriPct(KAT_SIPIL),
+    me            : getKategoriPct(KAT_ME),
+    plumbing      : getKategoriPct(KAT_PLUMBING),
+    hvac          : getKategoriPct(KAT_HVAC),
+    fixture       : getKategoriPct(KAT_FIXTURE)
+  };
+  fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)})
+    .then(function(r){return r.json();})
+    .then(function(j){
+      if(j.ok) alert('✅ Report berhasil dikirim ke Google Sheets!');
+      else alert('⚠️ GAS error: '+(j.message||'Unknown'));
+    })
+    .catch(function(){
+      alert('✅ Report terkirim. Silakan konfirmasi di GSheet.');
+    });
+}
+
+// ── HTML REPORT EXPORT (no library needed) ──
+function exportPPT(){
+  if(!selBrand){alert('Pilih brand terlebih dahulu.');return;}
+  var project = g('namaProject');
+  var periode = g('periodeStart');
+  var errors = [];
+  if(!project) errors.push('Nama Project / Lokasi');
+  if(!periode)  errors.push('Periode Start (Tab 1)');
+  if(errors.length){
+    alert('⚠️ Field wajib belum diisi:\n\n• '+errors.join('\n• '));
+    return;
+  }
+  buildPPT();
+}
+function buildPPT(){
+  try{_buildPPT();}catch(err){alert('Error PPT:\n'+err.message+'\n'+err.stack);}
+}
+function _buildPPT(){
+  var brandInfo=BRAND_COLORS[selBrand]||{primary:'#7B2FBE',name:selBrand};
+  var AC=brandInfo.primary.replace('#','').toUpperCase();
+  var AC2=parseInt(AC,16); // darken for secondary
+  var DARK='111827', SURFACE='1E293B', MUTED='94A3B8', WHITE='FFFFFF';
+  var fmt=function(d){return d?new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}):'--';};
+
+  // Progress calc
+  var phases=getActivePhases();
+  var effTotal=getEffectiveTotalBobot(phases),total=0;
+  phases.forEach(function(ph){
+    if(ph.isMilestonePhase) return;
+    ph.items.forEach(function(item){
+      if(item.bobot<=0) return;
+      var active=item.depAny?item.depAny.some(function(k){return optionalActive[k];}):(!item.optKey||optionalActive[item.optKey]);
+      if(!active) return;
+      var pct=item.isTes?(itemStatus[item.id]==='pass'?100:0):(itemPct[item.id]||0);
+      total+=(pct/100)*(item.bobot/effTotal)*100;
+    });
+  });
+  total=Math.round(total*10)/10;
+  var target=getEffectiveTarget();
+  var dev=Math.round((total-target)*10)/10;
+  var devStr=(dev>=0?'+':'')+dev+'%';
+  var statusTxt=dev>=-5?'ON TRACK':dev>=-10?'MINOR DELAY':'CRITICAL DELAY';
+  var SC=dev>=-5?'22C55E':dev>=-10?'F59E0B':'EF4444';
+  var delta=Math.round((total-(prevProgress||0))*10)/10;
+  var issueList=issueItems.filter(function(it){return it.issue&&it.issue.trim();});
+  var rencanaList=rencanaItems.filter(function(r){return r.trim();});
+  var fotoArr=[];
+  FOTO_SLOTS.forEach(function(label,i){if(fotoData[i]&&fotoData[i].url)fotoArr.push({label:label,url:fotoData[i].url,caption:fotoData[i].caption||''});});
+  for(var ei=0;ei<extraFotoCount;ei++){var ek='extra_'+ei;if(fotoData[ek]&&fotoData[ek].url)fotoArr.push({label:fotoData[ek].label||'Foto '+(ei+1),url:fotoData[ek].url,caption:fotoData[ek].caption||''});}
+
+  // ZIP builder
+  var cT=(function(){var t=new Uint32Array(256);for(var i=0;i<256;i++){var c=i;for(var j=0;j<8;j++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[i]=c;}return t;})();
+  function crc(b){var c=0xFFFFFFFF;for(var i=0;i<b.length;i++)c=(c>>>8)^cT[(c^b[i])&0xFF];return(c^0xFFFFFFFF)>>>0;}
+  function enc(s){return new TextEncoder().encode(s);}
+  function cat(){var n=0;for(var i=0;i<arguments.length;i++)n+=arguments[i].length;var r=new Uint8Array(n),p=0;for(var i=0;i<arguments.length;i++){r.set(arguments[i],p);p+=arguments[i].length;}return r;}
+  function du2b(du){var b64=du.split(',')[1],bs=atob(b64),b=new Uint8Array(bs.length);for(var i=0;i<bs.length;i++)b[i]=bs.charCodeAt(i);return b;}
+  function mkzip(entries){
+    var ps=[],cds=[],off=0;
+    entries.forEach(function(e){
+      var nb=enc(e.name),db=e.data instanceof Uint8Array?e.data:enc(e.data),cr=crc(db);
+      var lh=new Uint8Array(30+nb.length),lv=new DataView(lh.buffer);
+      lv.setUint32(0,0x04034b50,true);lv.setUint16(4,20,true);lv.setUint16(6,0,true);lv.setUint16(8,0,true);
+      lv.setUint16(10,0,true);lv.setUint16(12,0,true);lv.setUint32(14,cr,true);lv.setUint32(18,db.length,true);
+      lv.setUint32(22,db.length,true);lv.setUint16(26,nb.length,true);lv.setUint16(28,0,true);lh.set(nb,30);
+      var cd=new Uint8Array(46+nb.length),cv=new DataView(cd.buffer);
+      cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0,true);
+      cv.setUint16(10,0,true);cv.setUint16(12,0,true);cv.setUint16(14,0,true);cv.setUint32(16,cr,true);
+      cv.setUint32(20,db.length,true);cv.setUint32(24,db.length,true);cv.setUint16(28,nb.length,true);
+      cv.setUint16(30,0,true);cv.setUint16(32,0,true);cv.setUint16(34,0,true);cv.setUint16(36,0,true);
+      cv.setUint32(38,0,true);cv.setUint32(42,off,true);cd.set(nb,46);
+      ps.push(lh,db);cds.push(cd);off+=lh.length+db.length;
+    });
+    var csz=cds.reduce(function(a,b){return a+b.length;},0);
+    var eo=new Uint8Array(22),ev=new DataView(eo.buffer);
+    ev.setUint32(0,0x06054b50,true);ev.setUint16(4,0,true);ev.setUint16(6,0,true);
+    ev.setUint16(8,entries.length,true);ev.setUint16(10,entries.length,true);
+    ev.setUint32(12,csz,true);ev.setUint32(16,off,true);ev.setUint16(20,0,true);
+    return cat.apply(null,ps.concat(cds,[eo]));
+  }
+
+  // XML helpers — Portrait A4: 6858000 x 9144000
+  function xe(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/[^\x09\x0A\x0D\x20-\x7E]/g,'?');}
+  var SW=6858000,SH=9144000;
+  var ML=300000,MR=SW-300000,CW=SW-600000; // margins
+
+  function txS(id,x,y,w,h,text,sz,bold,col,align,wrap){
+    col=col||WHITE;align=align||'l';sz=(sz||14)*100;wrap=wrap?'square':'none';
+    return '<p:sp><p:nvSpPr><p:cNvPr id="'+id+'" name="t'+id+'"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>'
+      +'<p:spPr><a:xfrm><a:off x="'+x+'" y="'+y+'"/><a:ext cx="'+w+'" cy="'+h+'"/></a:xfrm>'
+      +'<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></p:spPr>'
+      +'<p:txBody><a:bodyPr wrap="'+wrap+'" anchr="ctr"/><a:lstStyle/><a:p><a:pPr algn="'+align+'"/><a:r>'
+      +'<a:rPr lang="id-ID" sz="'+sz+'" dirty="0">'+(bold?'<a:b/>':'')
+      +'<a:solidFill><a:srgbClr val="'+col+'"/></a:solidFill>'
+      +'<a:latin typeface="Calibri"/></a:rPr><a:t>'+xe(text)+'</a:t></a:r></a:p></p:txBody></p:sp>';
+  }
+  function rectS(id,x,y,w,h,col,alpha){
+    var fill=alpha?'<a:srgbClr val="'+col+'"><a:alpha val="'+alpha+'"/></a:srgbClr>':'<a:srgbClr val="'+col+'"/>';
+    return '<p:sp><p:nvSpPr><p:cNvPr id="'+id+'" name="r'+id+'"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>'
+      +'<p:spPr><a:xfrm><a:off x="'+x+'" y="'+y+'"/><a:ext cx="'+w+'" cy="'+h+'"/></a:xfrm>'
+      +'<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>'
+      +'<a:solidFill>'+fill+'</a:solidFill><a:ln><a:noFill/></a:ln></p:spPr>'
+      +'<p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody></p:sp>';
+  }
+  function rrectS(id,x,y,w,h,col){
+    return '<p:sp><p:nvSpPr><p:cNvPr id="'+id+'" name="rr'+id+'"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>'
+      +'<p:spPr><a:xfrm><a:off x="'+x+'" y="'+y+'"/><a:ext cx="'+w+'" cy="'+h+'"/></a:xfrm>'
+      +'<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val 50000"/></a:avLst></a:prstGeom>'
+      +'<a:solidFill><a:srgbClr val="'+col+'"/></a:solidFill><a:ln><a:noFill/></a:ln></p:spPr>'
+      +'<p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody></p:sp>';
+  }
+  function lineS(id,x,y,w,col){
+    return '<p:sp><p:nvSpPr><p:cNvPr id="'+id+'" name="l'+id+'"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>'
+      +'<p:spPr><a:xfrm><a:off x="'+x+'" y="'+y+'"/><a:ext cx="'+w+'" cy="30000"/></a:xfrm>'
+      +'<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>'
+      +'<a:solidFill><a:srgbClr val="'+col+'"/></a:solidFill><a:ln><a:noFill/></a:ln></p:spPr>'
+      +'<p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody></p:sp>';
+  }
+  function picS(id,rId,x,y,w,h){
+    return '<p:pic><p:nvPicPr><p:cNvPr id="'+id+'" name="img'+id+'"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>'
+      +'<p:blipFill><a:blip r:embed="'+rId+'"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>'
+      +'<p:spPr><a:xfrm><a:off x="'+x+'" y="'+y+'"/><a:ext cx="'+w+'" cy="'+h+'"/></a:xfrm>'
+      +'<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>';
+  }
+  function picSRounded(id,rId,x,y,w,h){
+    return '<p:pic><p:nvPicPr><p:cNvPr id="'+id+'" name="img'+id+'"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>'
+      +'<p:blipFill><a:blip r:embed="'+rId+'"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>'
+      +'<p:spPr><a:xfrm><a:off x="'+x+'" y="'+y+'"/><a:ext cx="'+w+'" cy="'+h+'"/></a:xfrm>'
+      +'<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val 16667"/></a:avLst></a:prstGeom></p:spPr></p:pic>';
+  }
+  function mkSld(bg,shapes){
+    bg=bg||DARK;
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" '
+      +'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" '
+      +'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+      +'<p:cSld><p:bg><p:bgPr><a:solidFill><a:srgbClr val="'+bg+'"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>'
+      +'<p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>'
+      +'<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/>'
+      +'<a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>'
+      +shapes+'</p:spTree></p:cSld></p:sld>';
+  }
+  function mkRels(mediaList){
+    var r='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+      +'<Relationship Id="rId99" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>';
+    (mediaList||[]).forEach(function(m){
+      r+='<Relationship Id="'+m.id+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="'+m.target+'"/>';
+    });
+    return r+'</Relationships>';
+  }
+
+  // Media registry
+  var allMedia=[],midx=1;
+  function addMedia(dataUrl){
+    var ext=dataUrl.indexOf('image/png')>-1?'png':'jpeg';
+    var name='ppt/media/img'+midx+'.'+ext;
+    allMedia.push({name:name,data:du2b(dataUrl)});
+    var rId='rId'+(midx);
+    midx++;
+    return {rId:rId,target:'../media/img'+(midx-1)+'.'+ext};
+  }
+
+  // ============================================================
+  // SLIDE 1: COMBINED REPORT (Portrait)
+  // ============================================================
+  var s1='',s1media=[],sid=2;
+
+  // Header background — brand color gradient effect using two rects
+  s1+=rectS(sid++,0,0,SW,950000,AC);
+  s1+=rectS(sid++,0,800000,SW,150000,DARK,30000); // fade bottom
+
+  // Decorative accent bar (right edge)
+  s1+=rectS(sid++,SW-120000,0,120000,950000,'000000',20000);
+
+  // Logo (if exists) — stretch to fill left portion of header
+  var logoRId=null;
+  var logoW=1200000; // wider logo area
+  if(BRAND_LOGOS&&BRAND_LOGOS[selBrand]){
+    var lm=addMedia(BRAND_LOGOS[selBrand]);
+    s1media.push({id:lm.rId,target:lm.target});
+    // Logo fills header height, white card behind it
+    s1+=rectS(sid++,ML,60000,logoW,820000,WHITE);
+    s1+=picS(sid++,lm.rId,ML+20000,80000,logoW-40000,780000);
+    logoRId=lm.rId;
+  }
+
+  // Brand name & subtitle
+  var bNameX=logoRId?ML+logoW+80000:ML;
+  var bNameW=logoRId?CW-logoW-80000:CW;
+  s1+=txS(sid++,bNameX,130000,bNameW,380000,brandInfo.name.toUpperCase(),28,true,WHITE,'l',false);
+  s1+=txS(sid++,bNameX,510000,bNameW,200000,'WEEKLY CONSTRUCTION REPORT',11,false,WHITE+'CC','l',false);
+  s1+=txS(sid++,bNameX,700000,bNameW,200000,'Minggu ke-'+selWeek+'  |  '+fmt(g('periodeStart'))+' - '+fmt(g('periodeEnd')),10,false,WHITE+'99','l',false);
+
+  // Status badge (top right)
+  s1+=rrectS(sid++,MR-1800000,130000,1700000,340000,SC);
+  s1+=txS(sid++,MR-1800000,130000,1700000,340000,statusTxt,13,true,WHITE,'ctr',false);
+
+  // ── Info strip ──
+  var iy=1000000;
+  s1+=rectS(sid++,0,iy,SW,420000,SURFACE);
+  s1+=lineS(sid++,0,iy,SW,AC);
+  var infoItems=[
+    {l:'Project',v:g('namaProject')||'--'},
+    {l:'SM',v:g('namaSM')||'--'},
+    {l:'Kontraktor',v:g('kontraktor')||'--'},
+    {l:'SPK',v:fmt(g('spkStart'))+' s/d '+fmt(g('spkEnd'))},
+    {l:'Opening',v:fmt(g('targetOpening'))}
+  ];
+  var infoColW=Math.floor(CW/infoItems.length);
+  infoItems.forEach(function(inf,i){
+    var ix=ML+i*infoColW;
+    s1+=txS(sid++,ix,iy+30000,infoColW-20000,160000,inf.l,8,false,MUTED,'l',false);
+    s1+=txS(sid++,ix,iy+190000,infoColW-20000,200000,inf.v,9,true,WHITE,'l',true);
+  });
+
+  // ── Progress Section ──
+  var py=1480000;
+  s1+=txS(sid++,ML,py,CW,280000,'PROGRESS KONSTRUKSI',11,true,AC,'l',false);
+  s1+=lineS(sid++,ML,py+290000,CW,AC);
+  py+=340000;
+
+  // 3 big number cards
+  var cardW=Math.floor(CW/3)-40000,cardH=620000;
+  var numCards=[
+    {val:total+'%',lbl:'KUMULATIF',c:WHITE},
+    {val:target+'%',lbl:'TARGET W'+selWeek,c:AC},
+    {val:devStr,lbl:'DEVIASI',c:SC}
+  ];
+  numCards.forEach(function(nc,i){
+    var cx=ML+i*(cardW+60000);
+    s1+=rectS(sid++,cx,py,cardW,cardH,SURFACE);
+    s1+=rrectS(sid++,cx,py,60000,cardH,nc.c); // left accent
+    s1+=txS(sid++,cx+80000,py+60000,cardW-100000,340000,nc.val,28,true,nc.c,'ctr',false);
+    s1+=txS(sid++,cx+80000,py+400000,cardW-100000,180000,nc.lbl,8,false,MUTED,'ctr',false);
+  });
+  py+=cardH+80000;
+
+  // Progress bar
+  var barW=CW,barH=200000;
+  s1+=rectS(sid++,ML,py,barW,barH,'2D3748');
+  var fW=Math.max(0,Math.min(barW,Math.round(barW*total/100)));
+  if(fW>0)s1+=rectS(sid++,ML,py,fW,barH,AC);
+  var tXbar=ML+Math.round(barW*target/100);
+  s1+=rectS(sid++,tXbar-20000,py-60000,40000,barH+120000,WHITE);
+  s1+=txS(sid++,tXbar-300000,py-240000,600000,160000,'Target',8,false,MUTED,'ctr',false);
+  s1+=txS(sid++,ML,py+220000,barW,180000,
+    'Minggu lalu '+( prevProgress||0)+'%  ->  Minggu ini '+total+'%  (delta '+(delta>=0?'+':'')+delta+'%)',
+    8,false,MUTED,'l',false);
+  py+=barH+350000;
+
+  // Phase breakdown
+  s1+=txS(sid++,ML,py,CW,220000,'PROGRESS PER FASE',9,true,MUTED,'l',false);
+  py+=240000;
+  phases.forEach(function(ph){
+    if(ph.isMilestonePhase||py>5200000) return;
+    var pt=0,pe=0;
+    ph.items.forEach(function(item){
+      if(item.bobot<=0) return;
+      var active=item.depAny?item.depAny.some(function(k){return optionalActive[k];}):(!item.optKey||optionalActive[item.optKey]);
+      if(!active) return;pe+=item.bobot;
+      var pct=item.isTes?(itemStatus[item.id]==='pass'?100:0):(itemPct[item.id]||0);pt+=pct*item.bobot;
+    });
+    var pp=pe>0?Math.round(pt/pe):0,pbW=CW-800000;
+    s1+=txS(sid++,ML,py,750000,220000,ph.label,8,false,WHITE,'l',false);
+    s1+=rectS(sid++,ML+800000,py+50000,pbW,130000,'2D3748');
+    if(pp>0)s1+=rectS(sid++,ML+800000,py+50000,Math.round(pbW*pp/100),130000,AC);
+    s1+=txS(sid++,ML+800000+pbW+40000,py,350000,220000,pp+'%',8,true,WHITE,'r',false);
+    py+=240000;
+  });
+
+  // ── Issue Section ──
+  py=Math.max(py+100000,5350000);
+  s1+=lineS(sid++,ML,py,CW,'2D3748');
+  py+=80000;
+  s1+=txS(sid++,ML,py,CW,250000,'KENDALA / ISSUE',11,true,AC,'l',false);
+  py+=280000;
+  if(issueList.length===0){
+    s1+=txS(sid++,ML,py,CW,250000,'Tidak ada issue.',10,false,MUTED,'l',false);
+    py+=280000;
+  } else {
+    issueList.slice(0,4).forEach(function(it){
+      var dot=(it.kategori==='Approval'||it.kategori==='Mall/Landlord')?'EF4444':'F59E0B';
+      s1+=rrectS(sid++,ML,py+40000,180000,180000,dot);
+      s1+=txS(sid++,ML+20000,py+40000,180000,180000,(it.kategori==='Approval'||it.kategori==='Mall/Landlord')?'!!':'*',9,true,WHITE,'ctr',false);
+      s1+=txS(sid++,ML+220000,py,CW-220000,280000,'['+( it.kategori||'-')+'] '+it.issue+(it.pic?' — '+it.pic:''),9,false,WHITE,'l',true);
+      py+=300000;
+    });
+  }
+
+  // ── Rencana Section ──
+  py+=50000;
+  s1+=lineS(sid++,ML,py,CW,'2D3748');
+  py+=80000;
+  s1+=txS(sid++,ML,py,CW,250000,'RENCANA MINGGU INI',11,true,AC,'l',false);
+  py+=280000;
+  if(rencanaList.length===0){
+    s1+=txS(sid++,ML,py,CW,250000,'Belum diisi.',10,false,MUTED,'l',false);
+  } else {
+    rencanaList.slice(0,4).forEach(function(r,i){
+      s1+=rrectS(sid++,ML,py+30000,220000,220000,AC);
+      s1+=txS(sid++,ML,py+30000,220000,220000,String(i+1),10,true,WHITE,'ctr',false);
+      s1+=txS(sid++,ML+260000,py,CW-260000,280000,r,9,false,WHITE,'l',true);
+      py+=300000;
+    });
+  }
+
+  // Footer
+  var footY=SH-220000;
+  s1+=rectS(sid++,0,footY-30000,SW,250000,SURFACE);
+  s1+=txS(sid++,ML,footY,CW/2,180000,'SM Report FnB 2026  |  '+new Date().toLocaleDateString('id-ID'),8,false,MUTED,'l',false);
+  s1+=txS(sid++,SW/2,footY,CW/2,180000,'Kontraktor: '+(g('kontraktor')||'--'),8,false,MUTED,'r',false);
+
+  // ============================================================
+  // SLIDE 2+: FOTO PORTRAIT (8 per slide)
+  // ============================================================
+  var photoSlds=[];
+  var perSlide=8; // 2 col x 4 row
+  var imgColW=Math.floor((CW-200000)/2);
+  var imgH=1300000;
+  var rowH=imgH+480000; // label+img+caption+gap
+
+  for(var pi=0;pi<fotoArr.length||pi===0;pi+=perSlide){
+    if(pi>0&&fotoArr.length===0) break;
+    var grp=fotoArr.slice(pi,Math.min(pi+perSlide,fotoArr.length));
+    if(grp.length===0) break;
+    var pss='',psMedia=[],psid=2;
+
+    // Header
+    pss+=rectS(psid++,0,0,SW,720000,AC);
+    pss+=rectS(psid++,0,680000,SW,40000,DARK,50000);
+    var pLogoW=900000;
+    if(BRAND_LOGOS&&BRAND_LOGOS[selBrand]){
+      var lm2=addMedia(BRAND_LOGOS[selBrand]);
+      psMedia.push({id:lm2.rId,target:lm2.target});
+      // White card + logo stretch
+      pss+=rectS(psid++,ML,50000,pLogoW,620000,WHITE);
+      pss+=picS(psid++,lm2.rId,ML+10000,65000,pLogoW-20000,590000);
+      pss+=txS(psid++,ML+pLogoW+80000,80000,CW-pLogoW-80000,300000,brandInfo.name.toUpperCase(),18,true,WHITE,'l',false);
+      pss+=txS(psid++,ML+pLogoW+80000,400000,CW-pLogoW-80000,220000,'FOTO PROGRESS - Minggu '+selWeek,11,false,WHITE+'BB','l',false);
+    } else {
+      pss+=txS(psid++,ML,120000,CW,300000,brandInfo.name.toUpperCase(),22,true,WHITE,'l',false);
+      pss+=txS(psid++,ML,440000,CW,220000,'FOTO PROGRESS - Minggu '+selWeek,12,false,WHITE+'BB','l',false);
+    }
+    if(fotoArr.length>perSlide){
+      var pg=Math.floor(pi/perSlide)+1,total_pg=Math.ceil(fotoArr.length/perSlide);
+      pss+=txS(psid++,MR-600000,560000,600000,180000,pg+'/'+total_pg,10,false,WHITE+'99','r',false);
+    }
+
+    // Photo grid
+    var startY=780000;
+    grp.forEach(function(fo,gi){
+      var col=gi%2,row=Math.floor(gi/2);
+      var gx=ML+col*(imgColW+200000);
+      var gy=startY+row*rowH;
+      // Card bg
+      pss+=rectS(psid++,gx-20000,gy,imgColW+40000,rowH-60000,SURFACE);
+      // Label bar
+      pss+=rectS(psid++,gx-20000,gy,imgColW+40000,240000,AC);
+      pss+=txS(psid++,gx+10000,gy,imgColW,240000,fo.label.toUpperCase(),9,true,WHITE,'l',false);
+      // Image
+      var fm=addMedia(fo.url);
+      psMedia.push({id:fm.rId,target:fm.target});
+      pss+=picS(psid++,fm.rId,gx-20000,gy+240000,imgColW+40000,imgH);
+      // Caption
+      if(fo.caption){
+        pss+=txS(psid++,gx,gy+240000+imgH+20000,imgColW,180000,fo.caption,8,false,MUTED,'l',true);
+      }
+    });
+
+    // Footer
+    pss+=rectS(psid++,0,SH-180000,SW,180000,SURFACE);
+    pss+=txS(psid++,ML,SH-150000,CW,130000,'Generated by SM Report FnB 2026  |  '+new Date().toLocaleDateString('id-ID'),8,false,MUTED,'l',false);
+    photoSlds.push({s:pss,media:psMedia});
+  }
+
+  // ============================================================
+  // ASSEMBLE PPTX
+  // ============================================================
+  var slideCount=1+photoSlds.length;
+  var sldIds='<p:sldId id="256" r:id="rId2"/>';
+  for(var si=0;si<photoSlds.length;si++) sldIds+='<p:sldId id="'+(257+si)+'" r:id="rId'+(si+3)+'"/>';
+  var presRels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    +'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+    +'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>'
+    +'<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/>';
+  for(var si=0;si<photoSlds.length;si++)
+    presRels+='<Relationship Id="rId'+(si+3)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide'+(si+2)+'.xml"/>';
+  presRels+='</Relationships>';
+
+  var ct='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpeg" ContentType="image/jpeg"/><Default Extension="jpg" ContentType="image/jpeg"/><Default Extension="png" ContentType="image/png"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>';
+  for(var si=1;si<=slideCount;si++) ct+='<Override PartName="/ppt/slides/slide'+si+'.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>';
+  ct+='<Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/></Types>';
+
+  var THEME='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="T"><a:themeElements><a:clrScheme name="C"><a:dk1><a:sysClr lastClr="000000" val="windowText"/></a:dk1><a:lt1><a:sysClr lastClr="ffffff" val="window"/></a:lt1><a:dk2><a:srgbClr val="1E293B"/></a:dk2><a:lt2><a:srgbClr val="F1F5F9"/></a:lt2><a:accent1><a:srgbClr val="'+AC+'"/></a:accent1><a:accent2><a:srgbClr val="'+SC+'"/></a:accent2><a:accent3><a:srgbClr val="22C55E"/></a:accent3><a:accent4><a:srgbClr val="F59E0B"/></a:accent4><a:accent5><a:srgbClr val="EF4444"/></a:accent5><a:accent6><a:srgbClr val="8B5CF6"/></a:accent6><a:hlink><a:srgbClr val="3B82F6"/></a:hlink><a:folHlink><a:srgbClr val="7C3AED"/></a:folHlink></a:clrScheme><a:fontScheme name="F"><a:majorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="S"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="6350"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="12700"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="19050"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements></a:theme>';
+  var MASTER='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sldMaster xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><p:cSld><p:bg><p:bgPr><a:solidFill><a:srgbClr val="'+DARK+'"/></a:solidFill><a:effectLst/></p:bgPr></p:bg><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst><p:txStyles><p:titleStyle><a:lvl1pPr/></p:titleStyle><p:bodyStyle><a:lvl1pPr/></p:bodyStyle><p:otherStyle><a:lvl1pPr/></p:otherStyle></p:txStyles></p:sldMaster>';
+  var LAYOUT='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sldLayout xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" type="blank" preserve="1"><p:cSld name="Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>';
+
+  var allE=[];
+  allE.push({name:'[Content_Types].xml',data:ct});
+  allE.push({name:'_rels/.rels',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/></Relationships>'});
+  allE.push({name:'ppt/presentation.xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" saveSubsetFonts="1"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>'+sldIds+'</p:sldIdLst><p:sldSz cx="'+SW+'" cy="'+SH+'"/><p:notesSz cx="'+SH+'" cy="'+SW+'"/></p:presentation>'});
+  allE.push({name:'ppt/_rels/presentation.xml.rels',data:presRels});
+  allE.push({name:'ppt/theme/theme1.xml',data:THEME});
+  allE.push({name:'ppt/slideMasters/slideMaster1.xml',data:MASTER});
+  allE.push({name:'ppt/slideMasters/_rels/slideMaster1.xml.rels',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/></Relationships>'});
+  allE.push({name:'ppt/slideLayouts/slideLayout1.xml',data:LAYOUT});
+  allE.push({name:'ppt/slideLayouts/_rels/slideLayout1.xml.rels',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>'});
+
+  // Slide 1
+  allE.push({name:'ppt/slides/slide1.xml',data:mkSld(DARK,s1)});
+  allE.push({name:'ppt/slides/_rels/slide1.xml.rels',data:mkRels(s1media)});
+  // Photo slides
+  photoSlds.forEach(function(ps,i){
+    allE.push({name:'ppt/slides/slide'+(i+2)+'.xml',data:mkSld(DARK,ps.s)});
+    allE.push({name:'ppt/slides/_rels/slide'+(i+2)+'.xml.rels',data:mkRels(ps.media)});
+  });
+  // Media
+  allMedia.forEach(function(m){allE.push(m);});
+
+  // Download
+  var zb=mkzip(allE);
+  var blob=new Blob([zb],{type:'application/vnd.openxmlformats-officedocument.presentationml.presentation'});
+  var url2=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url2;
+  a.download=((g('namaProject')||brandInfo.name).replace(/\s+/g,'_')+'_W'+selWeek+'.pptx');
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(url2);},2000);
+  alert('PPT berhasil didownload! ('+slideCount+' slide)');
+}
+-e 
+</script>
+</body>
+</html>
