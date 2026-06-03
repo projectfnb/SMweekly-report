@@ -202,11 +202,14 @@ input[type=checkbox]{accent-color:var(--green)}
         <option value="">-- Pilih SM dulu --</option>
       </select>
       <!-- Input manual: muncul hanya saat pilih "+ Project Baru" -->
-      <input type="text" id="namaProjectManual" placeholder="Ketik nama project baru..." style="display:none;margin-top:4px" oninput="syncProjectManual(this.value)"/>
+      <!-- oninput SENGAJA DIHAPUS — nama project hanya dikunci saat klik "Gunakan Nama Ini" -->
+      <input type="text" id="namaProjectManual" placeholder="Ketik nama project baru..." style="display:none;margin-top:4px"/>
+      <!-- Tombol konfirmasi nama project baru -->
+      <button id="btnKunciProject" onclick="kunciNamaProject()" style="display:none;width:100%;margin-top:5px;padding:8px;border-radius:7px;background:#1a2a10;border:1.5px solid var(--green);color:var(--green);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font)">&#x2705; Gunakan Nama Ini</button>
       <!-- Hidden field tetap sebagai value aktual -->
       <input type="hidden" id="namaProject" value=""/>
       <!-- Badge project terkunci -->
-      <div id="project-locked-note" style="display:none;font-size:9px;color:var(--yellow);margin-top:3px;font-family:var(--mono)">🔒 Nama project terkunci — pastikan ejaan konsisten tiap minggu</div>
+      <div id="project-locked-note" style="display:none;font-size:9px;color:var(--yellow);margin-top:3px;font-family:var(--mono)">&#x1F512; Nama project terkunci &mdash; pastikan ejaan konsisten tiap minggu</div>
     </div>
     <div class="form-full" style="margin-top:4px">
       <div class="fl">🏗️ Tipe Project</div>
@@ -415,17 +418,35 @@ input[type=checkbox]{accent-color:var(--green)}
     <button class="btn btn-save" style="margin-top:6px;font-size:11px;background:#1e6b3f" onclick="exportPPT()">📊 Export PPT</button>
     <button class="btn btn-save" style="margin-top:6px;font-size:11px;background:#1e3a5f;color:#fff;border:none" onclick="exportPDF()">🖨️ Export PDF</button>
   </div>
-  <button class="btn btn-save" onclick="saveLocal()">💾 Simpan Lokal</button>
-  <button class="btn btn-submit" onclick="submitToSheets()">📤 Submit ke Google Sheets</button>
+  <!-- ── SIMPAN DRAFT & SUBMIT SECTION ── -->
+  <div class="card" style="margin-bottom:0">
+    <div class="card-title">&#x1F4BE; Simpan &amp; Kirim Laporan</div>
+
+    <!-- STATUS DRAFT -->
+    <div id="draft-status-bar" style="display:none;padding:8px 10px;border-radius:7px;margin-bottom:10px;font-size:10px;font-family:var(--mono)"></div>
+
+    <!-- SUBMIT LOCK INDICATOR -->
+    <div id="submit-lock-bar" style="display:none;padding:10px 12px;border-radius:8px;background:#052a10;border:1px solid var(--green);margin-bottom:10px;font-size:10px;color:var(--green);font-family:var(--mono)">
+      &#x2705; Laporan W<span id="submit-lock-week"></span> sudah tersubmit &mdash; data dikunci dari double submit.
+      <br/><span style="color:var(--muted);font-size:9px">Untuk revisi hubungi PM.</span>
+    </div>
+
+    <!-- TOMBOL SIMPAN DRAFT -->
+    <button class="btn" id="btn-simpan-draft" onclick="simpanDraft()"
+      style="background:var(--surface2);border:1.5px solid var(--accent);color:var(--accent);margin-top:0;margin-bottom:8px">
+      &#x1F4BE; Simpan Draft
+    </button>
+
+    <!-- TOMBOL SUBMIT LAPORAN -->
+    <button class="btn btn-submit" id="btn-submit-laporan" onclick="submitLaporan()">
+      Submit Laporan ke Google Sheets
+    </button>
+  </div>
   <div class="card" style="margin-top:12px">
-    <div class="card-title">🔧 Backup & Restore</div>
-    <button class="btn btn-save" style="margin-top:0" onclick="exportJSON()">📤 Export JSON</button>
-    <label class="btn btn-save" style="display:block;text-align:center;margin-top:6px;cursor:pointer">
-      📥 Import JSON<input type="file" accept=".json" style="display:none" onchange="importJSON(event)"/>
-    </label>
-    <div style="margin-top:8px">
+    <div class="card-title">⚙️ Konfigurasi</div>
+    <div style="margin-top:4px">
       <div class="fl">Google Sheets Script URL</div>
-      <input type="url" id="sheets-url" placeholder="https://script.google.com/..." style="font-size:10px" value="https://script.google.com/macros/s/AKfycbz9I49ZsjyYlQF9cDA4WdHuugvnPdFt0tfUwMACVnCaTLloMYrALMxyZzzh--ODs80ZKw/exec"/>
+      <input type="url" id="sheets-url" placeholder="https://script.google.com/..." style="font-size:10px" value="https://script.google.com/macros/s/AKfycbzP0ejKcJOBhVcXwLKRe2HnMWSf78i9iHt1CePYGzf-2p1UohF8iaKxPsYNNs3JNHZhRg/exec"/>
     </div>
   </div>
   <div class="card" style="margin-top:12px;border-color:#ef4444">
@@ -882,15 +903,19 @@ function setWeek(w){
 
   lockOpeningDate();
   lockSPKDates();
+  cleanupPartialProjectKeys((document.getElementById('namaSM')||{}).value||'');
   updateOverall();
-  autoSave();
-  renderWeekHistoryBar(); // refresh riwayat bar
+  renderWeekHistoryBar();
+  _updateSubmitLockUI();   // update status submit lock untuk minggu baru
+  updateDraftStatusBar();  // update status draft
 }
 function setWeekManual(v){
   var n=parseInt(v); if(isNaN(n)||n<1) return;
   if(selWeek && selWeek !== n) autoSave();
-  selWeek=n; renderWeekGrid(); lockOpeningDate(); lockSPKDates(); updateOverall(); autoSave();
+  selWeek=n; renderWeekGrid(); lockOpeningDate(); lockSPKDates(); updateOverall();
   renderWeekHistoryBar();
+  _updateSubmitLockUI();
+  updateDraftStatusBar();
 }
 
 // Load data dari object (hasil JSON.parse) ke form — tanpa reload halaman
@@ -974,33 +999,37 @@ function populateProjectDropdown(smName){
   }
   sel.disabled = false;
 
-  // Kumpulkan semua project unik milik SM ini dari localStorage
+  // Bersihkan entry parsial dulu
+  cleanupPartialProjectKeys(smName);
+
+  // Scan localStorage — HANYA entry yang punya _w (sudah pernah Simpan Draft dengan minggu)
   var prefix = LS_PREFIX+'_'+sanitizeKey(smName)+'_';
-  var projects = {}; // key = namaProject, val = {savedAt, key}
+  var projects = {}; // namaProject → {savedAt, key}
 
   try{
     for(var i=0;i<localStorage.length;i++){
       var lk = localStorage.key(i);
-      if(lk && lk.indexOf(prefix)===0){
-        var raw = localStorage.getItem(lk);
-        if(raw){
-          try{
-            var d = JSON.parse(raw);
-            if(d && d.namaProject){
-              var np = d.namaProject;
-              // Ambil yang paling baru per project name
-              if(!projects[np] || new Date(d.savedAt||0) > new Date(projects[np].savedAt||0)){
-                projects[np] = {savedAt: d.savedAt||'', key: lk, data: d};
-              }
-            }
-          }catch(e){}
+      // Filter: harus prefix SM + ada _w + bukan LOCK key
+      if(!lk) continue;
+      if(lk.indexOf(prefix)!==0) continue;
+      if(lk.indexOf('_w')===-1) continue;      // skip entry tanpa minggu
+      if(lk.indexOf('_LOCK_')!==-1) continue;  // skip lock entry
+      var raw = localStorage.getItem(lk);
+      if(!raw) continue;
+      try{
+        var d = JSON.parse(raw);
+        if(d && d.namaProject && d.namaProject.trim().length >= 2){
+          var np = d.namaProject;
+          if(!projects[np] || new Date(d.savedAt||0) > new Date(projects[np].savedAt||0)){
+            projects[np] = {savedAt: d.savedAt||'', key: lk};
+          }
         }
-      }
+      }catch(e){}
     }
   }catch(e){}
 
-  var names = Object.keys(projects).sort();
-  names.forEach(function(nm){
+  // Render opsi — unik per namaProject
+  Object.keys(projects).sort().forEach(function(nm){
     var o = document.createElement('option');
     var dt = projects[nm].savedAt ? new Date(projects[nm].savedAt) : null;
     var dtStr = dt ? dt.toLocaleDateString('id-ID',{day:'2-digit',month:'short'}) : '';
@@ -1018,22 +1047,24 @@ function populateProjectDropdown(smName){
 }
 
 function handleProjectSel(sel){
-  var manual = document.getElementById('namaProjectManual');
-  var hidden = document.getElementById('namaProject');
-  var note   = document.getElementById('project-locked-note');
+  var manual  = document.getElementById('namaProjectManual');
+  var hidden  = document.getElementById('namaProject');
+  var note    = document.getElementById('project-locked-note');
+  var btnKunci= document.getElementById('btnKunciProject');
 
   if(sel.value === '__new__'){
-    // Mode project baru: tampil input manual
+    // Mode project baru: tampil input manual + tombol kunci
     if(manual){ manual.style.display='block'; manual.value=''; manual.focus(); }
+    if(btnKunci) btnKunci.style.display='block';
     if(hidden) hidden.value = '';
     if(note)   note.style.display = 'none';
     renderWeekHistoryBar();
-    autoSave();
     return;
   }
 
   if(!sel.value){
     if(manual){ manual.style.display='none'; manual.value=''; }
+    if(btnKunci) btnKunci.style.display='none';
     if(hidden) hidden.value = '';
     if(note)   note.style.display = 'none';
     return;
@@ -1042,8 +1073,9 @@ function handleProjectSel(sel){
   // Project existing dipilih: kunci nama, load data terbaru project tsb
   var projectName = sel.value;
   if(manual){ manual.style.display='none'; }
+  if(btnKunci) btnKunci.style.display='none';
   if(hidden) hidden.value = projectName;
-  if(note)   note.style.display = 'block';
+  if(note){ note.style.display='block'; note.textContent = '&#x1F512; Nama project terkunci &mdash; pastikan ejaan konsisten tiap minggu'; }
 
   // Load data project ini (week tertinggi atau terbaru)
   var smName = (document.getElementById('namaSM')||{}).value||'';
@@ -1052,14 +1084,55 @@ function handleProjectSel(sel){
   }
 
   renderWeekHistoryBar();
-  autoSave();
 }
 
+// ── PROJECT BARU: kunci nama hanya saat tombol "Gunakan Nama Ini" diklik ──
+function kunciNamaProject(){
+  var manual = document.getElementById('namaProjectManual');
+  var hidden = document.getElementById('namaProject');
+  var note   = document.getElementById('project-locked-note');
+  var btnKunci = document.getElementById('btnKunciProject');
+  if(!manual) return;
+  var val = manual.value.trim();
+  if(!val){
+    _showToast('&#x26A0;&#xFE0F; Nama project tidak boleh kosong.', 'warn');
+    manual.focus();
+    return;
+  }
+  // Commit ke hidden field
+  if(hidden) hidden.value = val;
+  // UI: sembunyikan input & tombol, tampilkan badge terkunci
+  manual.style.display = 'none';
+  if(btnKunci) btnKunci.style.display = 'none';
+  if(note){ note.style.display = 'block'; note.textContent = '&#x1F512; "'+val+'" — nama terkunci, siap disimpan'; }
+  // Update select dropdown tampilan ke nilai custom
+  var sel = document.getElementById('projectSel');
+  if(sel){
+    // Hapus opsi __new__ sementara, ganti dengan opsi "project baru ini" supaya terlihat terpilih
+    var found = false;
+    for(var i=0;i<sel.options.length;i++){
+      if(sel.options[i].value === val){ sel.value = val; found = true; break; }
+    }
+    if(!found){
+      // Tambah opsi sementara dengan nama ini (belum disimpan, akan diganti setelah Simpan Draft)
+      var oTmp = document.createElement('option');
+      oTmp.value = val; oTmp.textContent = val + '  [baru]'; oTmp.dataset.isNew = 'true';
+      // Insert sebelum opsi "+ Project Baru"
+      var newOpt = sel.querySelector('option[value="__new__"]');
+      sel.insertBefore(oTmp, newOpt);
+      sel.value = val;
+    }
+  }
+  renderWeekHistoryBar();
+  _showToast('&#x2705; Nama project dikunci: "'+val+'"', 'ok');
+}
+
+// [DEPRECATED] syncProjectManual: tidak lagi dipanggil dari oninput
+// Dibiarkan agar tidak ada referensi error di tempat lain
 function syncProjectManual(val){
   var hidden = document.getElementById('namaProject');
   if(hidden) hidden.value = val;
   renderWeekHistoryBar();
-  autoSave();
 }
 
 // Load data terbaru untuk project tertentu (week tertinggi)
@@ -2061,6 +2134,286 @@ function showCopyModal(txt){
   ta.select();
 }
 
+// ── CLEANUP: hapus entry parsial (tanpa _w) milik SM ini ────────
+function cleanupPartialProjectKeys(smName){
+  if(!smName) return;
+  var prefix = LS_PREFIX+'_'+sanitizeKey(smName)+'_';
+  var toDelete = [];
+  try{
+    for(var i=0;i<localStorage.length;i++){
+      var lk = localStorage.key(i);
+      // Entry parsial: prefix SM match, tapi TIDAK ada _w
+      if(lk && lk.indexOf(prefix)===0 && lk.indexOf('_w')===-1){
+        toDelete.push(lk);
+      }
+    }
+    toDelete.forEach(function(k){ localStorage.removeItem(k); });
+    if(toDelete.length) console.log('[cleanup] Hapus '+toDelete.length+' entry parsial');
+  }catch(e){}
+}
+
+// ── TOAST NOTIFICATION ──────────────────────────────────────────
+function _showToast(msg, type){
+  var old = document.getElementById('_toast_el');
+  if(old) old.remove();
+  var t = document.createElement('div');
+  t.id = '_toast_el';
+  var bg = type==='ok'?'#052a10':type==='warn'?'#2a1500':'#1a2a3a';
+  var border = type==='ok'?'var(--green)':type==='warn'?'var(--yellow)':'var(--accent)';
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;'
+    +'background:'+bg+';border:1.5px solid '+border+';border-radius:10px;padding:10px 20px;'
+    +'font-size:12px;font-weight:700;color:var(--text);font-family:var(--font);'
+    +'box-shadow:0 4px 20px rgba(0,0,0,.5);white-space:nowrap;max-width:90vw;text-align:center;';
+  t.innerHTML = msg;
+  document.body.appendChild(t);
+  setTimeout(function(){ if(t.parentNode) t.remove(); }, 3000);
+}
+
+// ── UPDATE DRAFT STATUS BAR ──────────────────────────────────────
+function updateDraftStatusBar(){
+  var bar = document.getElementById('draft-status-bar');
+  if(!bar) return;
+  var smName = (document.getElementById('namaSM')||{}).value||'';
+  var project = g('namaProject')||'';
+  if(!smName || !project || !selWeek){ bar.style.display='none'; return; }
+  var key = getCurrentKey();
+  var raw = null;
+  try{ raw = localStorage.getItem(key); }catch(e){}
+  if(!raw){ bar.style.display='none'; return; }
+  var d = null;
+  try{ d = JSON.parse(raw); }catch(e){}
+  var savedAt = d && d.savedAt ? new Date(d.savedAt) : null;
+  var timeStr = savedAt ? savedAt.toLocaleDateString('id-ID',{day:'2-digit',month:'short'})+' '+savedAt.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '—';
+  bar.style.display = 'block';
+  bar.style.background = '#0d1a2e';
+  bar.style.border = '1px solid var(--border)';
+  bar.style.color = 'var(--muted)';
+  bar.innerHTML = '&#x1F4BE; Draft tersimpan: <strong style="color:var(--text)">W'+selWeek+' &mdash; '+project+'</strong> &nbsp;|&nbsp; '+timeStr;
+}
+
+// ── SIMPAN DRAFT (OVERWRITE-SAFE) ────────────────────────────────
+// Hanya dipanggil saat tombol "Simpan Draft" diklik, BUKAN onInput/onChange.
+// Kunci utama = SM + Project + Minggu → overwrite jika sudah ada.
+function simpanDraft(){
+  // Validasi minimal
+  var project = g('namaProject');
+  var smName  = (document.getElementById('namaSM')||{}).value||'';
+  if(!smName){ _showToast('&#x26A0;&#xFE0F; Pilih Site Manager terlebih dahulu.','warn'); return; }
+  if(!project || !project.trim()){ _showToast('&#x26A0;&#xFE0F; Nama project belum dikunci. Klik "Gunakan Nama Ini".','warn'); return; }
+  if(!selWeek){ _showToast('&#x26A0;&#xFE0F; Pilih Minggu ke- terlebih dahulu.','warn'); return; }
+  if(!selBrand){ _showToast('&#x26A0;&#xFE0F; Pilih Brand terlebih dahulu.','warn'); return; }
+
+  // KEY = prefix + SM + project + _wN  →  overwrite aman
+  var key = LS_PREFIX+'_'+sanitizeKey(smName)+'_'+sanitizeKey(project)+'_w'+selWeek;
+  var state = getState();
+  state.savedAt = new Date().toISOString(); // perbarui timestamp
+
+  try{
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('fnb_last_key', key);
+  }catch(e){
+    if(e && (e.name==='QuotaExceededError'||e.code===22||e.code===1014)){
+      _showToast('&#x26A0;&#xFE0F; Storage HP penuh! Hapus draft lama.','warn');
+    } else {
+      _showToast('&#x274C; Gagal simpan: '+e.message,'warn');
+    }
+    return;
+  }
+
+  // Setelah simpan: bersihkan semua entry parsial milik SM ini
+  cleanupPartialProjectKeys(smName);
+
+  // Update dropdown project — pastikan project ini muncul dan tidak duplikat
+  _ensureProjectInDropdown(smName, project);
+
+  // Update UI
+  var tsEl = document.getElementById('ts-save');
+  if(tsEl) tsEl.textContent = 'Tersimpan: '+new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+  updateDraftStatusBar();
+  renderWeekHistoryBar();
+  _showToast('&#x1F4BE; Draft W'+selWeek+' tersimpan &mdash; '+project,'ok');
+}
+
+// Pastikan project ada di dropdown, tidak duplikat
+function _ensureProjectInDropdown(smName, projectName){
+  var sel = document.getElementById('projectSel');
+  if(!sel) return;
+  var found = false;
+  for(var i=0;i<sel.options.length;i++){
+    if(sel.options[i].value === projectName){ found=true; sel.value=projectName; break; }
+  }
+  if(!found){
+    // Hapus opsi sementara "[baru]" jika ada
+    for(var j=sel.options.length-1;j>=0;j--){
+      if(sel.options[j].dataset && sel.options[j].dataset.isNew==='true') sel.remove(j);
+    }
+    var o = document.createElement('option');
+    o.value = projectName;
+    var dtStr = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'short'});
+    o.textContent = projectName + '  ['+dtStr+']';
+    var newOpt = sel.querySelector('option[value="__new__"]');
+    sel.insertBefore(o, newOpt);
+    sel.value = projectName;
+  }
+}
+
+// ── SUBMIT LAPORAN (terpisah dari simpanDraft) ───────────────────
+// Validasi lengkap → kirim GAS → lock minggu ini dari double submit
+function submitLaporan(){
+  // Cek koneksi
+  if(!navigator.onLine){
+    _showToast('&#x274C; Tidak ada koneksi internet.','warn');
+    return;
+  }
+
+  // Cek submit lock
+  var lockKey = _getSubmitLockKey();
+  if(lockKey && localStorage.getItem(lockKey)){
+    _showToast('&#x26A0;&#xFE0F; Laporan W'+selWeek+' sudah pernah disubmit.','warn');
+    return;
+  }
+
+  // Validasi wajib
+  var errors = [];
+  if(!selBrand)                errors.push('Brand (Tab 1)');
+  if(!g('namaProject').trim()) errors.push('Nama Project (Tab 1)');
+  if(!selWeek)                 errors.push('Minggu Ke- (Tab 1)');
+  if(!g('namaSM').trim())      errors.push('Site Manager (Tab 1)');
+  if(!g('periodeStart').trim())errors.push('Periode Laporan Mulai (Tab 1)');
+  if(!g('targetOpening').trim())errors.push('Tanggal Opening/BAST (Tab 1)');
+  if(errors.length){
+    alert('&#x26A0;&#xFE0F; Field wajib belum diisi:\n\n\u2022 '+errors.join('\n\u2022')+'\n\nLengkapi sebelum submit.');
+    return;
+  }
+
+  if(!confirm('Submit laporan W'+selWeek+' untuk project "'+g('namaProject')+'"?\n\nSetelah submit, data akan dikunci.')){return;}
+
+  // Simpan draft terakhir dulu (overwrite-safe)
+  simpanDraft();
+
+  var url = g('sheets-url')||localStorage.getItem('sheets_url');
+  if(!url){ alert('Masukkan URL Google Apps Script di field GAS URL.'); return; }
+  localStorage.setItem('sheets_url', url);
+
+  // Hitung progress
+  var phases2=getActivePhases(), eff2=getEffectiveTotalBobot(phases2), tot2=0;
+  phases2.forEach(function(phase){
+    if(phase.isMilestonePhase) return;
+    phase.items.forEach(function(item){
+      if(item.bobot>0){
+        var active2=item.depAny?item.depAny.some(function(k){return optionalActive[k];}):(!item.optKey||optionalActive[item.optKey]);
+        if(!active2) return;
+        var pct2=item.isTes?(itemStatus[item.id]==='pass'?100:0):(itemPct[item.id]||0);
+        tot2+=(pct2/100)*(item.bobot/eff2)*100;
+      }
+    });
+  });
+  prevProgress = Math.round(tot2*10)/10;
+  var total = prevProgress;
+  var dev   = Math.round((total-getEffectiveTarget())*10)/10;
+  var statusVal = selWeek===1&&dev>=-10?'Early Stage':dev>=-5?'On Track':dev>=-10?'Minor Delay':'Critical Delay';
+  var kendalaList = issueItems.filter(function(it){return it.issue&&it.issue.trim();});
+
+  var payload={
+    timestamp    :new Date().toISOString(),
+    brand        :selBrand,
+    tipeProject  :selTipeProject,
+    namaPM       :(document.getElementById('namaPM')||{}).value||'',
+    namaSM       :g('namaSM'), sm:g('namaSM'),
+    namaProject  :g('namaProject'),
+    kontraktor   :g('kontraktor'),
+    spkStart     :g('spkStart'), spkEnd:g('spkEnd'),
+    mingguKe     :selWeek,
+    periodeStart :g('periodeStart'), periodeEnd:g('periodeEnd'),
+    targetOpening:g('targetOpening'), aktualOpening:g('aktualOpening'),
+    etaMBO1      :g('etaMBO1'), etaMBO2:g('etaMBO2'),
+    target       :getEffectiveTarget(), aktual:total, deviasi:dev, status:statusVal,
+    carryOver    :coItems.filter(function(c){return c.trim();}).join('; '),
+    kendala      :kendalaList.map(function(it){return '['+it.kategori+'] '+it.issue+(it.pic?' (PIC:'+it.pic+')':'');}).join('\n'),
+    'Eskalasi PM':eskalasiVal,
+    'Detail Eskalasi':(document.getElementById('eskalasiDetail')||{}).value||'',
+    rencana      :rencanaItems.filter(function(r){return r.trim();}).join('\n'),
+    persiapan    :getKategoriPct(KAT_PERSIAPAN), sipil:getKategoriPct(KAT_SIPIL),
+    me           :getKategoriPct(KAT_ME), plumbing:getKategoriPct(KAT_PLUMBING),
+    hvac         :getKategoriPct(KAT_HVAC), fixture:getKategoriPct(KAT_FIXTURE)
+  };
+
+  // Loading state
+  var btn = document.getElementById('btn-submit-laporan');
+  var origText = btn ? btn.textContent : '';
+  if(btn){ btn.disabled=true; btn.textContent='&#x23F3; Menyiapkan…'; }
+
+  function doFetch(finalPayload){
+    if(btn) btn.textContent='Mengirim…';
+    fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(finalPayload)})
+      .then(function(r){return r.json();})
+      .then(function(j){
+        if(btn){btn.disabled=false;btn.textContent=origText;}
+        if(j.ok){
+          _lockSubmit();
+          _showToast('&#x2705; Laporan W'+selWeek+' berhasil dikirim!','ok');
+        } else {
+          alert('&#x26A0;&#xFE0F; GAS error: '+(j.message||'Unknown'));
+        }
+      })
+      .catch(function(){
+        if(btn){btn.disabled=false;btn.textContent=origText;}
+        // CORS catch = kemungkinan sudah diterima GAS
+        _lockSubmit();
+        _showToast('&#x2705; Laporan terkirim (konfirmasi di GSheet).','ok');
+      });
+  }
+
+  try{
+    _buildPPTBlob(function(blob){
+      if(!blob){ doFetch(payload); return; }
+      var reader=new FileReader();
+      reader.onload=function(ev){
+        try{
+          var b64=ev.target.result.split(',')[1];
+          var proj=(g('namaProject')||'Report').replace(/[^a-zA-Z0-9]/g,'_').substring(0,30);
+          payload.fileBase64=b64;
+          payload.fileName=proj+'_W'+selWeek+'_Report.pptx';
+          payload.mimeType='application/vnd.openxmlformats-officedocument.presentationml.presentation';
+        }catch(e){}
+        doFetch(payload);
+      };
+      reader.onerror=function(){doFetch(payload);};
+      reader.readAsDataURL(blob);
+    });
+  }catch(e){ doFetch(payload); }
+}
+
+// Key unik untuk lock submit per SM + Project + Minggu
+function _getSubmitLockKey(){
+  var sm = (document.getElementById('namaSM')||{}).value||'';
+  var p  = g('namaProject')||'';
+  if(!sm||!p||!selWeek) return null;
+  return LS_PREFIX+'_LOCK_'+sanitizeKey(sm)+'_'+sanitizeKey(p)+'_w'+selWeek;
+}
+
+// Set lock + update UI
+function _lockSubmit(){
+  var k = _getSubmitLockKey();
+  if(k) try{ localStorage.setItem(k, new Date().toISOString()); }catch(e){}
+  _updateSubmitLockUI();
+}
+
+function _updateSubmitLockUI(){
+  var k = _getSubmitLockKey();
+  var lockBar  = document.getElementById('submit-lock-bar');
+  var weekSpan = document.getElementById('submit-lock-week');
+  var btn      = document.getElementById('btn-submit-laporan');
+  var isLocked = k && !!localStorage.getItem(k);
+  if(lockBar)  lockBar.style.display  = isLocked ? 'block' : 'none';
+  if(weekSpan) weekSpan.textContent   = selWeek||'';
+  if(btn){
+    btn.disabled = isLocked;
+    btn.style.opacity = isLocked ? '0.5' : '1';
+    btn.textContent = isLocked ? 'Sudah Disubmit — W'+selWeek : 'Submit Laporan ke Google Sheets';
+  }
+}
+
 // ── SAVE / LOAD ──
 function updateTimestamp(){
   var el=document.getElementById('ts-session');
@@ -2114,26 +2467,34 @@ function getState(){
   return {brand:selBrand,week:selWeek,tipeProject:selTipeProject,pm:selPM,namaProject:g('namaProject'),namaSM:g('namaSM'),kontraktor:g('kontraktor'),spkStart:g('spkStart'),spkEnd:g('spkEnd'),targetOpening:g('targetOpening'),aktualOpening:g('aktualOpening'),periodeStart:g('periodeStart'),periodeEnd:g('periodeEnd'),prevProgress:prevProgress,itemPct:itemPct,itemStatus:itemStatus,wpData:wpData,optionalActive:optionalActive,issueItems:issueItems,coItems:coItems,rencanaItems:rencanaItems,eskalasiVal:eskalasiVal,eskalasiDetail:g('eskalasiDetail')||'',etaMBO1:g('etaMBO1'),etaMBO2:g('etaMBO2'),critDates:critDates,checklistState:checklistState,extraFotoCount:extraFotoCount,fotoData:fotoData,savedAt:new Date().toISOString()};
 }
 function autoSave(){
+  // Jangan simpan jika belum ada SM + project + minggu yang terkunci
+  // Ini mencegah entry parsial saat user sedang mengetik nama project
   if(isRestoringData) return;
+  var smName  = (document.getElementById('namaSM')||{}).value||'';
+  var project = g('namaProject')||'';
+  if(!smName || !project.trim() || !selWeek) return; // belum siap disimpan
   try{
-    var _k=getCurrentKey();
-    localStorage.setItem(_k,JSON.stringify(getState()));
-    localStorage.setItem('fnb_last_key',_k);
+    var _k = getCurrentKey();
+    localStorage.setItem(_k, JSON.stringify(getState()));
+    localStorage.setItem('fnb_last_key', _k);
   }catch(e){
     if(e && (e.name==='QuotaExceededError'||e.code===22||e.code===1014)){
-      alert('⚠️ Penyimpanan HP penuh (>5MB)!\n\nHapus draf lama di menu "Manajemen Data Project" atau Export JSON terlebih dahulu, lalu coba lagi.');
+      alert('&#x26A0;&#xFE0F; Penyimpanan HP penuh (>5MB)!\n\nHapus draf lama di menu "Manajemen Data Project" atau Export JSON terlebih dahulu, lalu coba lagi.');
     }
   }
 }
 function saveLocal(silent){
+  // Guard: jangan simpan jika belum ada SM + project + minggu
+  var smName  = (document.getElementById('namaSM')||{}).value||'';
+  var project = g('namaProject')||'';
+  if(!smName || !project.trim() || !selWeek){ return; }
   try{
     var _k=getCurrentKey();localStorage.setItem(_k,JSON.stringify(getState()));localStorage.setItem('fnb_last_key',_k);
     var d=new Date(), el=document.getElementById('ts-save');
     if(el) el.textContent='Tersimpan: '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
-    if(!silent) alert('Data tersimpan!');
   }catch(e){
     if(e && (e.name==='QuotaExceededError'||e.code===22||e.code===1014)){
-      alert('⚠️ Penyimpanan HP penuh!\n\nHapus draf lama di menu "Manajemen Data Project" atau gunakan Export JSON untuk backup data kamu.');
+      if(!silent) alert('&#x26A0;&#xFE0F; Penyimpanan HP penuh!\n\nHapus draf lama atau gunakan Export JSON.');
     } else {
       if(!silent) alert('Gagal simpan.');
     }
@@ -2194,13 +2555,16 @@ function loadLocal(){
           for(var pi=0;pi<pSel.options.length;pi++){
             if(pSel.options[pi].value===data.namaProject){pSel.value=data.namaProject;pFound=true;break;}
           }
+          var btnKunciEl = document.getElementById('btnKunciProject');
           if(!pFound){
             // Project belum ada di dropdown (mungkin baru) — tampil manual
             pSel.value='__new__';
             if(pMan){pMan.style.display='block';pMan.value=data.namaProject;}
+            if(btnKunciEl) btnKunciEl.style.display='none'; // sudah terkunci via hidden field
             if(pNote) pNote.style.display='none';
           } else {
-            if(pMan) pMan.style.display='none';
+            if(pMan){ pMan.style.display='none'; }
+            if(btnKunciEl) btnKunciEl.style.display='none';
             if(pNote) pNote.style.display='block';
           }
         }
@@ -2251,6 +2615,8 @@ function loadLocal(){
     lockSPKDates();
     updateMBOVisibility();
     updateOpeningLabel();
+    _updateSubmitLockUI();
+    updateDraftStatusBar();
   }catch(e){}
   isRestoringData = false;
 }
@@ -2471,139 +2837,6 @@ function getKategoriPct(idArray){
   return totalBobot>0 ? Math.round(aktualBobot/totalBobot*100) : 0;
 }
 
-// ── SUBMIT TO SHEETS ───────────────────────────────────────────
-function submitToSheets(){
-  // Cek koneksi internet
-  if(!navigator.onLine){
-    alert('❌ Tidak ada koneksi internet.\nPastikan HP terhubung ke jaringan sebelum submit.');
-    return;
-  }
-
-  // ── VALIDASI WAJIB ──
-  var namaProjectVal = g('namaProject');
-  var periodeStartVal = g('periodeStart');
-  var errors = [];
-  if(!namaProjectVal || !namaProjectVal.trim()) errors.push('Nama Project / Lokasi (Tab 1)');
-  if(!periodeStartVal || !periodeStartVal.trim()) errors.push('Periode Laporan Mulai (Tab 1)');
-  if(errors.length){
-    alert('⚠️ Field wajib belum diisi:\n\n• ' + errors.join('\n• ') + '\n\nLengkapi terlebih dahulu sebelum submit.');
-    return;
-  }
-
-  // Save current progress as prevProgress before submit
-  var phases2=getActivePhases();
-  var eff2=getEffectiveTotalBobot(phases2), tot2=0;
-  phases2.forEach(function(phase){
-    if(phase.isMilestonePhase) return;
-    phase.items.forEach(function(item){
-      if(item.bobot>0){
-        var active2=item.depAny?item.depAny.some(function(k){return optionalActive[k];}):(!item.optKey||optionalActive[item.optKey]);
-        if(!active2) return;
-        var pct2=item.isTes?(itemStatus[item.id]==='pass'?100:0):(itemPct[item.id]||0);
-        tot2+=(pct2/100)*(item.bobot/eff2)*100;
-      }
-    });
-  });
-  prevProgress = Math.round(tot2*10)/10;
-  autoSave();
-
-  var url=g('sheets-url')||localStorage.getItem('sheets_url');
-  if(!url){alert('Masukkan URL Google Apps Script.');return;}
-  localStorage.setItem('sheets_url',url);
-
-  var phases=getActivePhases();
-  var effTotal=getEffectiveTotalBobot(phases), total=0;
-  phases.forEach(function(phase){
-    if(phase.isMilestonePhase) return;
-    phase.items.forEach(function(item){
-      if(item.bobot>0){var active=!item.optKey||optionalActive[item.optKey];if(!active) return;var pct=item.isTes?(itemStatus[item.id]==='pass'?100:0):(itemPct[item.id]||0);total+=(pct/100)*(item.bobot/effTotal)*100;}
-    });
-  });
-  total=Math.round(total*10)/10;
-
-  var dev=Math.round((total-getEffectiveTarget())*10)/10;
-  var statusVal=selWeek===1&&dev>=-10?'Early Stage':dev>=-5?'On Track':dev>=-10?'Minor Delay':'Critical Delay';
-  var kendalaList=issueItems.filter(function(it){return it.issue&&it.issue.trim();});
-
-  var payload={
-    timestamp     : new Date().toISOString(),
-    brand         : selBrand,
-    tipeProject   : selTipeProject,
-    namaPM        : (document.getElementById('namaPM')||{}).value||'',
-    namaSM        : g('namaSM'),
-    sm            : g('namaSM'),
-    namaProject   : g('namaProject'),
-    kontraktor    : g('kontraktor'),
-    spkStart      : g('spkStart'),
-    spkEnd        : g('spkEnd'),
-    mingguKe      : selWeek,
-    periodeStart  : g('periodeStart'),
-    periodeEnd    : g('periodeEnd'),
-    targetOpening : g('targetOpening'),
-    aktualOpening : g('aktualOpening'),
-    etaMBO1       : g('etaMBO1'),
-    etaMBO2       : g('etaMBO2'),
-    target        : getEffectiveTarget(),
-    aktual        : total,
-    deviasi       : dev,
-    status        : statusVal,
-    carryOver     : coItems.filter(function(c){return c.trim();}).join('; '),
-    kendala       : kendalaList.map(function(it){return '['+it.kategori+'] '+it.issue+(it.pic?' (PIC:'+it.pic+')':'');}).join('\n'),
-    'Eskalasi PM'    : eskalasiVal,
-    'Detail Eskalasi': (document.getElementById('eskalasiDetail')||{}).value||'',
-    rencana       : rencanaItems.filter(function(r){return r.trim();}).join('\n'),
-    persiapan     : getKategoriPct(KAT_PERSIAPAN),
-    sipil         : getKategoriPct(KAT_SIPIL),
-    me            : getKategoriPct(KAT_ME),
-    plumbing      : getKategoriPct(KAT_PLUMBING),
-    hvac          : getKategoriPct(KAT_HVAC),
-    fixture       : getKategoriPct(KAT_FIXTURE)
-  };
-
-  // ── LOADING STATE ──
-  var submitBtn = document.querySelector('.btn-submit');
-  var origText  = submitBtn ? submitBtn.textContent : '';
-  if(submitBtn){ submitBtn.disabled=true; submitBtn.textContent='⏳ Menyiapkan laporan…'; }
-
-  // ── INVISIBLE PPTX BUILD → BASE64 → INJECT ke payload ──
-  function doFetch(finalPayload){
-    if(submitBtn){ submitBtn.textContent='📤 Mengirim data…'; }
-    fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(finalPayload)})
-      .then(function(r){return r.json();})
-      .then(function(j){
-        if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent=origText; }
-        if(j.ok) alert('✅ Report berhasil dikirim ke Google Sheets!');
-        else alert('⚠️ GAS error: '+(j.message||'Unknown'));
-      })
-      .catch(function(){
-        if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent=origText; }
-        alert('✅ Report terkirim. Silakan konfirmasi di GSheet.');
-      });
-  }
-
-  // Build PPTX diam-diam di background, tanpa trigger download
-  try{
-    _buildPPTBlob(function(blob){
-      if(!blob){ doFetch(payload); return; }
-      var reader = new FileReader();
-      reader.onload = function(ev){
-        try{
-          var b64 = ev.target.result.split(',')[1];
-          var proj = (g('namaProject')||'Report').replace(/[^a-zA-Z0-9]/g,'_').substring(0,30);
-          payload.fileBase64 = b64;
-          payload.fileName   = proj+'_W'+selWeek+'_Report.pptx';
-          payload.mimeType   = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-        }catch(e){ /* abaikan, tetap kirim tanpa file */ }
-        doFetch(payload);
-      };
-      reader.onerror = function(){ doFetch(payload); };
-      reader.readAsDataURL(blob);
-    });
-  }catch(e){
-    doFetch(payload);
-  }
-}
-
 // ── HTML REPORT EXPORT (no library needed) ──
 function exportPPT(){
   if(!selBrand){alert('Pilih brand terlebih dahulu.');return;}
@@ -2623,7 +2856,7 @@ function buildPPT(){
 }
 
 // ── _buildPPTBlob: build PPTX dan return Blob via callback (tanpa download) ──
-// Dipakai oleh submitToSheets untuk invisible upload
+// Dipakai oleh submitLaporan untuk invisible upload
 function _buildPPTBlob(callback){
   try{
     var blob = _buildPPTCore();
