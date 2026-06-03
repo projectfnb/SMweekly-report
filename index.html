@@ -136,6 +136,27 @@ select option{background:var(--surface2)}
 .cl-progress.done{color:var(--green)}
 input[type=checkbox]{accent-color:var(--green)}
 .sect-divider{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);padding:8px 0 4px;border-bottom:1px solid var(--border)44;margin-bottom:8px}
+
+/* ── PRINT / EXPORT PDF ── */
+@media print{
+  body{background:#fff!important;color:#000!important;font-size:11px!important;}
+  .app-header,.step-tabs,.top-progress,.btn,.add-btn,.del-btn,.opt-btns,.ms-btns,.tes-row,
+  .ts-bar,.btn-next,.btn-save,.btn-submit,.foto-slot-empty,
+  [onclick],[style*="cursor:pointer"]{display:none!important;}
+  .step-content{display:block!important;page-break-inside:avoid;}
+  input,select,textarea{
+    border:none!important;background:transparent!important;
+    color:#000!important;padding:2px 0!important;font-size:11px!important;
+    -webkit-appearance:none;appearance:none;
+    box-shadow:none!important;outline:none!important;
+  }
+  select{pointer-events:none;}
+  .card{border:1px solid #ccc!important;background:#fff!important;margin-bottom:8px!important;padding:8px!important;}
+  .summary-box{border:1px solid #ccc!important;background:#fff!important;}
+  .pitem-bar,.top-progress-fill{display:none!important;}
+  .foto-slot img{max-height:120px!important;object-fit:cover!important;}
+  @page{size:A4 portrait;margin:15mm;}
+}
 </style>
 </head>
 <body>
@@ -392,6 +413,7 @@ input[type=checkbox]{accent-color:var(--green)}
     <button class="btn btn-save" style="margin-top:8px;font-size:11px" onclick="generateSummary()">🔄 Generate Summary</button>
     <button class="btn btn-save" style="margin-top:6px;font-size:11px" onclick="copySummary()">📋 Copy ke WhatsApp</button>
     <button class="btn btn-save" style="margin-top:6px;font-size:11px;background:#1e6b3f" onclick="exportPPT()">📊 Export PPT</button>
+    <button class="btn btn-save" style="margin-top:6px;font-size:11px;background:#1e3a5f;color:#fff;border:none" onclick="exportPDF()">🖨️ Export PDF</button>
   </div>
   <button class="btn btn-save" onclick="saveLocal()">💾 Simpan Lokal</button>
   <button class="btn btn-submit" onclick="submitToSheets()">📤 Submit ke Google Sheets</button>
@@ -758,6 +780,7 @@ function getKeyForWeek(w){
 var sessionStart=new Date();
 
 function g(id){var el=document.getElementById(id);return el?el.value:'';}
+function exportPDF(){ window.print(); }
 function s(id,v){var el=document.getElementById(id);if(el) el.value=v||'';}
 
 // ── INIT ──
@@ -2090,14 +2113,31 @@ function isInterkoneksiActive(){
 function getState(){
   return {brand:selBrand,week:selWeek,tipeProject:selTipeProject,pm:selPM,namaProject:g('namaProject'),namaSM:g('namaSM'),kontraktor:g('kontraktor'),spkStart:g('spkStart'),spkEnd:g('spkEnd'),targetOpening:g('targetOpening'),aktualOpening:g('aktualOpening'),periodeStart:g('periodeStart'),periodeEnd:g('periodeEnd'),prevProgress:prevProgress,itemPct:itemPct,itemStatus:itemStatus,wpData:wpData,optionalActive:optionalActive,issueItems:issueItems,coItems:coItems,rencanaItems:rencanaItems,eskalasiVal:eskalasiVal,eskalasiDetail:g('eskalasiDetail')||'',etaMBO1:g('etaMBO1'),etaMBO2:g('etaMBO2'),critDates:critDates,checklistState:checklistState,extraFotoCount:extraFotoCount,fotoData:fotoData,savedAt:new Date().toISOString()};
 }
-function autoSave(){if(isRestoringData) return;try{var _k=getCurrentKey();localStorage.setItem(_k,JSON.stringify(getState()));localStorage.setItem('fnb_last_key',_k);}catch(e){}}
+function autoSave(){
+  if(isRestoringData) return;
+  try{
+    var _k=getCurrentKey();
+    localStorage.setItem(_k,JSON.stringify(getState()));
+    localStorage.setItem('fnb_last_key',_k);
+  }catch(e){
+    if(e && (e.name==='QuotaExceededError'||e.code===22||e.code===1014)){
+      alert('⚠️ Penyimpanan HP penuh (>5MB)!\n\nHapus draf lama di menu "Manajemen Data Project" atau Export JSON terlebih dahulu, lalu coba lagi.');
+    }
+  }
+}
 function saveLocal(silent){
   try{
     var _k=getCurrentKey();localStorage.setItem(_k,JSON.stringify(getState()));localStorage.setItem('fnb_last_key',_k);
     var d=new Date(), el=document.getElementById('ts-save');
     if(el) el.textContent='Tersimpan: '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
     if(!silent) alert('Data tersimpan!');
-  }catch(e){if(!silent) alert('Gagal simpan.');}
+  }catch(e){
+    if(e && (e.name==='QuotaExceededError'||e.code===22||e.code===1014)){
+      alert('⚠️ Penyimpanan HP penuh!\n\nHapus draf lama di menu "Manajemen Data Project" atau gunakan Export JSON untuk backup data kamu.');
+    } else {
+      if(!silent) alert('Gagal simpan.');
+    }
+  }
 }
 function loadLocal(){
   isRestoringData = true;
@@ -2438,6 +2478,18 @@ function submitToSheets(){
     alert('❌ Tidak ada koneksi internet.\nPastikan HP terhubung ke jaringan sebelum submit.');
     return;
   }
+
+  // ── VALIDASI WAJIB ──
+  var namaProjectVal = g('namaProject');
+  var periodeStartVal = g('periodeStart');
+  var errors = [];
+  if(!namaProjectVal || !namaProjectVal.trim()) errors.push('Nama Project / Lokasi (Tab 1)');
+  if(!periodeStartVal || !periodeStartVal.trim()) errors.push('Periode Laporan Mulai (Tab 1)');
+  if(errors.length){
+    alert('⚠️ Field wajib belum diisi:\n\n• ' + errors.join('\n• ') + '\n\nLengkapi terlebih dahulu sebelum submit.');
+    return;
+  }
+
   // Save current progress as prevProgress before submit
   var phases2=getActivePhases();
   var eff2=getEffectiveTotalBobot(phases2), tot2=0;
@@ -2454,9 +2506,11 @@ function submitToSheets(){
   });
   prevProgress = Math.round(tot2*10)/10;
   autoSave();
+
   var url=g('sheets-url')||localStorage.getItem('sheets_url');
   if(!url){alert('Masukkan URL Google Apps Script.');return;}
   localStorage.setItem('sheets_url',url);
+
   var phases=getActivePhases();
   var effTotal=getEffectiveTotalBobot(phases), total=0;
   phases.forEach(function(phase){
@@ -2469,7 +2523,6 @@ function submitToSheets(){
 
   var dev=Math.round((total-getEffectiveTarget())*10)/10;
   var statusVal=selWeek===1&&dev>=-10?'Early Stage':dev>=-5?'On Track':dev>=-10?'Minor Delay':'Critical Delay';
-  // Note: statusVal menggunakan nilai yang konsisten dengan dashboard filter
   var kendalaList=issueItems.filter(function(it){return it.issue&&it.issue.trim();});
 
   var payload={
@@ -2506,15 +2559,49 @@ function submitToSheets(){
     hvac          : getKategoriPct(KAT_HVAC),
     fixture       : getKategoriPct(KAT_FIXTURE)
   };
-  fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)})
-    .then(function(r){return r.json();})
-    .then(function(j){
-      if(j.ok) alert('✅ Report berhasil dikirim ke Google Sheets!');
-      else alert('⚠️ GAS error: '+(j.message||'Unknown'));
-    })
-    .catch(function(){
-      alert('✅ Report terkirim. Silakan konfirmasi di GSheet.');
+
+  // ── LOADING STATE ──
+  var submitBtn = document.querySelector('.btn-submit');
+  var origText  = submitBtn ? submitBtn.textContent : '';
+  if(submitBtn){ submitBtn.disabled=true; submitBtn.textContent='⏳ Menyiapkan laporan…'; }
+
+  // ── INVISIBLE PPTX BUILD → BASE64 → INJECT ke payload ──
+  function doFetch(finalPayload){
+    if(submitBtn){ submitBtn.textContent='📤 Mengirim data…'; }
+    fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(finalPayload)})
+      .then(function(r){return r.json();})
+      .then(function(j){
+        if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent=origText; }
+        if(j.ok) alert('✅ Report berhasil dikirim ke Google Sheets!');
+        else alert('⚠️ GAS error: '+(j.message||'Unknown'));
+      })
+      .catch(function(){
+        if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent=origText; }
+        alert('✅ Report terkirim. Silakan konfirmasi di GSheet.');
+      });
+  }
+
+  // Build PPTX diam-diam di background, tanpa trigger download
+  try{
+    _buildPPTBlob(function(blob){
+      if(!blob){ doFetch(payload); return; }
+      var reader = new FileReader();
+      reader.onload = function(ev){
+        try{
+          var b64 = ev.target.result.split(',')[1];
+          var proj = (g('namaProject')||'Report').replace(/[^a-zA-Z0-9]/g,'_').substring(0,30);
+          payload.fileBase64 = b64;
+          payload.fileName   = proj+'_W'+selWeek+'_Report.pptx';
+          payload.mimeType   = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+        }catch(e){ /* abaikan, tetap kirim tanpa file */ }
+        doFetch(payload);
+      };
+      reader.onerror = function(){ doFetch(payload); };
+      reader.readAsDataURL(blob);
     });
+  }catch(e){
+    doFetch(payload);
+  }
 }
 
 // ── HTML REPORT EXPORT (no library needed) ──
@@ -2534,11 +2621,36 @@ function exportPPT(){
 function buildPPT(){
   try{_buildPPT();}catch(err){alert('Error PPT:\n'+err.message+'\n'+err.stack);}
 }
+
+// ── _buildPPTBlob: build PPTX dan return Blob via callback (tanpa download) ──
+// Dipakai oleh submitToSheets untuk invisible upload
+function _buildPPTBlob(callback){
+  try{
+    var blob = _buildPPTCore();
+    if(callback) callback(blob);
+  }catch(e){
+    if(callback) callback(null);
+  }
+}
+
+// ── _buildPPT: build + trigger download (existing behavior) ──
 function _buildPPT(){
+  var blob = _buildPPTCore();
+  if(!blob) return;
+  var proj=(g('namaProject')||'Report').replace(/[^a-zA-Z0-9\s]/g,'').replace(/\s+/g,'_').substring(0,30);
+  var fname=proj+'_W'+selWeek+'_Laporan.pptx';
+  var url2=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url2;a.download=fname;document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(url2);document.body.removeChild(a);},1000);
+}
+
+// ── _buildPPTCore: inti builder, return Blob ──────────────────
+function _buildPPTCore(){
   var brandInfo=BRAND_COLORS[selBrand]||{primary:'#7B2FBE',name:selBrand};
   var AC=brandInfo.primary.replace('#','').toUpperCase();
   var AC2=parseInt(AC,16); // darken for secondary
-  var DARK='111827', SURFACE='1E293B', MUTED='94A3B8', WHITE='FFFFFF';
+  // ── LIGHT MODE — clean white/corporate theme ──
+  var DARK='F8FAFC', SURFACE='FFFFFF', MUTED='64748B', WHITE='1E293B';
   var fmt=function(d){return d?new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}):'--';};
 
   // Progress calc
@@ -2936,15 +3048,10 @@ function _buildPPT(){
   // Media
   allMedia.forEach(function(m){allE.push(m);});
 
-  // Download
+  // Return Blob — download dilakukan oleh _buildPPT, upload oleh _buildPPTBlob
   var zb=mkzip(allE);
   var blob=new Blob([zb],{type:'application/vnd.openxmlformats-officedocument.presentationml.presentation'});
-  var url2=URL.createObjectURL(blob);
-  var a=document.createElement('a');a.href=url2;
-  a.download=((g('namaProject')||brandInfo.name).replace(/\s+/g,'_')+'_W'+selWeek+'.pptx');
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
-  setTimeout(function(){URL.revokeObjectURL(url2);},2000);
-  alert('PPT berhasil didownload! ('+slideCount+' slide)');
+  return blob;
 }
 -e 
 </script>
