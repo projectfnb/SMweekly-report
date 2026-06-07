@@ -12,6 +12,26 @@
   --font:'Inter',-apple-system,sans-serif;--mono:'JetBrains Mono',monospace;
   --radius:10px;
 }
+/* Light mode */
+[data-theme="light"]{
+  --bg:#f0f4f8;--surface:#ffffff;--surface2:#e8eef5;--border:#c8d8e8;
+  --text:#1a2a3a;--muted:#5a7a9a;
+  --accent:#d4880a;
+}
+[data-theme="light"] body{background:var(--bg);color:var(--text)}
+[data-theme="light"] .app-header{background:linear-gradient(135deg,#ffffff,#e8eef5)}
+[data-theme="light"] input,[data-theme="light"] select,[data-theme="light"] textarea{background:var(--surface2);color:var(--text);border-color:var(--border)}
+[data-theme="light"] select option{background:var(--surface2);color:var(--text)}
+[data-theme="light"] .card{background:var(--surface)}
+[data-theme="light"] .step-tabs{background:var(--surface)}
+[data-theme="light"] .step-tab{color:var(--muted)}
+[data-theme="light"] .step-tab.active{color:var(--accent)}
+[data-theme="light"] .summary-box{background:var(--surface2)}
+[data-theme="light"] .countdown-banner.ok{background:#e8f5e9;border-color:#22c55e}
+[data-theme="light"] .countdown-banner.warn{background:#fff8e1;border-color:#f59e0b}
+[data-theme="light"] .countdown-banner.danger{background:#fdecea;border-color:#ef4444}
+/* Theme toggle button */
+.theme-toggle{position:fixed;bottom:16px;right:16px;z-index:999;width:40px;height:40px;border-radius:50%;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);transition:all .2s}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;font-size:13px}
 .app-header{background:linear-gradient(135deg,#0a1422,#0d1a2e);padding:12px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
@@ -106,7 +126,29 @@ select option{background:var(--surface2)}
 .issue-table td input,.issue-table td select{font-size:10px;padding:4px 6px}
 .del-btn{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:2px}
 /* Foto */
-.foto-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pf-item{border-radius:8px;background:var(--surface2);border:1px solid var(--border);margin-bottom:8px;overflow:hidden}
+.pf-item-header{display:flex;align-items:center;gap:8px;padding:9px 10px}
+.pf-item-label{flex:1;font-size:11px;color:var(--text);font-weight:600}
+.pf-status-btns{display:flex;gap:4px;flex-shrink:0}
+.pf-status-btn{padding:4px 8px;border-radius:5px;border:1px solid var(--border);font-size:9px;font-weight:700;cursor:pointer;background:var(--surface);color:var(--muted);transition:all .15s}
+.pf-status-btn.belum.active{background:#2a0505;border-color:var(--red);color:var(--red)}
+.pf-status-btn.proses.active{background:#2a1500;border-color:var(--yellow);color:var(--yellow)}
+.pf-status-btn.done.active{background:#052a10;border-color:var(--green);color:var(--green)}
+.pf-issue-toggle{display:flex;align-items:center;gap:6px;padding:4px 10px 6px;border-top:1px solid var(--border)}
+.pf-issue-toggle-label{font-size:9px;color:var(--muted);flex:1}
+.pf-toggle-btn{padding:3px 8px;border-radius:4px;border:1px solid var(--border);font-size:9px;cursor:pointer;background:var(--surface);color:var(--muted);transition:all .15s}
+.pf-toggle-btn.ya.active{background:#2a0505;border-color:var(--red);color:var(--red)}
+.pf-toggle-btn.tidak.active{background:#052a10;border-color:var(--green);color:var(--green)}
+.pf-item-issue-form{padding:8px 10px;background:#0d0d1a;border-top:1px solid var(--border)}
+.pf-issue-field{margin-bottom:6px}
+.pf-issue-field .fl{font-size:9px;margin-bottom:3px}
+.pf-issue-row{display:flex;gap:6px;margin-bottom:6px;align-items:flex-start}
+.pf-issue-row textarea{flex:1;min-height:48px;resize:vertical;font-size:11px}
+.pf-issue-del{background:#7f1d1d;border:1px solid #ef4444;color:#fca5a5;border-radius:5px;padding:4px 8px;font-size:10px;cursor:pointer;flex-shrink:0;margin-top:2px}
+.pf-section{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.pf-section-title{font-size:11px;font-weight:800;color:var(--accent);margin-bottom:8px}
+.pf-section-body{}
+.pf-section-issue-row{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px}
 .foto-slot{border:1.5px dashed var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)}
 .foto-slot.filled{border-style:solid;border-color:var(--accent)66}
 .foto-slot-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);padding:5px 8px;letter-spacing:.06em;background:var(--surface);border-bottom:1px solid var(--border)}
@@ -184,7 +226,11 @@ input[type=checkbox]{accent-color:var(--green)}
   <div class="step-tab" id="tab-3" onclick="goTab(3)">4. Rencana</div>
   <div class="step-tab" id="tab-4" onclick="goTab(4)">5. Foto</div>
   <div class="step-tab" id="tab-5" onclick="goTab(5)">6. Submit</div>
+  <div class="step-tab" id="tab-6" onclick="goTab(6)" style="display:none">7. Pre-Fitout</div>
 </div>
+
+<!-- Theme toggle button -->
+<button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Ganti tema">🌙</button>
 
 <!-- TAB 0: INFO -->
 <div class="step-content active" id="tab-content-0">
@@ -197,18 +243,25 @@ input[type=checkbox]{accent-color:var(--green)}
     <div class="card-title">📋 Informasi Project</div>
     <div class="form-full">
       <div class="fl">Nama Project / Lokasi</div>
-      <!-- DROPDOWN PROJECT: diisi otomatis dari localStorage SM -->
+      <!-- DROPDOWN PROJECT: diisi dari Google Sheets via GAS (PM yang manage) -->
       <select id="projectSel" onchange="handleProjectSel(this)" style="width:100%;margin-bottom:4px">
         <option value="">-- Pilih SM dulu --</option>
       </select>
-      <!-- Input manual: muncul hanya saat pilih "+ Project Baru" -->
-      <!-- oninput SENGAJA DIHAPUS — nama project hanya dikunci saat klik "Gunakan Nama Ini" -->
-      <input type="text" id="namaProjectManual" placeholder="Ketik nama project baru..." style="display:none;margin-top:4px"/>
-      <!-- Tombol konfirmasi nama project baru -->
-      <button id="btnKunciProject" onclick="kunciNamaProject()" style="display:none;width:100%;margin-top:5px;padding:8px;border-radius:7px;background:#1a2a10;border:1.5px solid var(--green);color:var(--green);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font)">&#x2705; Gunakan Nama Ini</button>
+      <!-- Loading state -->
+      <div id="project-loading" style="display:none;font-size:9px;color:var(--muted);font-family:var(--mono);margin-top:3px;padding:4px 8px;background:var(--surface2);border-radius:5px">
+        ⏳ Mengambil daftar project dari server...
+      </div>
+      <!-- Info PM manage project -->
+      <div id="project-pm-info" style="display:none;font-size:9px;color:#3b82f6;margin-top:3px;font-family:var(--mono);padding:4px 8px;background:#050e2a;border:1px solid #3b82f644;border-radius:5px">
+        📋 Daftar project dikelola oleh PM di Google Sheets. Hubungi PM jika project kamu belum muncul.
+      </div>
+      <!-- Fallback jika GAS gagal: tampilkan dropdown dari localStorage -->
+      <div id="project-fallback-info" style="display:none;font-size:9px;color:var(--yellow);margin-top:3px;font-family:var(--mono);padding:4px 8px;background:#2a1500;border:1px solid var(--yellow)44;border-radius:5px">
+        ⚠️ Gagal terhubung ke server — menampilkan project dari cache lokal.
+      </div>
       <!-- Hidden field tetap sebagai value aktual -->
       <input type="hidden" id="namaProject" value=""/>
-      <!-- Badge project terkunci -->
+      <!-- Badge project terpilih -->
       <div id="project-locked-note" style="display:none;font-size:9px;color:var(--yellow);margin-top:3px;font-family:var(--mono)">&#x1F512; Nama project terkunci &mdash; pastikan ejaan konsisten tiap minggu</div>
     </div>
     <div class="form-full" style="margin-top:4px">
@@ -391,12 +444,12 @@ input[type=checkbox]{accent-color:var(--green)}
     <div class="foto-grid" id="foto-grid-extra" style="margin-top:8px"></div>
     <button class="add-btn" style="margin-top:8px" onclick="addExtraFotoSlot()">+ Tambah Slot Foto</button>
   </div>
-  <button class="btn btn-next" onclick="goTab(5)">Lanjut ke Submit →</button>
+  <button class="btn btn-next" onclick="goNextFromFoto()">Lanjut →</button>
 </div>
 
 <!-- TAB 5: SUBMIT -->
 <div class="step-content" id="tab-content-5">
-  <!-- Aktual Opening — diisi di akhir setelah semua selesai -->
+  <!-- Aktual Opening -->
   <div class="card">
     <div class="card-title" id="lbl-aktual-title">🏁 Aktual Opening (isi setelah semua fase selesai)</div>
     <div class="form-full">
@@ -418,29 +471,22 @@ input[type=checkbox]{accent-color:var(--green)}
     <button class="btn btn-save" style="margin-top:6px;font-size:11px;background:#1e6b3f" onclick="exportPPT()">📊 Export PPT</button>
     <button class="btn btn-save" style="margin-top:6px;font-size:11px;background:#1e3a5f;color:#fff;border:none" onclick="exportPDF()">🖨️ Export PDF</button>
   </div>
-  <!-- ── SIMPAN DRAFT & SUBMIT SECTION ── -->
+  <!-- SIMPAN DRAFT & SUBMIT -->
   <div class="card" style="margin-bottom:0">
     <div class="card-title">&#x1F4BE; Simpan &amp; Kirim Laporan</div>
-
-    <!-- STATUS DRAFT -->
     <div id="draft-status-bar" style="display:none;padding:8px 10px;border-radius:7px;margin-bottom:10px;font-size:10px;font-family:var(--mono)"></div>
-
-    <!-- SUBMIT LOCK INDICATOR -->
     <div id="submit-lock-bar" style="display:none;padding:10px 12px;border-radius:8px;background:#052a10;border:1px solid var(--green);margin-bottom:10px;font-size:10px;color:var(--green);font-family:var(--mono)">
       &#x2705; Laporan W<span id="submit-lock-week"></span> sudah tersubmit &mdash; data dikunci dari double submit.
       <br/><span style="color:var(--muted);font-size:9px">Untuk revisi hubungi PM.</span>
     </div>
-
-    <!-- TOMBOL SIMPAN DRAFT -->
     <button class="btn" id="btn-simpan-draft" onclick="simpanDraft()"
       style="background:var(--surface2);border:1.5px solid var(--accent);color:var(--accent);margin-top:0;margin-bottom:8px">
       &#x1F4BE; Simpan Draft
     </button>
-
-    <!-- TOMBOL SUBMIT LAPORAN -->
     <button class="btn btn-submit" id="btn-submit-laporan" onclick="submitLaporan()">
       Submit Laporan ke Google Sheets
     </button>
+    <div id="pf-submit-status" style="display:none;margin-top:8px;padding:8px 10px;border-radius:7px;font-size:10px;font-family:var(--mono)"></div>
   </div>
   <div class="card" style="margin-top:12px">
     <div class="card-title">⚙️ Konfigurasi</div>
@@ -455,6 +501,87 @@ input[type=checkbox]{accent-color:var(--green)}
     <button class="btn" style="width:100%;background:#7f1d1d;border:1px solid #ef4444;color:#fca5a5;font-size:11px" onclick="hapusProjectIni()">🗑️ Selesai & Hapus Project Ini</button>
   </div>
 </div>
+
+<div class="step-content" id="tab-content-6">
+  <!-- TAB PRE-FITOUT -->
+  <div class="card" style="border-color:#7c3aed66">
+    <div class="card-title" style="color:#a78bfa">🔧 Pre-Fitout Readiness</div>
+    <p style="font-size:10px;color:var(--muted);margin-bottom:10px;line-height:1.6">
+      Checklist kesiapan project sebelum fitout dimulai. Update setiap minggu — PM memantau dari dashboard.
+    </p>
+
+    <!-- Info jika tidak ada project pre-fitout -->
+    <div id="pf-empty-info" style="font-size:10px;color:var(--muted);font-family:var(--mono);padding:10px;background:var(--surface2);border-radius:7px;text-align:center">
+      Tidak ada project pre-fitout untuk SM ini saat ini.
+    </div>
+
+    <!-- Konten pre-fitout -->
+    <div id="pf-content" style="display:none">
+
+      <!-- Dropdown project pre-fitout -->
+      <div id="pf-project-wrap" style="margin-bottom:10px">
+        <div class="fl">Pilih Project Pre-Fitout</div>
+        <select id="pf-project-sel" onchange="handlePFProjectSel(this)" style="width:100%">
+          <option value="">-- Pilih Project --</option>
+        </select>
+      </div>
+      <div id="pf-project-name-display" style="font-size:14px;font-weight:800;color:var(--accent);font-family:var(--font);margin-bottom:8px;padding:8px 10px;background:var(--surface2);border-radius:8px;border-left:3px solid var(--accent);display:none"></div>
+
+      <!-- ALERT H-7 -->
+      <div id="pf-alert-blocked" style="display:none;padding:10px 12px;border-radius:8px;background:#2a0505;border:1.5px solid var(--red);margin-bottom:12px">
+        <div style="font-size:11px;font-weight:800;color:var(--red);margin-bottom:3px">⚠️ ALERT — H-7 SPK MULAI</div>
+        <div style="font-size:10px;color:#fca5a5;line-height:1.6">Masih ada item yang belum selesai. Segera koordinasi dengan PM.</div>
+      </div>
+
+      <!-- SECTION 1: SPK TERBIT -->
+      <div class="pf-section">
+        <div class="pf-section-title">📄 1. SPK Terbit</div>
+        <div id="pf-s1" class="pf-section-body"></div>
+      </div>
+
+      <!-- SECTION 2: APPROVAL GAMBAR LL -->
+      <div class="pf-section">
+        <div class="pf-section-title">📐 2. Approval Gambar dari LL</div>
+        <div id="pf-s2" class="pf-section-body"></div>
+      </div>
+
+      <!-- SECTION 3: FASILITAS KERJA -->
+      <div class="pf-section">
+        <div class="pf-section-title">🔌 3. Fasilitas Kerja</div>
+        <div id="pf-s3" class="pf-section-body"></div>
+      </div>
+
+      <!-- SECTION 4: BIAYA FITOUT -->
+      <div class="pf-section">
+        <div class="pf-section-title">💰 4. Biaya Fitout</div>
+        <div id="pf-s4" class="pf-section-body"></div>
+      </div>
+
+      <!-- SECTION 5: LOKASI SITE -->
+      <div class="pf-section">
+        <div class="pf-section-title">📍 5. Lokasi Site</div>
+        <div id="pf-s5" class="pf-section-body"></div>
+      </div>
+
+      <!-- ISSUE & KENDALA -->
+      <div class="pf-section" style="border-color:#ef444444">
+        <div class="pf-section-title" style="color:var(--red)">🚨 Issue & Kendala</div>
+        <div id="pf-issue-list" style="margin-bottom:8px"></div>
+        <button class="add-btn" onclick="addPFIssue()">+ Tambah Issue</button>
+      </div>
+
+      <!-- SIMPAN & SUBMIT -->
+      <button class="btn" style="margin-top:4px;width:100%;background:#1a0a2e;border:1.5px solid #7c3aed;color:#a78bfa" onclick="simpanDraftPF()">
+        💾 Simpan Draft Pre-Fitout
+      </button>
+      <button class="btn btn-submit" style="margin-top:8px;width:100%;background:linear-gradient(135deg,#7c3aed,#5b21b6)" onclick="submitPFStandalone()">
+        📤 Kirim Pre-Fitout ke Dashboard PM
+      </button>
+      <div id="pf-submit-status" style="display:none;margin-top:8px;padding:8px 10px;border-radius:7px;font-size:10px;font-family:var(--mono)"></div>
+    </div>
+  </div>
+</div>
+
 
 <script>
 
@@ -823,15 +950,19 @@ document.addEventListener('DOMContentLoaded', function(){
 
 // ── TABS ──
 var curTab=0;
+var TOTAL_TABS=7; // 0-6
 function goTab(n){
   document.getElementById('tab-content-'+curTab).classList.remove('active');
   document.getElementById('tab-'+curTab).classList.remove('active');
   curTab=n;
   document.getElementById('tab-content-'+n).classList.add('active');
   document.getElementById('tab-'+n).classList.add('active');
-  document.getElementById('top-fill').style.width=Math.round((n/5)*100)+'%';
+  document.getElementById('top-fill').style.width=Math.round((n/(TOTAL_TABS-1))*100)+'%';
   window.scrollTo(0,0);
 }
+
+// Dari tab Foto: ke Submit (tab 5)
+function goNextFromFoto(){ goTab(5); }
 
 // ── BRAND ──
 function renderBrandGrid(){
@@ -986,149 +1117,304 @@ function handlePMSel(sel){
   autoSave();
 }
 
-// ── PROJECT DROPDOWN: populate dari localStorage SM ──────────
+// ── CACHE PROJECT DATA DARI GAS ──────────────────────────────
+// Menyimpan object lengkap per namaProject: {brand, tipeProject, kontraktor, spkStart, spkEnd, ...}
+// Diisi saat fetch GAS sukses, dipakai saat handleProjectSel untuk auto-fill form
+var _gasProjectCache = {}; // key: namaProject → object data dari GAS
+
+// ── PROJECT DROPDOWN: fetch dari GAS (PM yang manage di GSheet) ──────────
+// GAS return array of project objects (brand, tipe, kontraktor, SPK, dll)
+// Fallback ke localStorage jika GAS tidak bisa diakses
 function populateProjectDropdown(smName){
-  var sel = document.getElementById('projectSel');
+  var sel        = document.getElementById('projectSel');
+  var loadingEl  = document.getElementById('project-loading');
+  var pmInfoEl   = document.getElementById('project-pm-info');
+  var fallbackEl = document.getElementById('project-fallback-info');
   if(!sel) return;
-  sel.innerHTML = '<option value="">-- Pilih Project --</option>';
+
+  // Reset cache saat SM ganti
+  _gasProjectCache = {};
 
   if(!smName){
     sel.innerHTML = '<option value="">-- Pilih SM dulu --</option>';
     sel.disabled = true;
+    if(loadingEl)  loadingEl.style.display  = 'none';
+    if(pmInfoEl)   pmInfoEl.style.display   = 'none';
+    if(fallbackEl) fallbackEl.style.display = 'none';
     return;
   }
-  sel.disabled = false;
 
-  // Bersihkan entry parsial dulu
+  // Tampilkan loading state
+  sel.innerHTML = '<option value="">⏳ Memuat daftar project...</option>';
+  sel.disabled = true;
+  if(loadingEl)  loadingEl.style.display  = 'block';
+  if(pmInfoEl)   pmInfoEl.style.display   = 'none';
+  if(fallbackEl) fallbackEl.style.display = 'none';
+
   cleanupPartialProjectKeys(smName);
 
-  // Scan localStorage — HANYA entry yang punya _w (sudah pernah Simpan Draft dengan minggu)
-  var prefix = LS_PREFIX+'_'+sanitizeKey(smName)+'_';
-  var projects = {}; // namaProject → {savedAt, key}
+  var gasUrl = (document.getElementById('sheets-url')||{}).value
+             || localStorage.getItem('sheets_url') || '';
 
+  if(!gasUrl){
+    _populateProjectFromLocalStorage(smName, true);
+    return;
+  }
+
+  // Fetch ke GAS: action=getProjects&sm=<smName>
+  // GAS handleGetProjects akan filter by namaSM kolom E
+  var fetchUrl = gasUrl + (gasUrl.indexOf('?')>=0 ? '&' : '?')
+               + 'action=getProjects&sm=' + encodeURIComponent(smName);
+
+  var done = false;
+  var fetchTimer = setTimeout(function(){
+    if(done) return;
+    done = true;
+    _populateProjectFromLocalStorage(smName, true);
+  }, 8000);
+
+  fetch(fetchUrl, {method:'GET'})
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(done) return;
+      done = true;
+      clearTimeout(fetchTimer);
+      if(loadingEl) loadingEl.style.display = 'none';
+
+      if(j && j.ok && Array.isArray(j.projects) && j.projects.length > 0){
+        var today = new Date(); today.setHours(0,0,0,0);
+        var activeNames = [];
+        var pfList = [];
+
+        j.projects.forEach(function(p){
+          if(typeof p === 'string'){
+            activeNames.push(p); // string → tidak tahu SPK, masukkan aktif
+          } else if(p && p.namaProject){
+            _gasProjectCache[p.namaProject] = p;
+            // Pisah aktif vs pre-fitout berdasarkan SPK Mulai
+            var isActive = true;
+            if(p.spkStart){
+              var spk = new Date(p.spkStart); spk.setHours(0,0,0,0);
+              isActive = spk <= today;
+            }
+            if(isActive){ activeNames.push(p.namaProject); }
+            else         { pfList.push(p); }
+          }
+        });
+
+        // Tab Info: hanya project aktif
+        _renderProjectOptions(sel, activeNames, smName);
+        if(pmInfoEl)   pmInfoEl.style.display   = 'block';
+        if(fallbackEl) fallbackEl.style.display = 'none';
+
+        // Tab Pre-Fitout: project yang belum mulai
+        detectAndShowPrefitout(pfList, smName);
+      } else {
+        // GAS OK tapi tidak ada project untuk SM ini → fallback localStorage
+        _populateProjectFromLocalStorage(smName, false);
+      }
+    })
+    .catch(function(){
+      if(done) return;
+      done = true;
+      clearTimeout(fetchTimer);
+      _populateProjectFromLocalStorage(smName, true);
+    });
+}
+
+// Render opsi project ke select dari array nama project
+// Tambahkan info tanggal terakhir draft dari localStorage jika ada
+function _renderProjectOptions(sel, projectNames, smName){
+  sel.innerHTML = '<option value="">-- Pilih Project --</option>';
+  sel.disabled = false;
+
+  // Ambil savedAt draft dari localStorage (untuk label [tgl])
+  var prefix    = LS_PREFIX+'_'+sanitizeKey(smName)+'_';
+  var lsSavedAt = {};
   try{
     for(var i=0;i<localStorage.length;i++){
-      var lk = localStorage.key(i);
-      // Filter: harus prefix SM + ada _w + bukan LOCK key
-      if(!lk) continue;
-      if(lk.indexOf(prefix)!==0) continue;
-      if(lk.indexOf('_w')===-1) continue;      // skip entry tanpa minggu
-      if(lk.indexOf('_LOCK_')!==-1) continue;  // skip lock entry
-      var raw = localStorage.getItem(lk);
+      var lk=localStorage.key(i);
+      if(!lk||lk.indexOf(prefix)!==0||lk.indexOf('_w')===-1||lk.indexOf('_LOCK_')!==-1) continue;
+      var raw=localStorage.getItem(lk);
       if(!raw) continue;
       try{
-        var d = JSON.parse(raw);
-        if(d && d.namaProject && d.namaProject.trim().length >= 2){
-          var np = d.namaProject;
-          if(!projects[np] || new Date(d.savedAt||0) > new Date(projects[np].savedAt||0)){
-            projects[np] = {savedAt: d.savedAt||'', key: lk};
+        var d=JSON.parse(raw);
+        if(d&&d.namaProject) lsSavedAt[d.namaProject]=d.savedAt||'';
+      }catch(e){}
+    }
+  }catch(e){}
+
+  if(projectNames.length === 0){
+    var oEmpty = document.createElement('option');
+    oEmpty.value=''; oEmpty.disabled=true;
+    oEmpty.textContent='— Tidak ada project aktif —';
+    sel.appendChild(oEmpty);
+    return;
+  }
+
+  projectNames.forEach(function(nm){
+    var o = document.createElement('option');
+    var savedAt = lsSavedAt[nm];
+    var dtStr = savedAt ? '  [draft '+new Date(savedAt).toLocaleDateString('id-ID',{day:'2-digit',month:'short'})+']' : '';
+    o.value = nm;
+    o.textContent = nm + dtStr;
+    sel.appendChild(o);
+  });
+}
+
+// Fallback: populate project dari localStorage SM (jika GAS tidak tersedia)
+function _populateProjectFromLocalStorage(smName, showFallbackBanner){
+  var sel        = document.getElementById('projectSel');
+  var loadingEl  = document.getElementById('project-loading');
+  var pmInfoEl   = document.getElementById('project-pm-info');
+  var fallbackEl = document.getElementById('project-fallback-info');
+  if(!sel) return;
+  if(loadingEl) loadingEl.style.display = 'none';
+
+  var prefix   = LS_PREFIX+'_'+sanitizeKey(smName)+'_';
+  var projects = {};
+  try{
+    for(var i=0;i<localStorage.length;i++){
+      var lk=localStorage.key(i);
+      if(!lk||lk.indexOf(prefix)!==0||lk.indexOf('_w')===-1||lk.indexOf('_LOCK_')!==-1) continue;
+      var raw=localStorage.getItem(lk);
+      if(!raw) continue;
+      try{
+        var d=JSON.parse(raw);
+        if(d&&d.namaProject&&d.namaProject.trim().length>=2){
+          var np=d.namaProject;
+          if(!projects[np]||new Date(d.savedAt||0)>new Date(projects[np].savedAt||0)){
+            projects[np]={savedAt:d.savedAt||''};
           }
         }
       }catch(e){}
     }
   }catch(e){}
 
-  // Render opsi — unik per namaProject
-  Object.keys(projects).sort().forEach(function(nm){
-    var o = document.createElement('option');
-    var dt = projects[nm].savedAt ? new Date(projects[nm].savedAt) : null;
-    var dtStr = dt ? dt.toLocaleDateString('id-ID',{day:'2-digit',month:'short'}) : '';
-    o.value = nm;
-    o.textContent = nm + (dtStr ? '  ['+dtStr+']' : '');
-    o.dataset.projectKey = projects[nm].key;
-    sel.appendChild(o);
-  });
+  var names = Object.keys(projects).sort();
+  _renderProjectOptions(sel, names, smName);
 
-  // Tambah opsi project baru
-  var oNew = document.createElement('option');
-  oNew.value = '__new__';
-  oNew.textContent = '+ Project Baru...';
-  sel.appendChild(oNew);
+  if(showFallbackBanner){
+    if(fallbackEl) fallbackEl.style.display = 'block';
+    if(pmInfoEl)   pmInfoEl.style.display   = 'none';
+  } else {
+    if(pmInfoEl)   pmInfoEl.style.display   = 'block';
+    if(fallbackEl) fallbackEl.style.display = 'none';
+  }
 }
 
 function handleProjectSel(sel){
-  var manual  = document.getElementById('namaProjectManual');
   var hidden  = document.getElementById('namaProject');
   var note    = document.getElementById('project-locked-note');
-  var btnKunci= document.getElementById('btnKunciProject');
 
-  if(sel.value === '__new__'){
-    // Mode project baru: tampil input manual + tombol kunci
-    if(manual){ manual.style.display='block'; manual.value=''; manual.focus(); }
-    if(btnKunci) btnKunci.style.display='block';
+  if(!sel.value){
     if(hidden) hidden.value = '';
     if(note)   note.style.display = 'none';
     renderWeekHistoryBar();
     return;
   }
 
-  if(!sel.value){
-    if(manual){ manual.style.display='none'; manual.value=''; }
-    if(btnKunci) btnKunci.style.display='none';
-    if(hidden) hidden.value = '';
-    if(note)   note.style.display = 'none';
-    return;
-  }
-
-  // Project existing dipilih: kunci nama, load data terbaru project tsb
   var projectName = sel.value;
-  if(manual){ manual.style.display='none'; }
-  if(btnKunci) btnKunci.style.display='none';
   if(hidden) hidden.value = projectName;
-  if(note){ note.style.display='block'; note.textContent = '&#x1F512; Nama project terkunci &mdash; pastikan ejaan konsisten tiap minggu'; }
+  if(note){ note.style.display='block'; note.innerHTML='&#x1F512; <strong>'+projectName+'</strong> — project terkunci'; }
 
-  // Load data project ini (week tertinggi atau terbaru)
-  var smName = (document.getElementById('namaSM')||{}).value||'';
-  if(smName && projectName){
-    loadLatestProjectData(smName, projectName);
+  // ── AUTO-FILL dari GAS cache ──────────────────────────────
+  var cached = _gasProjectCache[projectName];
+  if(cached){
+    _autoFillFromGAS(cached);
+    // Setelah auto-fill, cek apakah ada draft lokal untuk dilanjutkan
+    var smName = (document.getElementById('namaSM')||{}).value||'';
+    if(smName) _checkLocalDraftAfterGASFill(smName, projectName);
+  } else {
+    // Tidak ada cache (fallback localStorage) — pakai loadLatestProjectData seperti sebelumnya
+    var smName2 = (document.getElementById('namaSM')||{}).value||'';
+    if(smName2 && projectName) loadLatestProjectData(smName2, projectName);
   }
 
   renderWeekHistoryBar();
 }
 
-// ── PROJECT BARU: kunci nama hanya saat tombol "Gunakan Nama Ini" diklik ──
-function kunciNamaProject(){
-  var manual = document.getElementById('namaProjectManual');
-  var hidden = document.getElementById('namaProject');
-  var note   = document.getElementById('project-locked-note');
-  var btnKunci = document.getElementById('btnKunciProject');
-  if(!manual) return;
-  var val = manual.value.trim();
-  if(!val){
-    _showToast('&#x26A0;&#xFE0F; Nama project tidak boleh kosong.', 'warn');
-    manual.focus();
-    return;
-  }
-  // Commit ke hidden field
-  if(hidden) hidden.value = val;
-  // UI: sembunyikan input & tombol, tampilkan badge terkunci
-  manual.style.display = 'none';
-  if(btnKunci) btnKunci.style.display = 'none';
-  if(note){ note.style.display = 'block'; note.textContent = '&#x1F512; "'+val+'" — nama terkunci, siap disimpan'; }
-  // Update select dropdown tampilan ke nilai custom
-  var sel = document.getElementById('projectSel');
-  if(sel){
-    // Hapus opsi __new__ sementara, ganti dengan opsi "project baru ini" supaya terlihat terpilih
-    var found = false;
-    for(var i=0;i<sel.options.length;i++){
-      if(sel.options[i].value === val){ sel.value = val; found = true; break; }
-    }
-    if(!found){
-      // Tambah opsi sementara dengan nama ini (belum disimpan, akan diganti setelah Simpan Draft)
-      var oTmp = document.createElement('option');
-      oTmp.value = val; oTmp.textContent = val + '  [baru]'; oTmp.dataset.isNew = 'true';
-      // Insert sebelum opsi "+ Project Baru"
-      var newOpt = sel.querySelector('option[value="__new__"]');
-      sel.insertBefore(oTmp, newOpt);
-      sel.value = val;
+// Auto-fill form dari object GAS (Brand, Tipe, Kontraktor, SPK, Target Opening)
+function _autoFillFromGAS(data){
+  // Brand
+  if(data.brand){
+    var br = data.brand.toLowerCase().replace(/\s/g,'');
+    // Map alias: gogocurry, 88seoul, mollytea, chatime, gindaco
+    var brandMap = {'gogocurry':'gogocurry','gogo curry':'gogocurry','88seoul':'88seoul',
+                    'mollytea':'mollytea','molly tea':'mollytea',
+                    'chatime':'chatime','gindaco':'gindaco'};
+    var brandKey = brandMap[br] || br;
+    if(BRAND_COLORS[brandKey] && brandKey !== selBrand){
+      setBrand(brandKey);
     }
   }
-  renderWeekHistoryBar();
-  _showToast('&#x2705; Nama project dikunci: "'+val+'"', 'ok');
+  // Tipe Project
+  if(data.tipeProject){
+    var tpSel = document.getElementById('tipeProjectSel');
+    if(tpSel){ tpSel.value = data.tipeProject; handleTipeChange(data.tipeProject); }
+  }
+  // Kontraktor
+  if(data.kontraktor){
+    s('kontraktor', data.kontraktor);
+    var kSel = document.getElementById('kontraktorSel');
+    if(kSel){
+      var kFound = false;
+      for(var ki=0;ki<kSel.options.length;ki++){
+        if(kSel.options[ki].value === data.kontraktor){ kSel.value=data.kontraktor; kFound=true; break; }
+      }
+      if(!kFound){
+        kSel.value='__other__';
+        var km=document.getElementById('kontraktorManual');
+        if(km){ km.value=data.kontraktor; km.style.display='block'; }
+      } else {
+        var km2=document.getElementById('kontraktorManual');
+        if(km2) km2.style.display='none';
+      }
+    }
+  }
+  // SPK Mulai & Selesai
+  if(data.spkStart){ s('spkStart', data.spkStart); }
+  if(data.spkEnd)  { s('spkEnd',   data.spkEnd);   }
+  // Target Opening
+  if(data.targetOpening){ s('targetOpening', data.targetOpening); updateCountdown(); }
+
+  // Toast konfirmasi
+  _showToast('&#x2705; Data project dimuat dari GSheet', 'ok');
+  autoSave();
 }
 
-// [DEPRECATED] syncProjectManual: tidak lagi dipanggil dari oninput
-// Dibiarkan agar tidak ada referensi error di tempat lain
+// Setelah auto-fill dari GAS, cek apakah ada draft lokal → tawarkan lanjut
+function _checkLocalDraftAfterGASFill(smName, projectName){
+  var prefix = LS_PREFIX+'_'+sanitizeKey(smName)+'_'+sanitizeKey(projectName)+'_w';
+  var found = [];
+  try{
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(k && k.indexOf(prefix)===0){
+        var wStr=k.replace(prefix,'');
+        var wNum=parseInt(wStr);
+        if(!isNaN(wNum)){
+          var raw=localStorage.getItem(k);
+          if(raw){
+            try{ var d=JSON.parse(raw); found.push({week:wNum,data:d}); }catch(e){}
+          }
+        }
+      }
+    }
+  }catch(e){}
+
+  if(!found.length) return;
+  found.sort(function(a,b){ return b.week - a.week; });
+  var latest = found[0];
+
+  // Tampilkan banner saran lanjut dari draft terakhir
+  var nextWeek = latest.week + 1;
+  var maxW = getMaxWeeks ? getMaxWeeks() : 5;
+  showProjectLoadBanner(projectName, latest.week, nextWeek <= maxW ? nextWeek : null);
+}
+
+// [DEPRECATED] syncProjectManual: tidak lagi digunakan sejak v4-4
+// Project hanya bisa dipilih dari dropdown (PM yang manage di GSheet)
 function syncProjectManual(val){
   var hidden = document.getElementById('namaProject');
   if(hidden) hidden.value = val;
@@ -1309,16 +1595,24 @@ function handleSMSel(sel){
     m.style.display='none'; h.value=sel.value;
     autoSave();
     if(sel.value){
-      // Reset project dulu
+      // Reset project
       var pSel=document.getElementById('projectSel');
-      var pMan=document.getElementById('namaProjectManual');
       var pHid=document.getElementById('namaProject');
       var pNote=document.getElementById('project-locked-note');
+      var pInfo=document.getElementById('project-pm-info');
+      var pFall=document.getElementById('project-fallback-info');
       if(pSel) pSel.value='';
-      if(pMan){ pMan.style.display='none'; pMan.value=''; }
       if(pHid) pHid.value='';
       if(pNote) pNote.style.display='none';
-      // Populate dropdown project untuk SM ini
+      if(pInfo) pInfo.style.display='none';
+      if(pFall) pFall.style.display='none';
+      // Reset Pre-Fitout state
+      pfProjects=[];
+      _resetPFState();
+      // Tampilkan tab Pre-Fitout segera setelah SM dipilih
+      var tab6=document.getElementById('tab-6');
+      if(tab6){ tab6.style.display=''; tab6.textContent='7. Pre-Fitout'; }
+      // Fetch dropdown project untuk SM ini dari GAS
       setTimeout(function(){ populateProjectDropdown(sel.value); renderWeekHistoryBar(); },100);
     }
   }
@@ -1496,7 +1790,7 @@ function renderPhaseList(){
         if(item.syarat){var sy=document.createElement('div');sy.style.cssText='font-size:9px;color:var(--yellow);margin-top:2px';sy.textContent=item.syarat;lblSpan.appendChild(sy);}
         var inp=document.createElement('input'); inp.className='pitem-input'; inp.type='number'; inp.min=0; inp.max=100;
         inp.value=pct||''; inp.placeholder='0'; inp.disabled=!isOptActive;
-        (function(id,phRef){inp.oninput=function(){itemPct[id]=parseInt(this.value)||0;updateOverall();autoSave();var ph2=document.getElementById('phh-'+phRef.id);if(ph2)ph2.textContent=calcPhasePct(phRef)+'%';};})(item.id,phase);
+        (function(id,phRef){inp.oninput=function(){var v=parseInt(this.value)||0;v=Math.min(Math.max(v,0),100);if(this.value!==''&&parseInt(this.value)>100){this.value=100;}itemPct[id]=v;updateOverall();autoSave();var ph2=document.getElementById('phh-'+phRef.id);if(ph2)ph2.textContent=calcPhasePct(phRef)+'%';};})(item.id,phase);
         var pctLbl=document.createElement('span'); pctLbl.style.cssText='font-size:11px;color:var(--muted)'; pctLbl.textContent='%';
         ri.appendChild(lblSpan); ri.appendChild(inp); ri.appendChild(pctLbl); row.appendChild(ri);
         var bar=document.createElement('div'); bar.className='pitem-bar';
@@ -1558,7 +1852,8 @@ function calcPhasePct(phase){
       total+=(pct/100)*item.bobot;
     }
   });
-  return bobot>0?Math.round(total/bobot*100):0;
+  var result=bobot>0?Math.round(total/bobot*100):0;
+  return Math.min(result,100);
 }
 
 function updateOverall(){
@@ -1578,6 +1873,7 @@ function updateOverall(){
     });
   });
   total=Math.round(total*10)/10;
+  if(total>100) total=100; // clamp — formula sudah self-normalizing, >100 hanya jika input error
   var target=getEffectiveTarget();
   var dev=Math.round((total-target)*10)/10;
   var devStr=(dev>=0?'+':'')+dev+'%';
@@ -2234,25 +2530,32 @@ function simpanDraft(){
   _showToast('&#x1F4BE; Draft W'+selWeek+' tersimpan &mdash; '+project,'ok');
 }
 
-// Pastikan project ada di dropdown, tidak duplikat
+// Pastikan project ada di dropdown setelah simpan draft
+// (untuk kasus project sudah ada di GAS list, cukup update label savedAt saja)
 function _ensureProjectInDropdown(smName, projectName){
   var sel = document.getElementById('projectSel');
   if(!sel) return;
   var found = false;
   for(var i=0;i<sel.options.length;i++){
-    if(sel.options[i].value === projectName){ found=true; sel.value=projectName; break; }
+    if(sel.options[i].value === projectName){
+      found=true;
+      // Update label tanggal
+      var dtStr = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'short'});
+      sel.options[i].textContent = projectName + '  ['+dtStr+']';
+      sel.value = projectName;
+      break;
+    }
   }
   if(!found){
-    // Hapus opsi sementara "[baru]" jika ada
-    for(var j=sel.options.length-1;j>=0;j--){
-      if(sel.options[j].dataset && sel.options[j].dataset.isNew==='true') sel.remove(j);
-    }
+    // Tambah ke dropdown (jika project ini datang dari GAS tapi belum di-render)
     var o = document.createElement('option');
     o.value = projectName;
-    var dtStr = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'short'});
-    o.textContent = projectName + '  ['+dtStr+']';
-    var newOpt = sel.querySelector('option[value="__new__"]');
-    sel.insertBefore(o, newOpt);
+    var dtStr2 = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'short'});
+    o.textContent = projectName + '  ['+dtStr2+']';
+    // Insert sebelum opsi kosong terakhir, atau append saja
+    var lastOpt = sel.options[sel.options.length-1];
+    if(lastOpt && !lastOpt.value){ sel.insertBefore(o, lastOpt); }
+    else { sel.appendChild(o); }
     sel.value = projectName;
   }
 }
@@ -2309,6 +2612,7 @@ function submitLaporan(){
     });
   });
   prevProgress = Math.round(tot2*10)/10;
+  if(prevProgress>100) prevProgress=100;
   var total = prevProgress;
   var dev   = Math.round((total-getEffectiveTarget())*10)/10;
   var statusVal = selWeek===1&&dev>=-10?'Early Stage':dev>=-5?'On Track':dev>=-10?'Minor Delay':'Critical Delay';
@@ -2352,6 +2656,8 @@ function submitLaporan(){
         if(j.ok){
           _lockSubmit();
           _showToast('&#x2705; Laporan W'+selWeek+' berhasil dikirim!','ok');
+          // Submit Pre-Fitout bersamaan jika ada data PF
+          _submitPFIfAny(url);
         } else {
           alert('&#x26A0;&#xFE0F; GAS error: '+(j.message||'Unknown'));
         }
@@ -2361,6 +2667,7 @@ function submitLaporan(){
         // CORS catch = kemungkinan sudah diterima GAS
         _lockSubmit();
         _showToast('&#x2705; Laporan terkirim (konfirmasi di GSheet).','ok');
+        _submitPFIfAny(url);
       });
   }
 
@@ -2542,30 +2849,20 @@ function loadLocal(){
           if(m){m.style.display='none';}
         }
       }
-      // Sync project dropdown untuk SM ini
+      // Sync project dropdown untuk SM ini (fetch dari GAS)
       populateProjectDropdown(data.namaSM);
       // Set project dropdown ke project yang sedang diload
       if(data.namaProject){
         var pSel=document.getElementById('projectSel');
-        var pMan=document.getElementById('namaProjectManual');
         var pNote=document.getElementById('project-locked-note');
+        // Coba set value setelah fetch selesai (delay karena fetch async)
+        // Langsung set hidden field dulu
+        document.getElementById('namaProject').value = data.namaProject;
+        if(pNote){ pNote.style.display='block'; pNote.innerHTML='&#x1F512; <strong>'+data.namaProject+'</strong> — project terkunci'; }
+        // Coba set dropdown jika opsi sudah ada
         if(pSel){
-          // Cari di options
-          var pFound=false;
           for(var pi=0;pi<pSel.options.length;pi++){
-            if(pSel.options[pi].value===data.namaProject){pSel.value=data.namaProject;pFound=true;break;}
-          }
-          var btnKunciEl = document.getElementById('btnKunciProject');
-          if(!pFound){
-            // Project belum ada di dropdown (mungkin baru) — tampil manual
-            pSel.value='__new__';
-            if(pMan){pMan.style.display='block';pMan.value=data.namaProject;}
-            if(btnKunciEl) btnKunciEl.style.display='none'; // sudah terkunci via hidden field
-            if(pNote) pNote.style.display='none';
-          } else {
-            if(pMan){ pMan.style.display='none'; }
-            if(btnKunciEl) btnKunciEl.style.display='none';
-            if(pNote) pNote.style.display='block';
+            if(pSel.options[pi].value===data.namaProject){pSel.value=data.namaProject;break;}
           }
         }
       }
@@ -2900,6 +3197,7 @@ function _buildPPTCore(){
     });
   });
   total=Math.round(total*10)/10;
+  if(total>100) total=100; // clamp — formula sudah self-normalizing, >100 hanya jika input error
   var target=getEffectiveTarget();
   var dev=Math.round((total-target)*10)/10;
   var devStr=(dev>=0?'+':'')+dev+'%';
@@ -3286,7 +3584,456 @@ function _buildPPTCore(){
   var blob=new Blob([zb],{type:'application/vnd.openxmlformats-officedocument.presentationml.presentation'});
   return blob;
 }
--e 
+
+// ══════════════════════════════════════════════════════════════
+// PRE-FITOUT READINESS — v4-9
+// 5 sections: SPK Terbit, Approval Gambar, Fasilitas Kerja,
+//             Biaya Fitout, Lokasi Site + Issue Before Fitout
+// Dashboard: overwrite/replace baris terbaru per project (upsert)
+// ══════════════════════════════════════════════════════════════
+
+var PF_KATEGORI = ['Perizinan','Utilitas','Kontraktor','Dokumen','LandLord','Kondisi Site','Lainnya'];
+
+// Schema section-section pre-fitout
+// type: 'single' = satu item, 'multi' = dropdown pilihan sub-item
+var PF_SECTIONS = [
+  {
+    id    : 's1',
+    title : 'SPK Terbit',
+    type  : 'single',
+    items : [{key:'spk', label:'SPK Terbit', status:['Sudah','Belum']}],
+  },
+  {
+    id    : 's2',
+    title : 'Approval Gambar dari LL',
+    type  : 'single',
+    items : [{key:'approvalGbr', label:'Approval Gambar LL', status:['Belum','Proses','Done']}],
+  },
+  {
+    id    : 's3',
+    title : 'Fasilitas Kerja',
+    type  : 'multi',
+    items : [
+      {key:'airBersih',  label:'Air Bersih',     status:['Sudah','Belum']},
+      {key:'airKotor',   label:'Coring Air Kotor',status:['Sudah','Belum']},
+      {key:'listrik',    label:'Listrik Kerja',   status:['Sudah','Belum']},
+    ],
+  },
+  {
+    id    : 's4',
+    title : 'Biaya Fitout',
+    type  : 'multi',
+    items : [
+      {key:'deposit',    label:'Deposit Fitout',  status:['Sudah','Belum'], hasNote:true},
+      {key:'biayaFas',   label:'Biaya Fasilitas', status:['Sudah','Belum'], hasNote:true},
+      {key:'lainLain',   label:'Lain-lain',       status:['Sudah','Belum'], hasNote:true},
+    ],
+  },
+  {
+    id    : 's5',
+    title : 'Lokasi Site',
+    type  : 'multi',
+    items : [
+      {key:'lantaiBare', label:'Lantai Bare',          status:['Sudah','Belum']},
+      {key:'dindingBare',label:'Dinding Bare',         status:['Sudah','Belum']},
+      {key:'dindingLL',  label:'Dinding Antar Lease Line', status:['Sudah','Belum']},
+    ],
+  },
+];
+
+// State
+// pfData = { s1:{spk:{status,hasIssue,issue:{},note}}, s2:{...}, ... }
+var pfData        = {};
+var pfIssues      = []; // Issue Before Fitout section
+var pfProjectName = '';
+var pfProjects    = [];
+
+function detectAndShowPrefitout(pfList, smName){
+  pfProjects = pfList || [];
+  _renderPFSection(smName);
+}
+
+
+function _fmtSpkDate(spkStr){
+  if(!spkStr) return '';
+  var d = new Date(spkStr);
+  if(isNaN(d)) return spkStr;
+  return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+}
+function _pfProjDispHTML(projectName, spkStr){
+  var today = new Date(); today.setHours(0,0,0,0);
+  var hxStr = '';
+  if(spkStr){
+    var spk = new Date(spkStr); spk.setHours(0,0,0,0);
+    var diff = Math.ceil((spk-today)/86400000);
+    if(diff>0) hxStr = ' &nbsp;<span style="color:'+(diff<=7?'var(--red)':diff<=14?'var(--yellow)':'var(--green)')+'">H-'+diff+'</span>';
+    else if(diff===0) hxStr = ' &nbsp;<span style="color:var(--red)">H-0!</span>';
+  }
+  return '🔒 <strong>'+projectName+'</strong>'+(spkStr?'<div style="font-size:10px;font-weight:400;margin-top:3px;color:var(--muted)">📅 SPK Mulai: <span style="color:var(--text);font-weight:600">'+_fmtSpkDate(spkStr)+'</span>'+hxStr+'</div>':'');
+}
+
+function _renderPFSection(smName){
+  var tab6    = document.getElementById('tab-6');
+  var content = document.getElementById('pf-content');
+  var empty   = document.getElementById('pf-empty-info');
+
+  // Tab Pre-Fitout selalu tampil setelah SM dipilih
+  if(tab6){ tab6.style.display=''; tab6.textContent='7. Pre-Fitout'; tab6.style.color=''; }
+
+  if(!pfProjects.length){
+    // Tidak ada project pre-fitout — tampil info kosong
+    if(content) content.style.display='none';
+    if(empty)   empty.style.display='block';
+    return;
+  }
+
+  // Ada project pre-fitout
+  if(tab6){ tab6.textContent='7. Pre-Fitout ●'; tab6.style.color='#a78bfa'; }
+  if(content) content.style.display='block';
+  if(empty)   empty.style.display='none';
+
+  var projSel  = document.getElementById('pf-project-sel');
+  var projDisp = document.getElementById('pf-project-name-display');
+  var projWrap = document.getElementById('pf-project-wrap');
+
+  if(projSel){
+    projSel.innerHTML='<option value="">-- Pilih Project --</option>';
+    pfProjects.forEach(function(p){
+      var o=document.createElement('option'); o.value=p.namaProject; o.textContent=p.namaProject;
+      projSel.appendChild(o);
+    });
+    projSel.disabled=false;
+  }
+
+  if(pfProjects.length===1){
+    pfProjectName=pfProjects[0].namaProject;
+    if(projWrap) projWrap.style.display='none';
+    if(projDisp){ projDisp.style.display='block'; projDisp.innerHTML=_pfProjDispHTML(pfProjectName,(pfProjects[0]||{}).spkStart||''); }
+    if(projSel)  projSel.value=pfProjectName;
+    _loadPFData(pfProjectName, smName);
+  } else {
+    if(projWrap) projWrap.style.display='block';
+    if(projDisp) projDisp.style.display='none';
+  }
+}
+
+function handlePFProjectSel(sel){
+  pfProjectName=sel.value;
+  var smName=(document.getElementById('namaSM')||{}).value||'';
+  var projDisp=document.getElementById('pf-project-name-display');
+  if(projDisp){ projDisp.style.display=pfProjectName?'block':'none'; var _p=pfProjects.find(function(x){return x.namaProject===pfProjectName;})||{}; projDisp.innerHTML=_pfProjDispHTML(pfProjectName,_p.spkStart||''); }
+  if(pfProjectName) _loadPFData(pfProjectName, smName);
+}
+
+function _loadPFData(projectName, smName){
+  var lsKey='pf_'+sanitizeKey(smName)+'_'+sanitizeKey(projectName);
+  try{
+    var raw=localStorage.getItem(lsKey);
+    if(raw){ var saved=JSON.parse(raw); pfData=saved.data||{}; pfIssues=saved.issues||[]; }
+    else { pfData={}; pfIssues=[]; }
+  }catch(e){ pfData={}; pfIssues=[]; }
+  _renderAllSections();
+  _renderPFIssues();
+  _checkPFAlert(projectName);
+}
+
+// Render semua 5 section
+function _renderAllSections(){
+  PF_SECTIONS.forEach(function(sec){
+    _renderSection(sec);
+  });
+}
+
+function _renderSection(sec){
+  var wrap=document.getElementById('pf-'+sec.id);
+  if(!wrap) return;
+  wrap.innerHTML='';
+  var secData=pfData[sec.id]||{};
+
+  sec.items.forEach(function(item){
+    var itemData  = secData[item.key]||{};
+    var curStatus = itemData.status||item.status[0];
+    var noteVal   = itemData.note||'';
+
+    var card=document.createElement('div');
+    card.className='pf-item';
+
+    // Header: label + status buttons
+    var header=document.createElement('div');
+    header.className='pf-item-header';
+    var lbl=document.createElement('div');
+    lbl.className='pf-item-label';
+    lbl.textContent=item.label;
+    var btns=document.createElement('div');
+    btns.className='pf-status-btns';
+    item.status.forEach(function(st){
+      var b=document.createElement('button');
+      var cls=st==='Sudah'||st==='Done'?'done':st==='Proses'?'proses':'belum';
+      b.className='pf-status-btn '+cls+(curStatus===st?' active':'');
+      b.textContent=st;
+      (function(sid,k,s){
+        b.onclick=function(){
+          if(!pfData[sid]) pfData[sid]={};
+          if(!pfData[sid][k]) pfData[sid][k]={};
+          pfData[sid][k].status=s;
+          _renderSection(PF_SECTIONS.find(function(x){return x.id===sid;}));
+          _checkPFAlert(pfProjectName);
+          _autoSavePF();
+        };
+      })(sec.id,item.key,st);
+      btns.appendChild(b);
+    });
+    header.appendChild(lbl); header.appendChild(btns);
+    card.appendChild(header);
+
+    // Keterangan/nominal (Section 4 - Biaya Fitout)
+    if(item.hasNote){
+      var noteRow=document.createElement('div');
+      noteRow.style.cssText='padding:4px 10px 6px;border-top:1px solid var(--border)';
+      var noteInp=document.createElement('input');
+      noteInp.type='text'; noteInp.placeholder='Keterangan/nominal (opsional)';
+      noteInp.value=noteVal; noteInp.style.cssText='width:100%;font-size:10px';
+      (function(sid,k){
+        noteInp.oninput=function(){
+          if(!pfData[sid]) pfData[sid]={};
+          if(!pfData[sid][k]) pfData[sid][k]={};
+          pfData[sid][k].note=this.value;
+          _autoSavePF();
+        };
+      })(sec.id,item.key);
+      noteRow.appendChild(noteInp);
+      card.appendChild(noteRow);
+    }
+
+    wrap.appendChild(card);
+  });
+}
+
+// Issue & Kendala section — layout tabel seperti tab 3
+function _renderPFIssues(){
+  var wrap=document.getElementById('pf-issue-list');
+  if(!wrap) return;
+  wrap.innerHTML='';
+
+  if(!pfIssues.length){
+    wrap.innerHTML='<div style="text-align:center;color:var(--muted);font-size:10px;padding:10px">Belum ada issue.</div>';
+    return;
+  }
+
+  var table=document.createElement('table');
+  table.className='issue-table';
+  table.style.marginBottom='0';
+
+  var thead=document.createElement('thead');
+  thead.innerHTML='<tr>'+
+    '<th style="width:35%">Issue / Deskripsi</th>'+
+    '<th style="width:22%">Kategori</th>'+
+    '<th style="width:20%">PIC</th>'+
+    '<th style="width:16%">Target</th>'+
+    '<th style="width:7%"></th>'+
+    '</tr>';
+  table.appendChild(thead);
+
+  var tbody=document.createElement('tbody');
+  pfIssues.forEach(function(obj,i){
+    var tr=document.createElement('tr');
+
+    // Issue/Deskripsi
+    var td1=document.createElement('td');
+    var inp1=document.createElement('input');
+    inp1.type='text'; inp1.value=obj.text||''; inp1.placeholder='Deskripsi...';
+    (function(idx){ inp1.oninput=function(){ pfIssues[idx].text=this.value; _autoSavePF(); }; })(i);
+    td1.appendChild(inp1); tr.appendChild(td1);
+
+    // Kategori
+    var td2=document.createElement('td');
+    var sel=document.createElement('select');
+    sel.innerHTML='<option value="">--</option>';
+    PF_KATEGORI.forEach(function(k){
+      var o=document.createElement('option'); o.value=k; o.textContent=k;
+      if(obj.kategori===k) o.selected=true;
+      sel.appendChild(o);
+    });
+    (function(idx){ sel.onchange=function(){ pfIssues[idx].kategori=this.value; _autoSavePF(); }; })(i);
+    td2.appendChild(sel); tr.appendChild(td2);
+
+    // PIC
+    var td3=document.createElement('td');
+    var inp3=document.createElement('input');
+    inp3.type='text'; inp3.value=obj.pic||''; inp3.placeholder='PIC...';
+    (function(idx){ inp3.oninput=function(){ pfIssues[idx].pic=this.value; _autoSavePF(); }; })(i);
+    td3.appendChild(inp3); tr.appendChild(td3);
+
+    // Target
+    var td4=document.createElement('td');
+    var inp4=document.createElement('input');
+    inp4.type='date'; inp4.value=obj.target||'';
+    (function(idx){ inp4.onchange=function(){ pfIssues[idx].target=this.value; _autoSavePF(); }; })(i);
+    td4.appendChild(inp4); tr.appendChild(td4);
+
+    // Hapus
+    var td5=document.createElement('td');
+    var btn=document.createElement('button');
+    btn.className='del-btn'; btn.textContent='🗑';
+    (function(idx){ btn.onclick=function(){ pfIssues.splice(idx,1); _renderPFIssues(); _autoSavePF(); }; })(i);
+    td5.appendChild(btn); tr.appendChild(td5);
+
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+}
+
+function addPFIssue(){ pfIssues.push({text:'',kategori:'',pic:'',target:''}); _renderPFIssues(); }
+function deletePFIssue(idx){ pfIssues.splice(idx,1); _renderPFIssues(); _autoSavePF(); }
+
+function _checkPFAlert(projectName){
+  var alertEl=document.getElementById('pf-alert-blocked');
+  if(!alertEl||!projectName) return;
+  var proj=pfProjects.find(function(p){ return p.namaProject===projectName; });
+  if(!proj||!proj.spkStart){ alertEl.style.display='none'; return; }
+  var spk=new Date(proj.spkStart); spk.setHours(0,0,0,0);
+  var today=new Date(); today.setHours(0,0,0,0);
+  var diff=Math.ceil((spk-today)/86400000);
+  // Cek semua item apakah ada yang belum selesai
+  var hasUnfinished=false;
+  PF_SECTIONS.forEach(function(sec){
+    sec.items.forEach(function(item){
+      var s=(pfData[sec.id]||{})[item.key]||{};
+      var st=s.status||item.status[0];
+      if(st!=='Sudah'&&st!=='Done') hasUnfinished=true;
+    });
+  });
+  alertEl.style.display=(diff<=7&&diff>=0&&hasUnfinished)?'block':'none';
+}
+
+function _autoSavePF(){
+  var smName=(document.getElementById('namaSM')||{}).value||'';
+  if(!smName||!pfProjectName) return;
+  var lsKey='pf_'+sanitizeKey(smName)+'_'+sanitizeKey(pfProjectName);
+  try{
+    localStorage.setItem(lsKey,JSON.stringify({
+      data       :pfData,
+      issues     :pfIssues,
+      savedAt    :new Date().toISOString(),
+      smName     :smName,
+      namaProject:pfProjectName,
+    }));
+  }catch(e){}
+}
+
+function simpanDraftPF(){ _autoSavePF(); _showToast('💾 Draft Pre-Fitout tersimpan','ok'); }
+
+// Submit standalone (tombol sendiri di tab Pre-Fitout)
+function submitPFStandalone(){
+  var smName=(document.getElementById('namaSM')||{}).value||'';
+  var gasUrl=(document.getElementById('sheets-url')||{}).value||localStorage.getItem('sheets_url')||'';
+  if(!smName||!pfProjectName){ _showToast('⚠️ Pilih SM dan project dulu','warn'); return; }
+  if(!gasUrl){ _showToast('⚠️ GAS URL belum diisi di tab Submit → Konfigurasi','warn'); return; }
+  _submitPFToGAS(gasUrl, smName);
+}
+
+// Dipanggil dari handleSMSel reset
+function _resetPFState(){
+  pfData={}; pfIssues=[]; pfProjectName=''; pfProjects=[];
+  // Sembunyikan tab saat SM belum dipilih / ganti SM
+  var tab6=document.getElementById('tab-6');
+  var content=document.getElementById('pf-content');
+  var empty=document.getElementById('pf-empty-info');
+  if(tab6)    tab6.style.display='none';
+  if(content) content.style.display='none';
+  if(empty)   empty.style.display='block';
+}
+
+function _submitPFToGAS(url, smName){
+  var proj=pfProjects.find(function(p){ return p.namaProject===pfProjectName; })||{};
+
+  var checklistFlat={};
+  var itemIssues=[];
+  PF_SECTIONS.forEach(function(sec){
+    sec.items.forEach(function(item){
+      var d=(pfData[sec.id]||{})[item.key]||{};
+      checklistFlat[item.key]={status:d.status||item.status[0], note:d.note||''};
+    });
+  });
+
+  var payload={
+    action      :'submitPrefitout',
+    namaSM      :smName,
+    namaPM      :(document.getElementById('namaPM')||{}).value||'',
+    namaProject :pfProjectName,
+    brand       :proj.brand||'',
+    spkStart    :proj.spkStart||'',
+    checklist   :checklistFlat,
+    itemIssues  :itemIssues,
+    issues      :pfIssues,
+    submittedAt :new Date().toISOString(),
+  };
+
+  var statusEl=document.getElementById('pf-submit-status');
+  var btn=document.querySelector('[onclick="submitPFStandalone()"]');
+  var origText=btn?btn.textContent:'';
+
+  // Loading state
+  if(statusEl){
+    statusEl.style.display='block';
+    statusEl.style.background='var(--surface2)';
+    statusEl.style.color='var(--muted)';
+    statusEl.textContent='⏳ Mengirim data Pre-Fitout...';
+  }
+  if(btn){ btn.disabled=true; btn.textContent='Mengirim...'; }
+
+  fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)})
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(btn){ btn.disabled=false; btn.textContent=origText; }
+      if(j.ok){
+        if(statusEl){
+          statusEl.style.background='#052a10';
+          statusEl.style.color='var(--green)';
+          statusEl.textContent='✅ Pre-Fitout berhasil dikirim ke dashboard PM — '+new Date().toLocaleTimeString('id-ID');
+        }
+        _showToast('✅ Pre-Fitout terkirim!','ok');
+      } else {
+        if(statusEl){
+          statusEl.style.background='#2a0505';
+          statusEl.style.color='var(--red)';
+          statusEl.textContent='❌ Gagal: '+(j.message||'Server error');
+        }
+        _showToast('❌ Gagal kirim Pre-Fitout','warn');
+      }
+    })
+    .catch(function(err){
+      if(btn){ btn.disabled=false; btn.textContent=origText; }
+      // Catch bisa berarti CORS tapi sudah diterima GAS
+      if(statusEl){
+        statusEl.style.background='#052a10';
+        statusEl.style.color='var(--green)';
+        statusEl.textContent='✅ Pre-Fitout terkirim (konfirmasi di GSheet) — '+new Date().toLocaleTimeString('id-ID');
+      }
+      _showToast('✅ Pre-Fitout terkirim','ok');
+    });
+}
+
+// ── LIGHT / DARK MODE TOGGLE ─────────────────────────────────
+(function(){
+  // Load saved theme
+  var saved = localStorage.getItem('sm_theme') || 'dark';
+  applyTheme(saved);
+})();
+
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  var btn = document.getElementById('theme-toggle-btn');
+  if(btn) btn.textContent = theme==='dark' ? '☀️' : '🌙';
+  localStorage.setItem('sm_theme', theme);
+}
+
+function toggleTheme(){
+  var cur = document.documentElement.getAttribute('data-theme') || 'dark';
+  applyTheme(cur==='dark' ? 'light' : 'dark');
+}
+
 </script>
 </body>
 </html>
