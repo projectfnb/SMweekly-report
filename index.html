@@ -383,6 +383,9 @@ input[type=checkbox]{accent-color:var(--green)}
   </div>
   <div class="card">
     <div class="card-title">🔄 Carry Over Minggu Lalu</div>
+    <div id="co-info" style="font-size:9px;color:var(--muted);font-family:var(--mono);margin-bottom:8px;padding:4px 8px;background:var(--surface2);border-radius:5px;border:1px solid var(--border)">
+      💡 Issue minggu lalu dimuat otomatis saat pilih minggu baru. Centang ✓ jika sudah selesai — item belum selesai tetap tercatat di laporan.
+    </div>
     <div id="co-list"></div>
     <button class="add-btn" onclick="addCO()">+ Tambah Carry Over</button>
   </div>
@@ -486,19 +489,17 @@ input[type=checkbox]{accent-color:var(--green)}
     <button class="btn btn-submit" id="btn-submit-laporan" onclick="submitLaporan()">
       Submit Laporan ke Google Sheets
     </button>
-    <div id="pf-submit-status" style="display:none;margin-top:8px;padding:8px 10px;border-radius:7px;font-size:10px;font-family:var(--mono)"></div>
+    <div id="weekly-submit-status" style="display:none;margin-top:8px;padding:8px 10px;border-radius:7px;font-size:10px;font-family:var(--mono)"></div>
   </div>
-  <div class="card" style="margin-top:12px">
-    <div class="card-title">⚙️ Konfigurasi</div>
-    <div style="margin-top:4px">
-      <div class="fl">Google Sheets Script URL</div>
-      <input type="url" id="sheets-url" placeholder="https://script.google.com/..." style="font-size:10px" value="https://script.google.com/macros/s/AKfycbzP0ejKcJOBhVcXwLKRe2HnMWSf78i9iHt1CePYGzf-2p1UohF8iaKxPsYNNs3JNHZhRg/exec"/>
-    </div>
-  </div>
+  <!-- [v4-14] URL GAS di-hardcode, card Konfigurasi disembunyikan -->
+  <input type="hidden" id="sheets-url" value="https://script.google.com/macros/s/AKfycbzP0ejKcJOBhVcXwLKRe2HnMWSf78i9iHt1CePYGzf-2p1UohF8iaKxPsYNNs3JNHZhRg/exec"/>
   <div class="card" style="margin-top:12px;border-color:#ef4444">
     <div class="card-title" style="color:#ef4444">⚠️ Manajemen Data Project</div>
-    <p style="font-size:10px;color:var(--muted);margin-bottom:10px">Gunakan tombol ini jika project sudah selesai atau ingin menghapus data dari memori browser.</p>
-    <button class="btn" style="width:100%;background:#7f1d1d;border:1px solid #ef4444;color:#fca5a5;font-size:11px" onclick="hapusProjectIni()">🗑️ Selesai & Hapus Project Ini</button>
+    <p style="font-size:10px;color:var(--muted);margin-bottom:10px">Gunakan tombol ini untuk mengelola data project di memori browser.</p>
+    <button class="btn" id="btn-hapus-draft" style="width:100%;background:#1a1200;border:1px solid var(--yellow);color:var(--yellow);font-size:11px;margin-bottom:6px" onclick="hapusDraftSaja()">🗑 Hapus Draft — Project Masih Aktif</button>
+    <button class="btn" id="btn-hapus-selesai" style="width:100%;background:#7f1d1d;border:1px solid #ef4444;color:#fca5a5;font-size:11px;margin-bottom:6px" onclick="hapusProjectSelesai()">✅ Selesai 100% — Arsip & Sembunyikan Project</button>
+    <button class="btn" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:10px" onclick="resetArsipSM()">🔓 Reset Arsip — Tampilkan Kembali Project Tersembunyi</button>
+    <div id="hapus-info" style="font-size:9px;color:var(--muted);margin-top:6px;font-family:var(--mono);line-height:1.5;display:none"></div>
   </div>
 </div>
 
@@ -946,6 +947,7 @@ document.addEventListener('DOMContentLoaded', function(){
   populateLoadDraft();
   lockSPKDates();
   renderWeekHistoryBar();
+  autoFillPeriode(); // Auto-fill Periode Start/End saat load
 });
 
 // ── TABS ──
@@ -1039,6 +1041,14 @@ function setWeek(w){
   renderWeekHistoryBar();
   _updateSubmitLockUI();   // update status submit lock untuk minggu baru
   updateDraftStatusBar();  // update status draft
+  // Reset periode sesuai week baru jika belum ada data tersimpan
+  if(!existing || !existing.periodeStart){
+    s('periodeStart',''); s('periodeEnd',''); autoFillPeriode();
+  }
+  // Auto-load issue carry over dari minggu lalu (hanya jika belum ada data W-ini)
+  if(!existing || !existing.namaProject){
+    _loadIssueCarryFromPrevWeek();
+  }
 }
 function setWeekManual(v){
   var n=parseInt(v); if(isNaN(n)||n<1) return;
@@ -1070,7 +1080,12 @@ function loadWeekData(data){
     if(data.issueItems){ issueItems=data.issueItems; renderIssueTable(); }
     if(data.eskalasiVal) setEskalasi(data.eskalasiVal);
     if(data.eskalasiDetail){ var ed=document.getElementById('eskalasiDetail'); if(ed) ed.value=data.eskalasiDetail; }
-    if(data.coItems){ coItems=data.coItems; renderCOList(); }
+    if(data.coItems){ 
+      coItems=data.coItems.map(function(c){ 
+        return typeof c==='string' ? {text:c,done:false} : c; 
+      }); 
+      renderCOList(); 
+    }
     if(data.rencanaItems){ rencanaItems=data.rencanaItems; renderRencanaList(); }
     if(data.etaMBO1) s('etaMBO1',data.etaMBO1);
     if(data.etaMBO2) s('etaMBO2',data.etaMBO2);
@@ -1081,6 +1096,8 @@ function loadWeekData(data){
     updateCountdown(); updatePeriodeDisplay(); lockOpeningDate(); lockSPKDates();
     if(selBrand){ renderWeekGrid(); renderPhaseList(); updateOverall(); }
     updateMBOVisibility(); updateOpeningLabel();
+    // Isi periode otomatis jika draft tidak punya periode tersimpan
+    if(!g('periodeStart')) autoFillPeriode();
   }catch(e){ console.error('loadWeekData error',e); }
   isRestoringData = false;
 }
@@ -1228,6 +1245,10 @@ function _renderProjectOptions(sel, projectNames, smName){
   sel.innerHTML = '<option value="">-- Pilih Project --</option>';
   sel.disabled = false;
 
+  // Filter project yang sudah diarsip oleh SM ini
+  var archived = _getArchivedProjects(smName);
+  var filtered = projectNames.filter(function(nm){ return archived.indexOf(nm) === -1; });
+
   // Ambil savedAt draft dari localStorage (untuk label [tgl])
   var prefix    = LS_PREFIX+'_'+sanitizeKey(smName)+'_';
   var lsSavedAt = {};
@@ -1244,15 +1265,17 @@ function _renderProjectOptions(sel, projectNames, smName){
     }
   }catch(e){}
 
-  if(projectNames.length === 0){
+  if(filtered.length === 0){
     var oEmpty = document.createElement('option');
     oEmpty.value=''; oEmpty.disabled=true;
-    oEmpty.textContent='— Tidak ada project aktif —';
+    oEmpty.textContent = archived.length > 0
+      ? '— Semua project diarsip — (Reset Arsip jika perlu)'
+      : '— Tidak ada project aktif —';
     sel.appendChild(oEmpty);
     return;
   }
 
-  projectNames.forEach(function(nm){
+  filtered.forEach(function(nm){
     var o = document.createElement('option');
     var savedAt = lsSavedAt[nm];
     var dtStr = savedAt ? '  [draft '+new Date(savedAt).toLocaleDateString('id-ID',{day:'2-digit',month:'short'})+']' : '';
@@ -1260,6 +1283,14 @@ function _renderProjectOptions(sel, projectNames, smName){
     o.textContent = nm + dtStr;
     sel.appendChild(o);
   });
+
+  // Info arsip: tampilkan jika ada project yang disembunyikan
+  if(archived.length > 0){
+    var oInfo = document.createElement('option');
+    oInfo.value=''; oInfo.disabled=true;
+    oInfo.textContent = '── '+archived.length+' project diarsip (tersembunyi) ──';
+    sel.appendChild(oInfo);
+  }
 }
 
 // Fallback: populate project dari localStorage SM (jika GAS tidak tersedia)
@@ -2081,18 +2112,92 @@ function setEskalasi(val){
 }
 
 // ── CARRY OVER ──
+// coItems format: string (lama) atau {text, done} (baru)
+function _coText(item){ return typeof item==='string' ? item : (item&&item.text)||''; }
+function _coDone(item){ return typeof item==='object' && item && item.done===true; }
+
 function renderCOList(){
   var el=document.getElementById('co-list'); if(!el) return; el.innerHTML='';
   coItems.forEach(function(item,i){
-    var row=document.createElement('div'); row.className='co-item';
-    var inp=document.createElement('input'); inp.type='text'; inp.value=item||''; inp.placeholder='Item carry over...';
-    (function(idx){inp.oninput=function(){coItems[idx]=this.value;updateOverall();autoSave();};})(i);
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:6px;';
+
+    // Checkbox selesai/belum
+    var chk=document.createElement('input'); chk.type='checkbox';
+    chk.checked=_coDone(item);
+    chk.title='Centang jika sudah selesai';
+    chk.style.cssText='width:16px;height:16px;flex-shrink:0;accent-color:var(--green);cursor:pointer;';
+    (function(idx){
+      chk.onchange=function(){
+        var cur=coItems[idx];
+        var txt=_coText(cur);
+        coItems[idx]={text:txt, done:this.checked};
+        renderCOList(); updateOverall(); autoSave();
+      };
+    })(i);
+
+    var inp=document.createElement('input'); inp.type='text';
+    inp.value=_coText(item)||'';
+    inp.placeholder='Item carry over...';
+    inp.style.textDecoration=_coDone(item)?'line-through':'';
+    inp.style.color=_coDone(item)?'var(--green)':'var(--text)';
+    (function(idx){inp.oninput=function(){
+      var done=_coDone(coItems[idx]);
+      coItems[idx]={text:this.value, done:done};
+      updateOverall(); autoSave();
+    };})(i);
+
+    // Label status kecil
+    var lbl=document.createElement('span');
+    lbl.style.cssText='font-size:9px;font-weight:700;white-space:nowrap;padding:2px 6px;border-radius:8px;flex-shrink:0;';
+    if(_coDone(item)){
+      lbl.textContent='Selesai'; lbl.style.background='#052a10'; lbl.style.color='var(--green)';
+    } else {
+      lbl.textContent='Belum'; lbl.style.background='#2a1500'; lbl.style.color='var(--yellow)';
+    }
+
     var btn=document.createElement('button'); btn.className='del-btn'; btn.textContent='🗑';
     (function(idx){btn.onclick=function(){coItems.splice(idx,1);renderCOList();autoSave();};})(i);
-    row.appendChild(inp); row.appendChild(btn); el.appendChild(row);
+    row.appendChild(chk); row.appendChild(inp); row.appendChild(lbl); row.appendChild(btn);
+    el.appendChild(row);
   });
 }
-function addCO(){coItems.push('');renderCOList();}
+function addCO(){coItems.push({text:'',done:false});renderCOList();}
+
+// Ambil issue minggu lalu (W-1) yang belum selesai → jadikan carry-over minggu ini
+function _loadIssueCarryFromPrevWeek(){
+  if(!selWeek || selWeek <= 1) return;
+  var smName  = (document.getElementById('namaSM')||{}).value||'';
+  var project = g('namaProject')||'';
+  if(!smName || !project) return;
+
+  var prevKey = getKeyForWeek(selWeek - 1);
+  var raw; try{ raw = localStorage.getItem(prevKey); }catch(e){ return; }
+  if(!raw) return;
+  var prevData; try{ prevData = JSON.parse(raw); }catch(e){ return; }
+
+  var prevIssues = (prevData.issueItems||[]).filter(function(it){
+    return it && it.issue && it.issue.trim();
+  });
+  if(prevIssues.length === 0) return;
+
+  // Daftarkan issue minggu lalu sebagai carry-over (yang belum selesai)
+  // Hindari duplikasi: cek apakah teks sudah ada di coItems
+  var existingTexts = coItems.map(function(c){ return _coText(c).trim().toLowerCase(); });
+  var added = 0;
+  prevIssues.forEach(function(it){
+    var txt = '['+( it.kategori||'Issue')+'] '+it.issue;
+    if(existingTexts.indexOf(txt.trim().toLowerCase()) === -1){
+      coItems.push({text:txt, done:false});
+      added++;
+    }
+  });
+  if(added > 0){
+    renderCOList();
+    autoSave();
+    _showToast('&#x1F4CB; '+added+' issue minggu lalu dimuat ke Carry Over','ok');
+  }
+}
 
 // ── RENCANA ──
 function renderRencanaList(){
@@ -2338,6 +2443,18 @@ function generateSummary(){
       msDone.forEach(function(m){ txt += '• ✓ '+m.label+NL; });
       msBelum.forEach(function(m){ txt += '• ○ '+m.label+NL; });
     }
+  }
+
+  // Carry Over
+  var coDisplay = coItems.filter(function(c){ return _coText(c).trim(); });
+  if(coDisplay.length > 0){
+    txt += NL+SEP2+NL;
+    txt += '🔄 *CARRY OVER MINGGU LALU*'+NL;
+    coDisplay.forEach(function(c){
+      var icon = _coDone(c) ? '✅' : '🔴';
+      var stat = _coDone(c) ? '[Selesai]' : '[Belum]';
+      txt += icon+' '+stat+' '+_coText(c)+NL;
+    });
   }
 
   // Issues
@@ -2632,7 +2749,7 @@ function submitLaporan(){
     targetOpening:g('targetOpening'), aktualOpening:g('aktualOpening'),
     etaMBO1      :g('etaMBO1'), etaMBO2:g('etaMBO2'),
     target       :getEffectiveTarget(), aktual:total, deviasi:dev, status:statusVal,
-    carryOver    :coItems.filter(function(c){return c.trim();}).join('; '),
+    carryOver    :coItems.filter(function(c){return _coText(c).trim();}).map(function(c){return (_coDone(c)?'[✓] ':'')+_coText(c);}).join('; '),
     kendala      :kendalaList.map(function(it){return '['+it.kategori+'] '+it.issue+(it.pic?' (PIC:'+it.pic+')':'');}).join('\n'),
     'Eskalasi PM':eskalasiVal,
     'Detail Eskalasi':(document.getElementById('eskalasiDetail')||{}).value||'',
@@ -2647,6 +2764,8 @@ function submitLaporan(){
   var origText = btn ? btn.textContent : '';
   if(btn){ btn.disabled=true; btn.textContent='&#x23F3; Menyiapkan…'; }
 
+  // [v4-14] Satu request — data + file sekaligus (sama seperti v4-13)
+  // GAS selalu CORS di browser, jadi 2 request tidak bisa dapat response
   function doFetch(finalPayload){
     if(btn) btn.textContent='Mengirim…';
     fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(finalPayload)})
@@ -2656,40 +2775,57 @@ function submitLaporan(){
         if(j.ok){
           _lockSubmit();
           _showToast('&#x2705; Laporan W'+selWeek+' berhasil dikirim!','ok');
-          // Submit Pre-Fitout bersamaan jika ada data PF
           _submitPFIfAny(url);
+          // Tampilkan link file jika ada
+          var statusEl=document.getElementById('weekly-submit-status');
+          if(statusEl){
+            statusEl.style.display='block';
+            if(j.fileUrl&&j.fileUrl.indexOf('http')===0){
+              statusEl.style.background='#052a10'; statusEl.style.color='var(--green)';
+              statusEl.style.padding='8px 10px'; statusEl.style.borderRadius='7px'; statusEl.style.fontSize='10px';
+              statusEl.innerHTML='&#x2705; Laporan tersimpan &#x2014; <a href="'+j.fileUrl+'" target="_blank" style="color:#22c55e;font-weight:700;text-decoration:underline">&#x1F4C4; Buka File</a>';
+            } else {
+              statusEl.style.background='#052a10'; statusEl.style.color='var(--green)';
+              statusEl.style.padding='8px 10px'; statusEl.style.borderRadius='7px'; statusEl.style.fontSize='10px';
+              statusEl.textContent='&#x2705; Data berhasil disimpan di Google Sheets.';
+            }
+          }
         } else {
           alert('&#x26A0;&#xFE0F; GAS error: '+(j.message||'Unknown'));
         }
       })
       .catch(function(){
         if(btn){btn.disabled=false;btn.textContent=origText;}
-        // CORS catch = kemungkinan sudah diterima GAS
         _lockSubmit();
         _showToast('&#x2705; Laporan terkirim (konfirmasi di GSheet).','ok');
         _submitPFIfAny(url);
       });
   }
 
+  // [v4-14] Build PPTX dulu, lalu kirim data+file dalam 1 request
   try{
     _buildPPTBlob(function(blob){
       if(!blob){ doFetch(payload); return; }
       var reader=new FileReader();
       reader.onload=function(ev){
-        try{
-          var b64=ev.target.result.split(',')[1];
+        var b64='';
+        try{ b64=ev.target.result.split(',')[1]; }catch(ex){}
+        if(b64){
           var proj=(g('namaProject')||'Report').replace(/[^a-zA-Z0-9]/g,'_').substring(0,30);
           payload.fileBase64=b64;
           payload.fileName=proj+'_W'+selWeek+'_Report.pptx';
           payload.mimeType='application/vnd.openxmlformats-officedocument.presentationml.presentation';
-        }catch(e){}
+        }
+        // b64 kosong = tetap kirim tanpa file, tidak ditelan diam-diam
         doFetch(payload);
       };
-      reader.onerror=function(){doFetch(payload);};
+      reader.onerror=function(){ doFetch(payload); };
       reader.readAsDataURL(blob);
     });
   }catch(e){ doFetch(payload); }
 }
+
+
 
 // Key unik untuk lock submit per SM + Project + Minggu
 function _getSubmitLockKey(){
@@ -2727,10 +2863,65 @@ function updateTimestamp(){
   if(el) el.textContent='Sesi: '+sessionStart.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
 }
 
-// Auto-fill periode akhir = periodeStart + 6 hari
+// Auto-fill Periode: Senin–Minggu dari pekan ini
+// Week-1: mulai dari spkStart s/d Minggu akhir pekan pertama SPK
+// Dipanggil saat page load dan saat minggu dipilih
+function autoFillPeriode(){
+  var today = new Date(); today.setHours(0,0,0,0);
+  var fmt = function(d){ return d.toISOString().split('T')[0]; };
+
+  // Cari Senin pekan ini (hari terdekat ke belakang yang hari Senin)
+  var day = today.getDay(); // 0=Minggu,1=Senin,...,6=Sabtu
+  // Offset: Senin=0 offset, Selasa=1, ..., Minggu=6
+  var offsetToMonday = (day === 0) ? 6 : day - 1;
+  var thisMonday = new Date(today);
+  thisMonday.setDate(today.getDate() - offsetToMonday);
+  thisMonday.setHours(0,0,0,0);
+
+  // Minggu (Ahad) = 6 hari setelah Senin
+  var thisSunday = new Date(thisMonday);
+  thisSunday.setDate(thisMonday.getDate() + 6);
+
+  var periodeStart = fmt(thisMonday);
+  var periodeEnd   = fmt(thisSunday);
+
+  // Untuk Week-1: periodeStart = spkStart (jika tersedia)
+  if(selWeek === 1){
+    var spkS = g('spkStart');
+    if(spkS){
+      // Periode mulai = spkStart
+      periodeStart = spkS;
+      // Periode selesai = Minggu (Ahad) dari pekan SPK mulai
+      var spkDate = new Date(spkS); spkDate.setHours(0,0,0,0);
+      var spkDay  = spkDate.getDay();
+      var offsetSun = (spkDay === 0) ? 0 : 7 - spkDay; // sisa hari sampai Minggu
+      var firstSunday = new Date(spkDate);
+      firstSunday.setDate(spkDate.getDate() + offsetSun);
+      periodeEnd = fmt(firstSunday);
+    }
+  }
+
+  // Hanya isi jika field masih kosong (jangan override jika sudah diisi manual)
+  if(!g('periodeStart')) s('periodeStart', periodeStart);
+  if(!g('periodeEnd'))   s('periodeEnd',   periodeEnd);
+
+  updatePeriodeDisplay();
+}
+
+// Auto-fill periode akhir = periodeStart + 6 hari (Senin → Minggu)
+// Untuk Week-1 dengan spkStart tengah minggu, end = Minggu pekan itu
 function autoUpdatePeriode(){
   var start = g('periodeStart'); if(!start) return;
-  var d = new Date(start); d.setDate(d.getDate()+6);
+  var d = new Date(start); d.setHours(0,0,0,0);
+  // Selalu cari Minggu (Ahad) dari pekan yg dimulai
+  if(selWeek === 1 && g('spkStart') === start){
+    // Week-1: end = Minggu pekan SPK
+    var dayS = d.getDay();
+    var offsetSun = (dayS === 0) ? 0 : 7 - dayS;
+    d.setDate(d.getDate() + offsetSun);
+  } else {
+    d.setDate(d.getDate() + 6);
+  }
   s('periodeEnd', d.toISOString().split('T')[0]);
   updatePeriodeDisplay();
   autoSave();
@@ -2830,6 +3021,8 @@ function loadLocal(){
     ['namaProject','spkStart','spkEnd','targetOpening','aktualOpening','periodeStart','periodeEnd'].forEach(function(k){if(data[k]) s(k,data[k]);});
     if(data.prevProgress!==undefined) prevProgress=data.prevProgress;
     updatePeriodeDisplay();
+    // Jika periode tidak ada di data lama, auto-fill
+    if(!g('periodeStart')) autoFillPeriode();
     lockOpeningDate();
     lockSPKDates();
     if(data.namaSM){
@@ -2894,7 +3087,7 @@ function loadLocal(){
     if(data.issueItems){issueItems=data.issueItems;renderIssueTable();}
     if(data.eskalasiVal){setEskalasi(data.eskalasiVal);}
     if(data.eskalasiDetail){var ed=document.getElementById('eskalasiDetail');if(ed)ed.value=data.eskalasiDetail;}
-    if(data.coItems){coItems=data.coItems;renderCOList();}
+    if(data.coItems){coItems=data.coItems.map(function(c){return typeof c==='string'?{text:c,done:false}:c;});renderCOList();}
     if(data.rencanaItems){rencanaItems=data.rencanaItems;renderRencanaList();}
     if(data.etaMBO1){s('etaMBO1',data.etaMBO1);}
     // Backward compat: migrate old single etaMBO to etaMBO1
@@ -2932,21 +3125,88 @@ function importJSON(e){
   reader.readAsText(file);
 }
 // ── HAPUS PROJECT ──────────────────────────────────────────────
-function hapusProjectIni(){
+
+// Key arsip: daftar project yang disembunyikan dari dropdown per SM
+function _getArchiveKey(smName){
+  return LS_PREFIX+'_ARCHIVE_'+sanitizeKey(smName||'');
+}
+function _getArchivedProjects(smName){
+  try{ return JSON.parse(localStorage.getItem(_getArchiveKey(smName))||'[]'); }catch(e){ return []; }
+}
+function _addToArchive(smName, projectName){
+  var list = _getArchivedProjects(smName);
+  if(list.indexOf(projectName)===-1){ list.push(projectName); }
+  try{ localStorage.setItem(_getArchiveKey(smName), JSON.stringify(list)); }catch(e){}
+}
+
+// Hapus semua key localStorage milik SM + project ini
+function _deleteAllProjectKeys(sm, project){
+  var prefix     = LS_PREFIX+'_'+sanitizeKey(sm)+'_'+sanitizeKey(project)+'_';
+  var lockPrefix = LS_PREFIX+'_LOCK_'+sanitizeKey(sm)+'_'+sanitizeKey(project)+'_';
+  var toDelete = [];
+  for(var i=0;i<localStorage.length;i++){
+    var k=localStorage.key(i);
+    if(k && (k.indexOf(prefix)===0 || k.indexOf(lockPrefix)===0)) toDelete.push(k);
+  }
+  toDelete.forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+  return toDelete.length;
+}
+
+// Opsi A: Hapus draft saja (project masih aktif, tetap tampil di dropdown)
+function hapusDraftSaja(){
   var project = g('namaProject');
+  var sm      = (document.getElementById('namaSM')||{}).value||'';
+  if(!project||!sm){ alert('Pilih SM dan project terlebih dahulu.'); return; }
+  if(!confirm('Hapus draft lokal untuk project ini?\n\nProject: '+project+'\nSM: '+sm+'\n\n• Project tetap muncul di dropdown\n• Data di Google Sheets tidak terpengaruh')) return;
+  var n = _deleteAllProjectKeys(sm, project);
+  localStorage.removeItem('fnb_last_key');
+  alert('✅ Draft dihapus ('+n+' entri). Halaman akan direset.');
+  location.reload();
+}
+
+// Opsi B: Project selesai 100% — hapus draft + arsip (sembunyikan dari dropdown)
+function hapusProjectSelesai(){
+  var project = g('namaProject');
+  var sm      = (document.getElementById('namaSM')||{}).value||'';
+  if(!project||!sm){ alert('Pilih SM dan project terlebih dahulu.'); return; }
+
+  // Hitung progress aktual
+  var phases=getActivePhases(), effTotal=getEffectiveTotalBobot(phases), total=0;
+  phases.forEach(function(ph){
+    if(ph.isMilestonePhase) return;
+    ph.items.forEach(function(item){
+      if(item.bobot<=0) return;
+      var active=item.depAny?item.depAny.some(function(k){return optionalActive[k];}):(!item.optKey||optionalActive[item.optKey]);
+      if(!active) return;
+      var pct=item.isTes?(itemStatus[item.id]==='pass'?100:0):(itemPct[item.id]||0);
+      total+=(pct/100)*(item.bobot/effTotal)*100;
+    });
+  });
+  total=Math.round(total*10)/10;
+
+  var warningMsg = total < 100
+    ? '\n\n⚠️ Progress saat ini '+total+'% (belum 100%). Yakin project sudah benar-benar selesai?'
+    : '\n\n✅ Progress '+total+'% — siap diarsip.';
+
+  if(!confirm('Arsip & sembunyikan project dari dropdown?\n\nProject: '+project+'\nSM: '+sm+warningMsg+'\n\n• Project tidak akan muncul lagi di pilihan\n• Data di Google Sheets tetap tersimpan (histori aman)\n• Bisa dimunculkan kembali via "Reset Arsip" jika perlu')) return;
+
+  _deleteAllProjectKeys(sm, project);
+  _addToArchive(sm, project);
+  localStorage.removeItem('fnb_last_key');
+  alert('✅ Project diarsip & disembunyikan dari dropdown. Halaman akan direset.');
+  location.reload();
+}
+
+// Reset arsip SM (tampilkan kembali semua project yang diarsip)
+function resetArsipSM(){
   var sm = (document.getElementById('namaSM')||{}).value||'';
-  var keyToDelete = getCurrentKey();
-  var msg = 'Hapus data project ini dari memori browser?';
-  if(project) msg += '\n\nProject: ' + project;
-  if(sm)      msg += '\nSM: ' + sm;
-  msg += '\n\n(Data di Google Sheets tidak terpengaruh)';
-  if(!confirm(msg)) return;
-  try{
-    localStorage.removeItem(keyToDelete);
-    localStorage.removeItem('fnb_last_key');
-    alert('✅ Data project dihapus. Halaman akan direset.');
-    location.reload();
-  }catch(e){ alert('Gagal hapus: '+e.message); }
+  if(!sm){ alert('Pilih SM terlebih dahulu.'); return; }
+  var list = _getArchivedProjects(sm);
+  if(list.length===0){ alert('Tidak ada project yang diarsip untuk '+sm+'.'); return; }
+  if(!confirm('Tampilkan kembali semua project yang diarsip untuk '+sm+'?\n\n'+list.join('\n'))) return;
+  try{ localStorage.removeItem(_getArchiveKey(sm)); }catch(e){}
+  alert('✅ Arsip direset. Refresh halaman untuk melihat semua project kembali.');
+  location.reload();
 }
 
 // ── RIWAYAT MINGGU: tampilkan badge per week yang ada datanya ──
@@ -3929,7 +4189,7 @@ function submitPFStandalone(){
   var smName=(document.getElementById('namaSM')||{}).value||'';
   var gasUrl=(document.getElementById('sheets-url')||{}).value||localStorage.getItem('sheets_url')||'';
   if(!smName||!pfProjectName){ _showToast('⚠️ Pilih SM dan project dulu','warn'); return; }
-  if(!gasUrl){ _showToast('⚠️ GAS URL belum diisi di tab Submit → Konfigurasi','warn'); return; }
+  if(!gasUrl){ gasUrl = "https://script.google.com/macros/s/AKfycbzP0ejKcJOBhVcXwLKRe2HnMWSf78i9iHt1CePYGzf-2p1UohF8iaKxPsYNNs3JNHZhRg/exec"; }
   _submitPFToGAS(gasUrl, smName);
 }
 
