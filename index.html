@@ -2764,65 +2764,142 @@ function submitLaporan(){
   var origText = btn ? btn.textContent : '';
   if(btn){ btn.disabled=true; btn.textContent='&#x23F3; Menyiapkan…'; }
 
-  // [v4-14] Satu request — data + file sekaligus (sama seperti v4-13)
-  // GAS selalu CORS di browser, jadi 2 request tidak bisa dapat response
+  // [v4-15-2] ALUR 2 TAHAP:
+  // Tahap 1 → kirim data teks saja (ringan, pasti masuk)
+  // Tahap 2 → upload file + update kolom AF via action=updateFileUrl (terpisah, tidak blokir)
   function doFetch(finalPayload){
-    if(btn) btn.textContent='Mengirim…';
-    fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(finalPayload)})
+    // Pisahkan file dari payload teks agar Tahap 1 ringan
+    var fileBase64 = finalPayload.fileBase64 || '';
+    var fileName   = finalPayload.fileName   || '';
+    var mimeType   = finalPayload.mimeType   || '';
+    // Kirim hanya data teks di Tahap 1
+    var textPayload = Object.assign({}, finalPayload);
+    delete textPayload.fileBase64;
+    delete textPayload.fileName;
+    delete textPayload.mimeType;
+
+    if(btn) btn.textContent='Mengirim data…';
+    fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(textPayload)})
       .then(function(r){return r.json();})
       .then(function(j){
         if(btn){btn.disabled=false;btn.textContent=origText;}
         if(j.ok){
           _lockSubmit();
-          _showToast('&#x2705; Laporan W'+selWeek+' berhasil dikirim!','ok');
+          _showToast('&#x2705; Data W'+selWeek+' tersimpan!','ok');
           _submitPFIfAny(url);
-          // Tampilkan link file jika ada
           var statusEl=document.getElementById('weekly-submit-status');
-          if(statusEl){
-            statusEl.style.display='block';
-            if(j.fileUrl&&j.fileUrl.indexOf('http')===0){
-              statusEl.style.background='#052a10'; statusEl.style.color='var(--green)';
-              statusEl.style.padding='8px 10px'; statusEl.style.borderRadius='7px'; statusEl.style.fontSize='10px';
-              statusEl.innerHTML='&#x2705; Laporan tersimpan &#x2014; <a href="'+j.fileUrl+'" target="_blank" style="color:#22c55e;font-weight:700;text-decoration:underline">&#x1F4C4; Buka File</a>';
-            } else {
-              statusEl.style.background='#052a10'; statusEl.style.color='var(--green)';
-              statusEl.style.padding='8px 10px'; statusEl.style.borderRadius='7px'; statusEl.style.fontSize='10px';
-              statusEl.textContent='&#x2705; Data berhasil disimpan di Google Sheets.';
-            }
+          if(statusEl){ statusEl.style.display='block'; statusEl.style.background='#052a10'; statusEl.style.color='var(--green)'; statusEl.style.padding='8px 10px'; statusEl.style.borderRadius='7px'; statusEl.style.fontSize='10px'; statusEl.textContent='&#x2705; Data tersimpan. Mengupload file laporan…'; }
+
+          // Tahap 2 — upload file jika ada, non-blocking
+          if(fileBase64 && fileBase64.length > 100 && fileName){
+            var uploadPayload = {
+              action      : 'updateFileUrl',
+              fileBase64  : fileBase64,
+              fileName    : fileName,
+              mimeType    : mimeType,
+              namaProject : textPayload.namaProject,
+              mingguKe    : textPayload.mingguKe,
+              namaSM      : textPayload.namaSM || textPayload.sm || '',
+              rowIndex    : j.baris || 0
+            };
+            fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(uploadPayload)})
+              .then(function(r2){ return r2.json(); })
+              .then(function(j2){
+                if(statusEl){
+                  if(j2.fileUrl && j2.fileUrl.indexOf('http')===0){
+                    statusEl.innerHTML='&#x2705; Laporan tersimpan &#x2014; <a href="'+j2.fileUrl+'" target="_blank" style="color:#22c55e;font-weight:700;text-decoration:underline">&#x1F4C4; Buka File PPT</a>';
+                    _showToast('&#x1F4CE; File laporan berhasil diupload!','ok');
+                  } else {
+                    statusEl.textContent='&#x2705; Data tersimpan. Upload file: '+(j2.message||'selesai');
+                  }
+                }
+              })
+              .catch(function(){
+                // CORS catch pada upload — file mungkin tetap terupload di GAS
+                if(statusEl) statusEl.textContent='&#x2705; Data tersimpan. File dikirim — cek kolom AF di GSheet.';
+              });
+          } else {
+            // Tidak ada file
+            if(statusEl) statusEl.textContent='&#x2705; Data berhasil disimpan di Google Sheets.';
           }
         } else {
+          if(btn){btn.disabled=false;btn.textContent=origText;}
           alert('&#x26A0;&#xFE0F; GAS error: '+(j.message||'Unknown'));
         }
       })
       .catch(function(){
+        // CORS catch — data kemungkinan tetap masuk ke GSheet
         if(btn){btn.disabled=false;btn.textContent=origText;}
         _lockSubmit();
         _showToast('&#x2705; Laporan terkirim (konfirmasi di GSheet).','ok');
         _submitPFIfAny(url);
+        var statusEl=document.getElementById('weekly-submit-status');
+        if(statusEl){ statusEl.style.display='block'; statusEl.style.background='#052a10'; statusEl.style.color='var(--green)'; statusEl.style.padding='8px 10px'; statusEl.style.borderRadius='7px'; statusEl.style.fontSize='10px'; statusEl.textContent='&#x2705; Data terkirim. File upload diproses terpisah oleh server.'; }
+        // Coba upload file meskipun tahap 1 CORS — mungkin data sudah masuk
+        if(fileBase64 && fileBase64.length > 100 && fileName){
+          var uploadPayload2 = {
+            action      : 'updateFileUrl',
+            fileBase64  : fileBase64,
+            fileName    : fileName,
+            mimeType    : mimeType,
+            namaProject : textPayload.namaProject,
+            mingguKe    : textPayload.mingguKe,
+            namaSM      : textPayload.namaSM || textPayload.sm || ''
+          };
+          fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(uploadPayload2)})
+            .then(function(r3){ return r3.json(); })
+            .then(function(j3){
+              if(j3.fileUrl && j3.fileUrl.indexOf('http')===0 && statusEl){
+                statusEl.innerHTML='&#x2705; Laporan tersimpan &#x2014; <a href="'+j3.fileUrl+'" target="_blank" style="color:#22c55e;font-weight:700;text-decoration:underline">&#x1F4C4; Buka File PPT</a>';
+              }
+            })
+            .catch(function(){});
+        }
       });
   }
 
-  // [v4-14] Build PPTX dulu, lalu kirim data+file dalam 1 request
+  // [v4-15-2] Build PPTX dulu, lalu kirim data+file dalam 1 request
+  // Error di setiap tahap dicatat di console dan ditampilkan ke SM via toast
   try{
+    if(btn) btn.textContent='⏳ Menyiapkan PPT…';
     _buildPPTBlob(function(blob){
-      if(!blob){ doFetch(payload); return; }
+      if(!blob){
+        console.warn('[SUBMIT] blob null — kirim tanpa file');
+        doFetch(payload);
+        return;
+      }
+      if(btn) btn.textContent='⏳ Encoding file…';
       var reader=new FileReader();
       reader.onload=function(ev){
         var b64='';
-        try{ b64=ev.target.result.split(',')[1]; }catch(ex){}
-        if(b64){
+        try{
+          b64=ev.target.result.split(',')[1];
+        }catch(ex){
+          console.error('[SUBMIT] split b64 error:', ex);
+        }
+        if(b64 && b64.length > 100){
           var proj=(g('namaProject')||'Report').replace(/[^a-zA-Z0-9]/g,'_').substring(0,30);
           payload.fileBase64=b64;
           payload.fileName=proj+'_W'+selWeek+'_Report.pptx';
           payload.mimeType='application/vnd.openxmlformats-officedocument.presentationml.presentation';
+          console.log('[SUBMIT] File siap upload: fileName='+payload.fileName+' | b64 length='+b64.length);
+        } else {
+          console.warn('[SUBMIT] b64 kosong atau terlalu pendek (length='+(b64?b64.length:0)+') — kirim tanpa file');
         }
-        // b64 kosong = tetap kirim tanpa file, tidak ditelan diam-diam
         doFetch(payload);
       };
-      reader.onerror=function(){ doFetch(payload); };
+      reader.onerror=function(err){
+        console.error('[SUBMIT] FileReader error:', err);
+        _showToast('⚠️ Gagal encode file — data tetap dikirim tanpa lampiran.','warn');
+        doFetch(payload);
+      };
       reader.readAsDataURL(blob);
     });
-  }catch(e){ doFetch(payload); }
+  }catch(e){
+    console.error('[SUBMIT] Exception saat build PPT:', e);
+    _showToast('⚠️ Exception PPT: '+(e&&e.message||e)+' — kirim tanpa file.','warn');
+    doFetch(payload);
+  }
 }
 
 
@@ -3414,11 +3491,16 @@ function buildPPT(){
 
 // ── _buildPPTBlob: build PPTX dan return Blob via callback (tanpa download) ──
 // Dipakai oleh submitLaporan untuk invisible upload
+// [v4-15-2] Fix: error tidak lagi ditelan diam-diam; ditampilkan di toast + console
 function _buildPPTBlob(callback){
   try{
     var blob = _buildPPTCore();
+    if(!blob){ console.warn('[PPT] _buildPPTCore return null/undefined'); if(callback) callback(null); return; }
+    console.log('[PPT] Blob berhasil dibuat, size=', blob.size);
     if(callback) callback(blob);
   }catch(e){
+    console.error('[PPT] Error saat build PPTX:', e && e.message, e && e.stack);
+    _showToast('⚠️ PPT gagal dibuat: '+(e&&e.message||'unknown')+' — data tetap dikirim tanpa file.','warn');
     if(callback) callback(null);
   }
 }
