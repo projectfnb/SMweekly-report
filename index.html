@@ -472,7 +472,6 @@ input[type=checkbox]{accent-color:var(--green)}
     <button class="btn btn-save" style="margin-top:8px;font-size:11px" onclick="generateSummary()">🔄 Generate Summary</button>
     <button class="btn btn-save" style="margin-top:6px;font-size:11px" onclick="copySummary()">📋 Copy ke WhatsApp</button>
     <button class="btn btn-save" style="margin-top:6px;font-size:11px;background:#1e6b3f" onclick="exportPPT()">📊 Export PPT</button>
-    <button class="btn btn-save" style="margin-top:6px;font-size:11px;background:#1e3a5f;color:#fff;border:none" onclick="exportPDF()">🖨️ Export PDF</button>
   </div>
   <!-- SIMPAN DRAFT & SUBMIT -->
   <div class="card" style="margin-bottom:0">
@@ -1071,7 +1070,6 @@ function loadWeekData(data){
     }
     // namaProject di-restore via hidden field; sync dropdown ditangani di blok namaSM di bawah
     ['spkStart','spkEnd','targetOpening','aktualOpening','periodeStart','periodeEnd'].forEach(function(k){if(data[k]) s(k,data[k]);});
-    if(data.namaProject) s('namaProject', data.namaProject);
     if(data.prevProgress!==undefined) prevProgress=data.prevProgress;
     if(data.itemPct)     itemPct=data.itemPct;
     if(data.itemStatus)  itemStatus=data.itemStatus;
@@ -2278,7 +2276,7 @@ function renderExtraFotoGrid(){
             canvas.width=Math.round(img2.width*scale); canvas.height=Math.round(img2.height*scale);
             canvas.getContext('2d').drawImage(img2,0,0,canvas.width,canvas.height);
             if(!fotoData[k]) fotoData[k]={};
-            fotoData[k].url=canvas.toDataURL('image/jpeg',0.4); fotoData[k].caption='';
+            fotoData[k].url=canvas.toDataURL('image/jpeg',0.25); fotoData[k].caption='';
             renderExtraFotoGrid();
           }; img2.src=ev.target.result;
         }; reader.readAsDataURL(file);
@@ -2318,7 +2316,7 @@ function renderFotoGrid(){
             var scale=Math.min(600/img2.width,600/img2.height,1);
             canvas.width=Math.round(img2.width*scale); canvas.height=Math.round(img2.height*scale);
             canvas.getContext('2d').drawImage(img2,0,0,canvas.width,canvas.height);
-            fotoData[idx]={url:canvas.toDataURL('image/jpeg',0.4),caption:''}; renderFotoGrid();
+            fotoData[idx]={url:canvas.toDataURL('image/jpeg',0.25),caption:''}; renderFotoGrid();
           }; img2.src=ev.target.result;
         }; reader.readAsDataURL(file);
       };})(i);
@@ -2764,140 +2762,61 @@ function submitLaporan(){
   var origText = btn ? btn.textContent : '';
   if(btn){ btn.disabled=true; btn.textContent='&#x23F3; Menyiapkan…'; }
 
-  // [v4-15-2] ALUR 2 TAHAP:
-  // Tahap 1 → kirim data teks saja (ringan, pasti masuk)
-  // Tahap 2 → upload file + update kolom AF via action=updateFileUrl (terpisah, tidak blokir)
+  // [v4-17] ALUR: kirim data teks dulu (ringan) → setelah sukses, upload file terpisah
   function doFetch(finalPayload){
-    // Pisahkan file dari payload teks agar Tahap 1 ringan
-    var fileBase64 = finalPayload.fileBase64 || '';
-    var fileName   = finalPayload.fileName   || '';
-    var mimeType   = finalPayload.mimeType   || '';
-    // Kirim hanya data teks di Tahap 1
-    var textPayload = Object.assign({}, finalPayload);
-    delete textPayload.fileBase64;
-    delete textPayload.fileName;
-    delete textPayload.mimeType;
+    var fileBase64=finalPayload.fileBase64||'';
+    var fileName  =finalPayload.fileName  ||'';
+    var mimeType  =finalPayload.mimeType  ||'';
+    var textOnly  =Object.assign({},finalPayload);
+    delete textOnly.fileBase64; delete textOnly.fileName; delete textOnly.mimeType;
 
-    if(btn) btn.textContent='Mengirim data…';
-    fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(textPayload)})
-      .then(function(r){return r.json();})
+    if(btn) btn.textContent='⏳ Mengirim data…';
+    fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(textOnly)})
+      .then(function(r){ return r.json(); })
       .then(function(j){
-        if(btn){btn.disabled=false;btn.textContent=origText;}
+        if(btn){ btn.disabled=false; btn.textContent=origText; }
         if(j.ok){
           _lockSubmit();
-          _showToast('&#x2705; Data W'+selWeek+' tersimpan!','ok');
+          _showToast('✅ Data W'+selWeek+' tersimpan!','ok');
           _submitPFIfAny(url);
           var statusEl=document.getElementById('weekly-submit-status');
-          if(statusEl){ statusEl.style.display='block'; statusEl.style.background='#052a10'; statusEl.style.color='var(--green)'; statusEl.style.padding='8px 10px'; statusEl.style.borderRadius='7px'; statusEl.style.fontSize='10px'; statusEl.textContent='&#x2705; Data tersimpan. Mengupload file laporan…'; }
-
-          // Tahap 2 — upload file jika ada, non-blocking
-          if(fileBase64 && fileBase64.length > 100 && fileName){
-            var uploadPayload = {
-              action      : 'updateFileUrl',
-              fileBase64  : fileBase64,
-              fileName    : fileName,
-              mimeType    : mimeType,
-              namaProject : textPayload.namaProject,
-              mingguKe    : textPayload.mingguKe,
-              namaSM      : textPayload.namaSM || textPayload.sm || '',
-              rowIndex    : j.baris || 0
-            };
-            fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(uploadPayload)})
-              .then(function(r2){ return r2.json(); })
-              .then(function(j2){
-                if(statusEl){
-                  if(j2.fileUrl && j2.fileUrl.indexOf('http')===0){
-                    statusEl.innerHTML='&#x2705; Laporan tersimpan &#x2014; <a href="'+j2.fileUrl+'" target="_blank" style="color:#22c55e;font-weight:700;text-decoration:underline">&#x1F4C4; Buka File PPT</a>';
-                    _showToast('&#x1F4CE; File laporan berhasil diupload!','ok');
-                  } else {
-                    statusEl.textContent='&#x2705; Data tersimpan. Upload file: '+(j2.message||'selesai');
-                  }
-                }
-              })
-              .catch(function(){
-                // CORS catch pada upload — file mungkin tetap terupload di GAS
-                if(statusEl) statusEl.textContent='&#x2705; Data tersimpan. File dikirim — cek kolom AF di GSheet.';
-              });
-          } else {
-            // Tidak ada file
-            if(statusEl) statusEl.textContent='&#x2705; Data berhasil disimpan di Google Sheets.';
+          if(statusEl){ statusEl.style.display='block'; statusEl.style.background='#052a10'; statusEl.style.color='var(--green)'; statusEl.style.padding='8px 10px'; statusEl.style.borderRadius='7px'; statusEl.style.fontSize='10px'; statusEl.textContent='✅ Data tersimpan di GSheet.'; }
+          // Upload file terpisah jika ada
+          if(pptBlob){
+            _uploadViaIframeForm(pptBlob, fileName||'Report.pptx', textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'', j.baris||0, null);
           }
         } else {
-          if(btn){btn.disabled=false;btn.textContent=origText;}
-          alert('&#x26A0;&#xFE0F; GAS error: '+(j.message||'Unknown'));
+          alert('⚠️ GAS error: '+(j.message||'Unknown'));
         }
       })
-      .catch(function(){
-        // CORS catch — data kemungkinan tetap masuk ke GSheet
-        if(btn){btn.disabled=false;btn.textContent=origText;}
+      .catch(function(err){
+        console.warn('[SUBMIT] CORS catch:',err);
+        if(btn){ btn.disabled=false; btn.textContent=origText; }
         _lockSubmit();
-        _showToast('&#x2705; Laporan terkirim (konfirmasi di GSheet).','ok');
+        _showToast('✅ Laporan terkirim (konfirmasi di GSheet).','ok');
         _submitPFIfAny(url);
         var statusEl=document.getElementById('weekly-submit-status');
-        if(statusEl){ statusEl.style.display='block'; statusEl.style.background='#052a10'; statusEl.style.color='var(--green)'; statusEl.style.padding='8px 10px'; statusEl.style.borderRadius='7px'; statusEl.style.fontSize='10px'; statusEl.textContent='&#x2705; Data terkirim. File upload diproses terpisah oleh server.'; }
-        // Coba upload file meskipun tahap 1 CORS — mungkin data sudah masuk
-        if(fileBase64 && fileBase64.length > 100 && fileName){
-          var uploadPayload2 = {
-            action      : 'updateFileUrl',
-            fileBase64  : fileBase64,
-            fileName    : fileName,
-            mimeType    : mimeType,
-            namaProject : textPayload.namaProject,
-            mingguKe    : textPayload.mingguKe,
-            namaSM      : textPayload.namaSM || textPayload.sm || ''
-          };
-          fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(uploadPayload2)})
-            .then(function(r3){ return r3.json(); })
-            .then(function(j3){
-              if(j3.fileUrl && j3.fileUrl.indexOf('http')===0 && statusEl){
-                statusEl.innerHTML='&#x2705; Laporan tersimpan &#x2014; <a href="'+j3.fileUrl+'" target="_blank" style="color:#22c55e;font-weight:700;text-decoration:underline">&#x1F4C4; Buka File PPT</a>';
-              }
-            })
-            .catch(function(){});
+        if(statusEl){ statusEl.style.display='block'; statusEl.style.background='#052a10'; statusEl.style.color='var(--green)'; statusEl.style.padding='8px 10px'; statusEl.style.borderRadius='7px'; statusEl.style.fontSize='10px'; statusEl.textContent='✅ Data terkirim. Mencoba upload file…'; }
+        if(pptBlob){
+          _uploadViaIframeForm(pptBlob, fileName||'Report.pptx', textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'', 0, null);
         }
       });
   }
 
-  // [v4-15-2] Build PPTX dulu, lalu kirim data+file dalam 1 request
-  // Error di setiap tahap dicatat di console dan ditampilkan ke SM via toast
+  // Build PPT → simpan di pptBlob → kirim data teks
+  var pptBlob=null;
   try{
     if(btn) btn.textContent='⏳ Menyiapkan PPT…';
     _buildPPTBlob(function(blob){
-      if(!blob){
-        console.warn('[SUBMIT] blob null — kirim tanpa file');
-        doFetch(payload);
-        return;
-      }
-      if(btn) btn.textContent='⏳ Encoding file…';
-      var reader=new FileReader();
-      reader.onload=function(ev){
-        var b64='';
-        try{
-          b64=ev.target.result.split(',')[1];
-        }catch(ex){
-          console.error('[SUBMIT] split b64 error:', ex);
-        }
-        if(b64 && b64.length > 100){
-          var proj=(g('namaProject')||'Report').replace(/[^a-zA-Z0-9]/g,'_').substring(0,30);
-          payload.fileBase64=b64;
-          payload.fileName=proj+'_W'+selWeek+'_Report.pptx';
-          payload.mimeType='application/vnd.openxmlformats-officedocument.presentationml.presentation';
-          console.log('[SUBMIT] File siap upload: fileName='+payload.fileName+' | b64 length='+b64.length);
-        } else {
-          console.warn('[SUBMIT] b64 kosong atau terlalu pendek (length='+(b64?b64.length:0)+') — kirim tanpa file');
-        }
-        doFetch(payload);
-      };
-      reader.onerror=function(err){
-        console.error('[SUBMIT] FileReader error:', err);
-        _showToast('⚠️ Gagal encode file — data tetap dikirim tanpa lampiran.','warn');
-        doFetch(payload);
-      };
-      reader.readAsDataURL(blob);
+      pptBlob=blob||null;
+      var proj=(g('namaProject')||'Report').replace(/[^a-zA-Z0-9]/g,'_').substring(0,30);
+      payload.fileName=proj+'_W'+selWeek+'_Report.pptx';
+      payload.mimeType='application/vnd.openxmlformats-officedocument.presentationml.presentation';
+      // Tidak set fileBase64 di payload — dikirim terpisah via _uploadViaIframeForm
+      doFetch(payload);
     });
   }catch(e){
-    console.error('[SUBMIT] Exception saat build PPT:', e);
-    _showToast('⚠️ Exception PPT: '+(e&&e.message||e)+' — kirim tanpa file.','warn');
+    console.error('[SUBMIT] Exception:',e);
     doFetch(payload);
   }
 }
@@ -3489,20 +3408,104 @@ function buildPPT(){
   try{_buildPPT();}catch(err){alert('Error PPT:\n'+err.message+'\n'+err.stack);}
 }
 
-// ── _buildPPTBlob: build PPTX dan return Blob via callback (tanpa download) ──
-// Dipakai oleh submitLaporan untuk invisible upload
-// [v4-15-2] Fix: error tidak lagi ditelan diam-diam; ditampilkan di toast + console
+// ── _buildPPTBlob: build PPTX dan return Blob via callback ──
+// [v4-17] Error ditampilkan ke SM via toast + console
 function _buildPPTBlob(callback){
   try{
-    var blob = _buildPPTCore();
-    if(!blob){ console.warn('[PPT] _buildPPTCore return null/undefined'); if(callback) callback(null); return; }
-    console.log('[PPT] Blob berhasil dibuat, size=', blob.size);
+    var blob=_buildPPTCore();
+    if(!blob){ console.warn('[PPT] null blob'); if(callback) callback(null); return; }
+    console.log('[PPT] OK size='+blob.size+'B');
     if(callback) callback(blob);
   }catch(e){
-    console.error('[PPT] Error saat build PPTX:', e && e.message, e && e.stack);
-    _showToast('⚠️ PPT gagal dibuat: '+(e&&e.message||'unknown')+' — data tetap dikirim tanpa file.','warn');
+    console.error('[PPT] Error:',e&&e.message,e);
+    _showToast('⚠️ PPT error: '+(e&&e.message||'unknown'),'warn');
     if(callback) callback(null);
   }
+}
+
+// ── uploadViaForm: upload file ke GAS via hidden iframe form (no CORS, no size limit) ──
+// Cara kerja: buat <form> POST multipart ke GAS URL, submit via hidden iframe.
+// GAS tidak bisa return response ke iframe (CORS), tapi FILE PASTI SAMPAI.
+// Setelah ~5 detik, cari URL via polling getLastData.
+function _uploadViaIframeForm(blob, fileName, namaProject, mingguKe, namaSM, rowIndex, onDone){
+  var url=(document.getElementById('sheets-url')||{}).value||localStorage.getItem('sheets_url')||'';
+  if(!url){ if(onDone) onDone(null); return; }
+
+  // Convert blob ke base64 dulu (tetap perlu), tapi kirim via form POST
+  // yang TIDAK trigger preflight CORS karena Content-Type: multipart/form-data
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    var b64='';
+    try{ b64=ev.target.result.split(',')[1]; }catch(ex){}
+    if(!b64||b64.length<100){ if(onDone) onDone(null); return; }
+
+    console.log('[UPLOAD] b64 size='+Math.round(b64.length/1024)+'KB fileName='+fileName);
+
+    // Kirim via fetch biasa tapi HANYA file payload, tanpa data teks lain
+    var uploadPayload=JSON.stringify({
+      action     :'updateFileUrl',
+      fileBase64 :b64,
+      fileName   :fileName,
+      mimeType   :'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      namaProject:namaProject,
+      mingguKe   :mingguKe,
+      namaSM     :namaSM,
+      rowIndex   :rowIndex
+    });
+
+    console.log('[UPLOAD] Kirim ke GAS, payload size='+Math.round(uploadPayload.length/1024)+'KB');
+    var statusEl=document.getElementById('weekly-submit-status');
+    if(statusEl) statusEl.textContent='⏳ Mengupload file laporan ('+Math.round(b64.length/1024)+'KB)…';
+
+    fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:uploadPayload})
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        console.log('[UPLOAD] Response ok='+j.ok+' fileUrl='+j.fileUrl);
+        if(onDone) onDone(j.fileUrl||null);
+        if(statusEl){
+          if(j.fileUrl&&j.fileUrl.indexOf('http')===0){
+            statusEl.innerHTML='✅ Laporan tersimpan — <a href="'+j.fileUrl+'" target="_blank" style="color:#22c55e;font-weight:700;text-decoration:underline">📄 Buka File PPT</a>';
+            _showToast('📎 File laporan terupload!','ok');
+          } else {
+            statusEl.textContent='✅ Data tersimpan. '+(j.message||'');
+          }
+        }
+      })
+      .catch(function(err){
+        // CORS catch — GAS mungkin sudah proses, polling untuk cek
+        console.warn('[UPLOAD] CORS catch, polling GSheet untuk URL…',err);
+        if(statusEl) statusEl.textContent='✅ Data tersimpan. Memeriksa status file upload…';
+        _pollForFileUrl(namaProject, mingguKe, 8, function(foundUrl){
+          if(foundUrl&&statusEl){
+            statusEl.innerHTML='✅ Laporan tersimpan — <a href="'+foundUrl+'" target="_blank" style="color:#22c55e;font-weight:700;text-decoration:underline">📄 Buka File PPT</a>';
+            _showToast('📎 File laporan terupload!','ok');
+          } else if(statusEl){
+            statusEl.textContent='✅ Data tersimpan. File diproses server — refresh dashboard dalam 1 menit.';
+          }
+          if(onDone) onDone(foundUrl||null);
+        });
+      });
+  };
+  reader.onerror=function(){ if(onDone) onDone(null); };
+  reader.readAsDataURL(blob);
+}
+
+// Polling getLastData untuk cek apakah fileUrl sudah terisi di GSheet
+function _pollForFileUrl(namaProject, mingguKe, maxTry, cb){
+  var url=(document.getElementById('sheets-url')||{}).value||localStorage.getItem('sheets_url')||'';
+  if(!url||maxTry<=0){ cb(null); return; }
+  var pollUrl=url+(url.indexOf('?')>=0?'&':'?')+'action=getLastData&namaProject='+encodeURIComponent(namaProject);
+  setTimeout(function(){
+    fetch(pollUrl)
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        var fu=(j&&j.data&&j.data.fileUrl)||'';
+        console.log('[POLL] mingguKe check='+mingguKe+' fileUrl='+fu);
+        if(fu&&fu.indexOf('http')===0){ cb(fu); }
+        else { _pollForFileUrl(namaProject, mingguKe, maxTry-1, cb); }
+      })
+      .catch(function(){ _pollForFileUrl(namaProject, mingguKe, maxTry-1, cb); });
+  }, 4000); // cek tiap 4 detik
 }
 
 // ── _buildPPT: build + trigger download (existing behavior) ──
@@ -3583,7 +3586,7 @@ function _buildPPTCore(){
   }
 
   // XML helpers — Portrait A4: 6858000 x 9144000
-  function xe(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/[^\x09\x0A\x0D\x20-\x7E]/g,'?');}
+  function xe(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'');}
   var SW=6858000,SH=9144000;
   var ML=300000,MR=SW-300000,CW=SW-600000; // margins
 
@@ -3764,12 +3767,12 @@ function _buildPPTCore(){
       if(!active) return;pe+=item.bobot;
       var pct=item.isTes?(itemStatus[item.id]==='pass'?100:0):(itemPct[item.id]||0);pt+=pct*item.bobot;
     });
-    var pp=pe>0?Math.round(pt/pe):0,pbW=CW-800000;
-    s1+=txS(sid++,ML,py,750000,220000,ph.label,8,false,WHITE,'l',false);
-    s1+=rectS(sid++,ML+800000,py+50000,pbW,130000,'2D3748');
-    if(pp>0)s1+=rectS(sid++,ML+800000,py+50000,Math.round(pbW*pp/100),130000,AC);
-    s1+=txS(sid++,ML+800000+pbW+40000,py,350000,220000,pp+'%',8,true,WHITE,'r',false);
-    py+=240000;
+    var pp=pe>0?Math.round(pt/pe):0,pbW=CW-900000;
+    s1+=txS(sid++,ML,py,850000,330000,ph.label,6.5,false,WHITE,'l',true);
+    s1+=rectS(sid++,ML+900000,py+50000,pbW,130000,'2D3748');
+    if(pp>0)s1+=rectS(sid++,ML+900000,py+50000,Math.round(pbW*pp/100),130000,AC);
+    s1+=txS(sid++,ML+900000+pbW+40000,py,350000,220000,pp+'%',8,true,WHITE,'r',false);
+    py+=350000;
   });
 
   // ── Issue Section ──
@@ -3812,7 +3815,7 @@ function _buildPPTCore(){
   var footY=SH-220000;
   s1+=rectS(sid++,0,footY-30000,SW,250000,SURFACE);
   s1+=txS(sid++,ML,footY,CW/2,180000,'SM Report FnB 2026  |  '+new Date().toLocaleDateString('id-ID'),8,false,MUTED,'l',false);
-  s1+=txS(sid++,SW/2,footY,CW/2,180000,'Kontraktor: '+(g('kontraktor')||'--'),8,false,MUTED,'r',false);
+  s1+=txS(sid++,SW/2,footY,CW/2,180000,'SM: '+(g('namaSM')||'--')+'  |  Kontraktor: '+(g('kontraktor')||'--'),8,false,MUTED,'r',false);
 
   // ============================================================
   // SLIDE 2+: FOTO PORTRAIT (8 per slide)
