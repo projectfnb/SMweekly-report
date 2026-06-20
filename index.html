@@ -314,8 +314,8 @@ input[type=checkbox]{accent-color:var(--green)}
       <div><div class="fl">SPK Selesai</div><input type="date" id="spkEnd" onchange="checkOverrun();autoSave()"/><div id="spkEnd-locked-note" style="display:none;font-size:9px;color:var(--yellow);margin-top:2px;font-family:var(--mono)">🔒 Terkunci mulai W2</div></div>
     </div>
     <div class="form-row">
-      <div><div class="fl">Periode Laporan (Mulai)</div><input type="date" id="periodeStart" onchange="autoUpdatePeriode();autoSave()"/></div>
-      <div><div class="fl">Periode Laporan (Selesai)</div><input type="date" id="periodeEnd" onchange="autoSave()"/></div>
+      <div><div class="fl">Periode Laporan (Mulai)</div><input type="date" id="periodeStart" onchange="autoUpdatePeriode();autoSave()"/><div id="periodeStart-locked-note" style="display:none;font-size:9px;color:var(--yellow);margin-top:2px;font-family:var(--mono)">🔒 Otomatis sesuai tanggal submit</div></div>
+      <div><div class="fl">Periode Laporan (Selesai)</div><input type="date" id="periodeEnd" onchange="autoSave()"/><div id="periodeEnd-locked-note" style="display:none;font-size:9px;color:var(--yellow);margin-top:2px;font-family:var(--mono)">🔒 Otomatis sesuai tanggal submit</div></div>
     </div>
     <div class="form-full" style="background:var(--surface2);border-radius:7px;padding:7px 10px;margin-bottom:8px;font-size:10px;color:var(--muted);font-family:var(--mono)" id="periode-display">Periode: —</div>
     <div class="form-full">
@@ -788,21 +788,21 @@ function getActivePhases(){
   }
 }
 
-// ── WEEK TARGETS PER BRAND ──
-// Proportional distribution: W1 fixed, remaining split evenly
-// Chatime(4w): W1=15, step=(100-15)/3=28.3 → 15,43,72,100
-// Others(5w):  W1=13, step=(100-13)/4=21.75 → 13,35,57,79,100
+// ── WEEK TARGETS PER BRAND — S-CURVE ──
+// Delta terbesar di W3 (puncak konstruksi: close ceiling, dinding, fixture)
+// Chatime 4W : 15 → 40 → 72 → 100  | delta: +15, +25, +32, +28
+// Others  5W : 12 → 30 → 57 → 82 → 100 | delta: +12, +18, +27, +25, +18
 var WEEK_TARGETS_BY_BRAND = {
-  chatime:   {1:15, 2:43, 3:72, 4:100},
-  gindaco:   {1:13, 2:35, 3:57, 4:79, 5:100},
-  gogocurry: {1:13, 2:35, 3:57, 4:79, 5:100},
-  '88seoul': {1:13, 2:35, 3:57, 4:79, 5:100},
-  mollytea:  {1:13, 2:35, 3:57, 4:79, 5:100},
+  chatime:   {1:15, 2:40, 3:72, 4:100},
+  gindaco:   {1:12, 2:30, 3:57, 4:82, 5:100},
+  gogocurry: {1:12, 2:30, 3:57, 4:82, 5:100},
+  '88seoul': {1:12, 2:30, 3:57, 4:82, 5:100},
+  mollytea:  {1:12, 2:30, 3:57, 4:82, 5:100},
 };
 var MAX_WEEKS_BY_BRAND = {chatime:4, gindaco:5, gogocurry:5, '88seoul':5, mollytea:5};
 function getWeekTargets(){
-  if(selTipeProject==='Touch Up'||selTipeProject==='Bongkaran Bare') return {1:50,2:100};
-  if(selTipeProject==='Touch Up + Hotdak') return {1:33,2:66,3:100};
+  if(selTipeProject==='Touch Up'||selTipeProject==='Bongkaran Bare') return {1:45,2:100};
+  if(selTipeProject==='Touch Up + Hotdak') return {1:22,2:62,3:100};
   return WEEK_TARGETS_BY_BRAND[selBrand]||WEEK_TARGETS_BY_BRAND.gindaco;
 }
 function getMaxWeeks(){
@@ -816,8 +816,8 @@ var TIPE_INFO_MAP = {
   'New Store'       : '🏪 Fase standar 5 fasa | Timeline brand (Chatime 4W, lainnya 5W)',
   'Relayout'        : '🔄 Tambah Fase 0 Pembongkaran | Timeline brand normal',
   'Relokasi'        : '📦 Fase standar + Pemindahan Equipment H-10 | Timeline brand normal',
-  'Touch Up'        : '🔧 3 fasa ramping | Maks 2 minggu | W1:50% W2:100%',
-  'Touch Up + Hotdak': '🔧🏗️ 3 fasa + Waterproofing Hotdak | Maks 3 minggu | W1:33% W2:66% W3:100%',
+  'Touch Up'        : '🔧 3 fasa ramping | Maks 2 minggu | W1:45% W2:100%',
+  'Touch Up + Hotdak': '🔧🏗️ 3 fasa + Waterproofing Hotdak | Maks 3 minggu | W1:22% W2:62% W3:100%',
   'Bongkaran Bare'  : '🏚️ Bongkar total 4 fasa | Maks 2 minggu | Target → BAST',
 };
 function handleTipeChange(val){
@@ -1052,7 +1052,7 @@ function setWeek(w){
 function setWeekManual(v){
   var n=parseInt(v); if(isNaN(n)||n<1) return;
   if(selWeek && selWeek !== n) autoSave();
-  selWeek=n; renderWeekGrid(); lockOpeningDate(); lockSPKDates(); updateOverall();
+  selWeek=n; renderWeekGrid(); lockOpeningDate(); lockSPKDates(); lockPeriodeDates(); updateOverall();
   renderWeekHistoryBar();
   _updateSubmitLockUI();
   updateDraftStatusBar();
@@ -1091,7 +1091,7 @@ function loadWeekData(data){
     if(data.checklistState) checklistState=data.checklistState;
     if(data.extraFotoCount){ extraFotoCount=data.extraFotoCount; renderExtraFotoGrid(); }
     if(data.fotoData){ fotoData=data.fotoData; renderFotoGrid(); }
-    updateCountdown(); updatePeriodeDisplay(); lockOpeningDate(); lockSPKDates();
+    updateCountdown(); updatePeriodeDisplay(); lockOpeningDate(); lockSPKDates(); lockPeriodeDates();
     if(selBrand){ renderWeekGrid(); renderPhaseList(); updateOverall(); }
     updateMBOVisibility(); updateOpeningLabel();
     // Isi periode otomatis jika draft tidak punya periode tersimpan
@@ -1409,6 +1409,9 @@ function _autoFillFromGAS(data){
 
   // Toast konfirmasi
   _showToast('&#x2705; Data project dimuat dari GSheet', 'ok');
+  lockSPKDates();
+  // W1: periode belum terisi saat page load (spkStart kosong) — isi sekarang setelah spkStart tersedia
+  if(selWeek === 1){ s('periodeStart',''); s('periodeEnd',''); autoFillPeriode(); }
   autoSave();
 }
 
@@ -1497,6 +1500,8 @@ function loadLatestProjectData(smName, projectName){
   }
   if(d.spkStart)      s('spkStart',d.spkStart);
   if(d.spkEnd)        s('spkEnd',d.spkEnd);
+  lockSPKDates();
+  if(selWeek === 1){ s('periodeStart',''); s('periodeEnd',''); autoFillPeriode(); }
   if(d.targetOpening){ s('targetOpening',d.targetOpening); updateCountdown(); }
   if(d.brand && !selBrand){ selBrand=d.brand; renderBrandGrid(); }
   if(d.tipeProject){
@@ -1586,6 +1591,8 @@ function autoLoadSMData(smName){
   }
   if(latest.spkStart)     s('spkStart',latest.spkStart);
   if(latest.spkEnd)       s('spkEnd',latest.spkEnd);
+  lockSPKDates();
+  if(selWeek === 1){ s('periodeStart',''); s('periodeEnd',''); autoFillPeriode(); }
   if(latest.targetOpening){ s('targetOpening',latest.targetOpening); updateCountdown(); }
   if(latest.brand && !selBrand){ selBrand=latest.brand; renderBrandGrid(); }
 
@@ -2859,8 +2866,10 @@ function updateTimestamp(){
   if(el) el.textContent='Sesi: '+sessionStart.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
 }
 
-// Auto-fill Periode: Senin–Minggu dari pekan ini
-// Week-1: mulai dari spkStart s/d Minggu akhir pekan pertama SPK
+// Auto-fill Periode:
+// - Week-1: mulai dari spkStart s/d Minggu akhir pekan pertama SPK
+// - Week-2+: minggu LALU yang sudah penuh (Senin–Minggu sebelum hari submit),
+//   bukan minggu berjalan — supaya laporan selalu menutup minggu yang sudah lewat.
 // Dipanggil saat page load dan saat minggu dipilih
 function autoFillPeriode(){
   var today = new Date(); today.setHours(0,0,0,0);
@@ -2874,27 +2883,29 @@ function autoFillPeriode(){
   thisMonday.setDate(today.getDate() - offsetToMonday);
   thisMonday.setHours(0,0,0,0);
 
-  // Minggu (Ahad) = 6 hari setelah Senin
-  var thisSunday = new Date(thisMonday);
-  thisSunday.setDate(thisMonday.getDate() + 6);
+  // Minggu LALU (sudah penuh): Senin pekan ini - 7 hari, s/d Minggu pekan ini - 1 hari
+  var lastMonday = new Date(thisMonday);
+  lastMonday.setDate(thisMonday.getDate() - 7);
+  var lastSunday = new Date(lastMonday);
+  lastSunday.setDate(lastMonday.getDate() + 6);
 
-  var periodeStart = fmt(thisMonday);
-  var periodeEnd   = fmt(thisSunday);
+  var periodeStart = fmt(lastMonday);
+  var periodeEnd   = fmt(lastSunday);
 
-  // Untuk Week-1: periodeStart = spkStart (jika tersedia)
+  // Untuk Week-1: periodeStart = spkStart (jika tersedia) — tetap pakai anchor SPK
+  // Jika spkStart belum terisi (project belum dipilih), jangan fill dulu — tunggu _autoFillFromGAS
   if(selWeek === 1){
     var spkS = g('spkStart');
-    if(spkS){
-      // Periode mulai = spkStart
-      periodeStart = spkS;
-      // Periode selesai = Minggu (Ahad) dari pekan SPK mulai
-      var spkDate = new Date(spkS); spkDate.setHours(0,0,0,0);
-      var spkDay  = spkDate.getDay();
-      var offsetSun = (spkDay === 0) ? 0 : 7 - spkDay; // sisa hari sampai Minggu
-      var firstSunday = new Date(spkDate);
-      firstSunday.setDate(spkDate.getDate() + offsetSun);
-      periodeEnd = fmt(firstSunday);
-    }
+    if(!spkS) return; // ← belum ada SPK, skip; akan dipanggil ulang setelah project dipilih
+    // Periode mulai = spkStart
+    periodeStart = spkS;
+    // Periode selesai = Minggu (Ahad) dari pekan SPK mulai
+    var spkDate = new Date(spkS); spkDate.setHours(0,0,0,0);
+    var spkDay  = spkDate.getDay();
+    var offsetSun = (spkDay === 0) ? 0 : 7 - spkDay; // sisa hari sampai Minggu
+    var firstSunday = new Date(spkDate);
+    firstSunday.setDate(spkDate.getDate() + offsetSun);
+    periodeEnd = fmt(firstSunday);
   }
 
   // Hanya isi jika field masih kosong (jangan override jika sudah diisi manual)
@@ -2902,6 +2913,7 @@ function autoFillPeriode(){
   if(!g('periodeEnd'))   s('periodeEnd',   periodeEnd);
 
   updatePeriodeDisplay();
+  lockPeriodeDates();
 }
 
 // Auto-fill periode akhir = periodeStart + 6 hari (Senin → Minggu)
@@ -2920,6 +2932,7 @@ function autoUpdatePeriode(){
   }
   s('periodeEnd', d.toISOString().split('T')[0]);
   updatePeriodeDisplay();
+  lockPeriodeDates();
   autoSave();
 }
 function updatePeriodeDisplay(){
@@ -2952,6 +2965,21 @@ function lockSPKDates(){
     if(note) note.style.display = locked ? 'block' : 'none';
   });
 }
+
+// Periode Laporan: selalu dihitung otomatis (anchor SPK di W1, minggu-lalu di W2+),
+// jadi dikunci segera setelah terisi — tidak ada input manual.
+function lockPeriodeDates(){
+  ['periodeStart','periodeEnd'].forEach(function(id){
+    var inp = document.getElementById(id);
+    var note = document.getElementById(id+'-locked-note');
+    if(!inp) return;
+    var locked = !!inp.value;
+    inp.readOnly = locked;
+    inp.style.opacity = locked ? '0.6' : '1';
+    if(note) note.style.display = locked ? 'block' : 'none';
+  });
+}
+
 
 // Interkoneksi visibility: show only when gas=ADA or fss=ADA
 function isInterkoneksiActive(){
@@ -3021,6 +3049,7 @@ function loadLocal(){
     if(!g('periodeStart')) autoFillPeriode();
     lockOpeningDate();
     lockSPKDates();
+    lockPeriodeDates();
     if(data.namaSM){
       s('namaSM',data.namaSM);
       // Sync SM dropdown visual
@@ -3099,6 +3128,7 @@ function loadLocal(){
     updatePeriodeDisplay();
     lockOpeningDate();
     lockSPKDates();
+    lockPeriodeDates();
     updateMBOVisibility();
     updateOpeningLabel();
     _updateSubmitLockUI();
@@ -3268,7 +3298,7 @@ function renderWeekHistoryBar(){
           }catch(e){}
           renderWeekGrid();
           renderWeekHistoryBar();
-          lockOpeningDate(); lockSPKDates();
+          lockOpeningDate(); lockSPKDates(); lockPeriodeDates();
           localStorage.setItem('fnb_last_key', it.key);
         };
       })(item);
