@@ -2284,6 +2284,7 @@ function renderExtraFotoGrid(){
             canvas.getContext('2d').drawImage(img2,0,0,canvas.width,canvas.height);
             if(!fotoData[k]) fotoData[k]={};
             fotoData[k].url=canvas.toDataURL('image/jpeg',0.25); fotoData[k].caption='';
+            fotoData[k].w=canvas.width; fotoData[k].h=canvas.height;
             renderExtraFotoGrid();
           }; img2.src=ev.target.result;
         }; reader.readAsDataURL(file);
@@ -2323,7 +2324,7 @@ function renderFotoGrid(){
             var scale=Math.min(600/img2.width,600/img2.height,1);
             canvas.width=Math.round(img2.width*scale); canvas.height=Math.round(img2.height*scale);
             canvas.getContext('2d').drawImage(img2,0,0,canvas.width,canvas.height);
-            fotoData[idx]={url:canvas.toDataURL('image/jpeg',0.25),caption:''}; renderFotoGrid();
+            fotoData[idx]={url:canvas.toDataURL('image/jpeg',0.25),caption:'',w:canvas.width,h:canvas.height}; renderFotoGrid();
           }; img2.src=ev.target.result;
         }; reader.readAsDataURL(file);
       };})(i);
@@ -3582,8 +3583,8 @@ function _buildPPTCore(){
   var issueList=issueItems.filter(function(it){return it.issue&&it.issue.trim();});
   var rencanaList=rencanaItems.filter(function(r){return r.trim();});
   var fotoArr=[];
-  FOTO_SLOTS.forEach(function(label,i){if(fotoData[i]&&fotoData[i].url)fotoArr.push({label:label,url:fotoData[i].url,caption:fotoData[i].caption||''});});
-  for(var ei=0;ei<extraFotoCount;ei++){var ek='extra_'+ei;if(fotoData[ek]&&fotoData[ek].url)fotoArr.push({label:fotoData[ek].label||'Foto '+(ei+1),url:fotoData[ek].url,caption:fotoData[ek].caption||''});}
+  FOTO_SLOTS.forEach(function(label,i){if(fotoData[i]&&fotoData[i].url)fotoArr.push({label:label,url:fotoData[i].url,caption:fotoData[i].caption||'',w:fotoData[i].w,h:fotoData[i].h});});
+  for(var ei=0;ei<extraFotoCount;ei++){var ek='extra_'+ei;if(fotoData[ek]&&fotoData[ek].url)fotoArr.push({label:fotoData[ek].label||'Foto '+(ei+1),url:fotoData[ek].url,caption:fotoData[ek].caption||'',w:fotoData[ek].w,h:fotoData[ek].h});}
 
   // ZIP builder
   var cT=(function(){var t=new Uint32Array(256);for(var i=0;i<256;i++){var c=i;for(var j=0;j<8;j++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[i]=c;}return t;})();
@@ -3591,6 +3592,22 @@ function _buildPPTCore(){
   function enc(s){return new TextEncoder().encode(s);}
   function cat(){var n=0;for(var i=0;i<arguments.length;i++)n+=arguments[i].length;var r=new Uint8Array(n),p=0;for(var i=0;i<arguments.length;i++){r.set(arguments[i],p);p+=arguments[i].length;}return r;}
   function du2b(du){var b64=du.split(',')[1],bs=atob(b64),b=new Uint8Array(bs.length);for(var i=0;i<bs.length;i++)b[i]=bs.charCodeAt(i);return b;}
+  // Baca dimensi asli JPEG dari header (fallback utk foto lama yg blm simpan w/h)
+  function getJpegSize(bytes){
+    var i=2;
+    while(i<bytes.length-9){
+      if(bytes[i]!==0xFF){ i++; continue; }
+      var marker=bytes[i+1];
+      if(marker===0xD8||marker===0x01||(marker>=0xD0&&marker<=0xD7)){ i+=2; continue; }
+      if(marker===0xD9||marker===0xDA) break;
+      var len=(bytes[i+2]<<8)+bytes[i+3];
+      if(marker>=0xC0&&marker<=0xCF&&marker!==0xC4&&marker!==0xC8&&marker!==0xCC){
+        return {w:(bytes[i+7]<<8)+bytes[i+8], h:(bytes[i+5]<<8)+bytes[i+6]};
+      }
+      i+=2+len;
+    }
+    return null;
+  }
   function mkzip(entries){
     var ps=[],cds=[],off=0;
     entries.forEach(function(e){
@@ -3785,24 +3802,26 @@ function _buildPPTCore(){
     8,false,MUTED,'l',false);
   py+=barH+350000;
 
-  // Phase breakdown
-  s1+=txS(sid++,ML,py,CW,220000,'PROGRESS PER FASE',9,true,MUTED,'l',false);
+  // Disiplin breakdown — 6 disiplin (Persiapan, Sipil, ME, Plumbing, HVAC, Fixture)
+  // Pakai getKategoriConfig() yg sudah menyesuaikan per tipe project (New Store/Touch Up/Bongkaran)
+  s1+=txS(sid++,ML,py,CW,220000,'PROGRESS PER DISIPLIN',9,true,MUTED,'l',false);
   py+=240000;
-  phases.forEach(function(ph){
-    if(ph.isMilestonePhase||py>5200000) return;
-    var pt=0,pe=0;
-    ph.items.forEach(function(item){
-      if(item.bobot<=0) return;
-      var active=item.depAny?item.depAny.some(function(k){return optionalActive[k];}):(!item.optKey||optionalActive[item.optKey]);
-      if(!active) return;pe+=item.bobot;
-      var pct=item.isTes?(itemStatus[item.id]==='pass'?100:0):(itemPct[item.id]||0);pt+=pct*item.bobot;
-    });
-    var pp=pe>0?Math.round(pt/pe):0,pbW=CW-900000;
-    s1+=txS(sid++,ML,py,850000,330000,ph.label,6.5,false,WHITE,'l',true);
-    s1+=rectS(sid++,ML+900000,py+50000,pbW,130000,'2D3748');
-    if(pp>0)s1+=rectS(sid++,ML+900000,py+50000,Math.round(pbW*pp/100),130000,AC);
-    s1+=txS(sid++,ML+900000+pbW+40000,py,350000,220000,pp+'%',8,true,WHITE,'r',false);
-    py+=350000;
+  var katList=getKategoriConfig();
+  var katRowH=380000, katLabelW=2050000, katPctW=480000;
+  var katBarX=ML+katLabelW+60000;
+  var katBarW=CW-katLabelW-60000-katPctW-40000;
+  katList.forEach(function(kat){
+    var kp=getKategoriPct(kat.ids);
+    // Label — wrap diizinkan, box lega & rata-tengah vertikal supaya tdk terpotong/tumpang tindih
+    s1+=txS(sid++,ML,py,katLabelW,katRowH,kat.label,8.5,true,WHITE,'l',true);
+    // Bar — diposisikan center vertikal dalam row
+    var barY=py+Math.round((katRowH-140000)/2);
+    s1+=rectS(sid++,katBarX,barY,katBarW,140000,'2D3748');
+    if(kp>0)s1+=rectS(sid++,katBarX,barY,Math.round(katBarW*kp/100),140000,AC);
+    // Persen
+    var pctY=py+Math.round((katRowH-220000)/2);
+    s1+=txS(sid++,katBarX+katBarW+40000,pctY,katPctW,220000,kp+'%',9,true,WHITE,'r',false);
+    py+=katRowH;
   });
 
   // ── Issue Section ──
@@ -3894,10 +3913,21 @@ function _buildPPTCore(){
       // Label bar
       pss+=rectS(psid++,gx-20000,gy,imgColW+40000,240000,AC);
       pss+=txS(psid++,gx+10000,gy,imgColW,240000,fo.label.toUpperCase(),9,true,WHITE,'l',false);
-      // Image
+      // Image — fit (contain) supaya tidak stretch, mempertahankan rasio asli
       var fm=addMedia(fo.url);
       psMedia.push({id:fm.rId,target:fm.target});
-      pss+=picS(psid++,fm.rId,gx-20000,gy+240000,imgColW+40000,imgH);
+      var boxW=imgColW+40000, boxH=imgH;
+      var dim=(fo.w&&fo.h)?{w:fo.w,h:fo.h}:getJpegSize(du2b(fo.url));
+      var pic;
+      if(dim&&dim.w>0&&dim.h>0){
+        var sc=Math.min(boxW/dim.w, boxH/dim.h);
+        var dW=Math.round(dim.w*sc), dH=Math.round(dim.h*sc);
+        var pX=gx-20000+Math.round((boxW-dW)/2), pY=gy+240000+Math.round((boxH-dH)/2);
+        pic={x:pX,y:pY,w:dW,h:dH};
+      } else {
+        pic={x:gx-20000,y:gy+240000,w:boxW,h:boxH}; // fallback: dimensi tdk terbaca
+      }
+      pss+=picS(psid++,fm.rId,pic.x,pic.y,pic.w,pic.h);
       // Caption
       if(fo.caption){
         pss+=txS(psid++,gx,gy+240000+imgH+20000,imgColW,180000,fo.caption,8,false,MUTED,'l',true);
