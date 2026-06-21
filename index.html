@@ -2872,9 +2872,16 @@ function updateTimestamp(){
 // - Week-2+: minggu LALU yang sudah penuh (Senin–Minggu sebelum hari submit),
 //   bukan minggu berjalan — supaya laporan selalu menutup minggu yang sudah lewat.
 // Dipanggil saat page load dan saat minggu dipilih
+// Format Date jadi 'YYYY-MM-DD' pakai komponen tanggal LOKAL (bukan UTC).
+// toISOString() TIDAK aman dipakai di sini krn convert ke UTC — utk WIB (UTC+7)
+// tengah malam lokal bisa mundur jadi hari sebelumnya stlh dikonversi.
+function fmtLocalDate(d){
+  var y=d.getFullYear(), m=('0'+(d.getMonth()+1)).slice(-2), dd=('0'+d.getDate()).slice(-2);
+  return y+'-'+m+'-'+dd;
+}
 function autoFillPeriode(){
   var today = new Date(); today.setHours(0,0,0,0);
-  var fmt = function(d){ return d.toISOString().split('T')[0]; };
+  var fmt = fmtLocalDate;
 
   // Cari Senin pekan ini (hari terdekat ke belakang yang hari Senin)
   var day = today.getDay(); // 0=Minggu,1=Senin,...,6=Sabtu
@@ -2931,7 +2938,7 @@ function autoUpdatePeriode(){
   } else {
     d.setDate(d.getDate() + 6);
   }
-  s('periodeEnd', d.toISOString().split('T')[0]);
+  s('periodeEnd', fmtLocalDate(d));
   updatePeriodeDisplay();
   lockPeriodeDates();
   autoSave();
@@ -2950,7 +2957,9 @@ function lockOpeningDate(){
   var note=document.getElementById('opening-locked-note');
   if(!inp) return;
   var locked = (selWeek > 1) && inp.value;
-  inp.readOnly = locked ? true : false;
+  // PENTING: pakai disabled, bukan readOnly — readOnly tidak reliable di tablet/mobile
+  // (date-picker native masih bisa dibuka & diubah meski readOnly aktif di sebagian browser Android)
+  inp.disabled = !!locked;
   inp.style.opacity = locked ? '0.6' : '1';
   if(note) note.style.display = locked ? 'block' : 'none';
 }
@@ -2961,7 +2970,7 @@ function lockSPKDates(){
     var note = document.getElementById(id+'-locked-note');
     if(!inp) return;
     var locked = (selWeek > 1) && inp.value;
-    inp.readOnly = locked ? true : false;
+    inp.disabled = !!locked;
     inp.style.opacity = locked ? '0.6' : '1';
     if(note) note.style.display = locked ? 'block' : 'none';
   });
@@ -2975,7 +2984,7 @@ function lockPeriodeDates(){
     var note = document.getElementById(id+'-locked-note');
     if(!inp) return;
     var locked = !!inp.value;
-    inp.readOnly = locked;
+    inp.disabled = locked;
     inp.style.opacity = locked ? '0.6' : '1';
     if(note) note.style.display = locked ? 'block' : 'none';
   });
