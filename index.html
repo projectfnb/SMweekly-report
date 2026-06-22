@@ -1038,16 +1038,15 @@ function setWeek(w){
   cleanupPartialProjectKeys((document.getElementById('namaSM')||{}).value||'');
   updateOverall();
   renderWeekHistoryBar();
-  _updateSubmitLockUI();   // update status submit lock untuk minggu baru
-  updateDraftStatusBar();  // update status draft
+  _updateSubmitLockUI();
+  updateDraftStatusBar();
   // Reset periode sesuai week baru jika belum ada data tersimpan
   if(!existing || !existing.periodeStart){
     s('periodeStart',''); s('periodeEnd',''); autoFillPeriode();
   }
-  // Auto-load issue carry over dari minggu lalu (hanya jika belum ada data W-ini)
-  if(!existing || !existing.namaProject){
-    _loadIssueCarryFromPrevWeek();
-  }
+  // Carry-over issue dari minggu lalu — SELALU dicek (bukan hanya saat data kosong).
+  // Deduplication di dalam fungsi mencegah double-add jika sudah ada.
+  _loadIssueCarryFromPrevWeek();
 }
 function setWeekManual(v){
   var n=parseInt(v); if(isNaN(n)||n<1) return;
@@ -1206,14 +1205,40 @@ function populateProjectDropdown(smName){
             activeNames.push(p); // string → tidak tahu SPK, masukkan aktif
           } else if(p && p.namaProject){
             _gasProjectCache[p.namaProject] = p;
-            // Pisah aktif vs pre-fitout berdasarkan SPK Mulai
+
+            // ── Filter 1: Pre-fitout (SPK Mulai belum tiba) ──
             var isActive = true;
             if(p.spkStart){
               var spk = new Date(p.spkStart); spk.setHours(0,0,0,0);
               isActive = spk <= today;
             }
+
+            // ── Filter 2: Sudah selesai ──
+            // Project hilang dari daftar aktif setelah Minggu (Ahad) pekan berikutnya
+            // dari aktualOpening (atau spkEnd jika aktualOpening belum diisi).
+            // Contoh: aktualOpening = Rabu 24 Jun → Minggu pekan ini = 28 Jun →
+            //   project masih muncul s/d 28 Jun, baru hilang mulai 29 Jun (Senin).
+            if(isActive){
+              var closingStr = p.aktualOpening || p.spkEnd;
+              if(closingStr){
+                var cd = new Date(closingStr); cd.setHours(0,0,0,0);
+                if(cd < today){
+                  // Cari Minggu (Ahad) terdekat pada/setelah closing date
+                  var cdDay = cd.getDay(); // 0=Ahad
+                  var daysToSun = (cdDay === 0) ? 0 : 7 - cdDay;
+                  var cutoffSunday = new Date(cd);
+                  cutoffSunday.setDate(cd.getDate() + daysToSun);
+                  // Sudah lewat Minggu cutoff → project tidak aktif lagi
+                  if(today > cutoffSunday){ isActive = false; }
+                }
+              }
+            }
+
             if(isActive){ activeNames.push(p.namaProject); }
-            else         { pfList.push(p); }
+            else if(p.spkStart){
+              var spkCheck = new Date(p.spkStart); spkCheck.setHours(0,0,0,0);
+              if(spkCheck > today) pfList.push(p); // hanya masuk pre-fitout jika belum mulai
+            }
           }
         });
 
@@ -1313,14 +1338,27 @@ function _populateProjectFromLocalStorage(smName, showFallbackBanner){
         if(d&&d.namaProject&&d.namaProject.trim().length>=2){
           var np=d.namaProject;
           if(!projects[np]||new Date(d.savedAt||0)>new Date(projects[np].savedAt||0)){
-            projects[np]={savedAt:d.savedAt||''};
+            projects[np]={savedAt:d.savedAt||'', spkEnd:d.spkEnd||'', aktualOpening:d.aktualOpening||''};
           }
         }
       }catch(e){}
     }
   }catch(e){}
 
-  var names = Object.keys(projects).sort();
+  var today2 = new Date(); today2.setHours(0,0,0,0);
+  var names = Object.keys(projects).filter(function(np){
+    var pd = projects[np];
+    // Sama seperti GAS path: project hilang setelah Minggu pekan setelah aktualOpening/spkEnd
+    var closingStr = pd.aktualOpening || pd.spkEnd;
+    if(!closingStr) return true; // tidak ada info closing → tetap aktif
+    var cd = new Date(closingStr); cd.setHours(0,0,0,0);
+    if(cd >= today2) return true; // closing belum tiba
+    var cdDay = cd.getDay();
+    var daysToSun = (cdDay === 0) ? 0 : 7 - cdDay;
+    var cutoffSunday = new Date(cd);
+    cutoffSunday.setDate(cd.getDate() + daysToSun);
+    return today2 <= cutoffSunday; // masih dalam periode s/d Minggu cutoff
+  }).sort();
   _renderProjectOptions(sel, names, smName);
 
   if(showFallbackBanner){
@@ -1678,7 +1716,7 @@ function checkOverrun(){
   var spkEnd=g('spkEnd'); if(!spkEnd) return;
   var end=new Date(spkEnd); end.setHours(0,0,0,0);
   var today=new Date(); today.setHours(0,0,0,0);
-  if(today>=end) updateOverall();
+  if(today>end) updateOverall();
 }
 
 // ── BOBOT EFEKTIF (proporsional redistribusi) ──
@@ -1698,10 +1736,9 @@ function getEffectiveTotalBobot(phases){
   return total||1;
 }
 function getEffectiveTarget(){
-  // Overrun check — pakai >= (bukan >) supaya SPK Selesai yang jatuh tempo HARI INI
-  // langsung dianggap overrun (target 100%), bukan baru besok.
+  // Overrun check
   var spkEnd=g('spkEnd');
-  if(spkEnd){var end=new Date(spkEnd);end.setHours(0,0,0,0);var today=new Date();today.setHours(0,0,0,0);if(today>=end) return 100;}
+  if(spkEnd){var end=new Date(spkEnd);end.setHours(0,0,0,0);var today=new Date();today.setHours(0,0,0,0);if(today>end) return 100;}
   // Week-1 prorate
   if (isProrateActive()) return getProrateTarget();
   var targets=getWeekTargets(); return targets[selWeek]||20;
@@ -3144,6 +3181,9 @@ function loadLocal(){
     updateOpeningLabel();
     _updateSubmitLockUI();
     updateDraftStatusBar();
+    // Carry-over issue saat fresh reload (misal setelah SM tutup dan buka ulang app di W-baru)
+    // Delay kecil supaya populateProjectDropdown selesai mengisi namaProject dari GAS dulu
+    setTimeout(function(){ _loadIssueCarryFromPrevWeek(); }, 1200);
   }catch(e){}
   isRestoringData = false;
 }
