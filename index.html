@@ -1678,7 +1678,7 @@ function checkOverrun(){
   var spkEnd=g('spkEnd'); if(!spkEnd) return;
   var end=new Date(spkEnd); end.setHours(0,0,0,0);
   var today=new Date(); today.setHours(0,0,0,0);
-  if(today>end) updateOverall();
+  if(today>=end) updateOverall();
 }
 
 // ── BOBOT EFEKTIF (proporsional redistribusi) ──
@@ -1698,9 +1698,10 @@ function getEffectiveTotalBobot(phases){
   return total||1;
 }
 function getEffectiveTarget(){
-  // Overrun check
+  // Overrun check — pakai >= (bukan >) supaya SPK Selesai yang jatuh tempo HARI INI
+  // langsung dianggap overrun (target 100%), bukan baru besok.
   var spkEnd=g('spkEnd');
-  if(spkEnd){var end=new Date(spkEnd);end.setHours(0,0,0,0);var today=new Date();today.setHours(0,0,0,0);if(today>end) return 100;}
+  if(spkEnd){var end=new Date(spkEnd);end.setHours(0,0,0,0);var today=new Date();today.setHours(0,0,0,0);if(today>=end) return 100;}
   // Week-1 prorate
   if (isProrateActive()) return getProrateTarget();
   var targets=getWeekTargets(); return targets[selWeek]||20;
