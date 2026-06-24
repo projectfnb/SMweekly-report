@@ -27,26 +27,6 @@
 [data-theme="light"] .step-tab{color:var(--muted)}
 [data-theme="light"] .step-tab.active{color:var(--accent)}
 /* Panel ringkasan minggu lalu */
-.pw-panel{margin:10px 0;border-radius:10px;border:1px solid var(--border);background:var(--surface);overflow:hidden;transition:all .2s}
-.pw-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;user-select:none;background:var(--surface2)}
-.pw-header-left{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:var(--text)}
-.pw-badge{font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--accent);color:#fff}
-.pw-toggle{font-size:12px;color:var(--muted);transition:transform .2s}
-.pw-toggle.open{transform:rotate(180deg)}
-.pw-body{padding:10px 14px;display:none}
-.pw-body.open{display:block}
-.pw-section{margin-bottom:10px}
-.pw-section-title{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
-.pw-progress-row{display:flex;align-items:center;gap:10px;margin-bottom:4px}
-.pw-pct{font-size:22px;font-weight:800;color:var(--accent);min-width:52px}
-.pw-bar-wrap{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden}
-.pw-bar-fill{height:100%;border-radius:4px;background:var(--accent)}
-.pw-item{padding:5px 8px;border-radius:6px;background:var(--surface2);border:1px solid var(--border);margin-bottom:4px;font-size:10px;color:var(--text);line-height:1.4}
-.pw-item.done{opacity:.45;text-decoration:line-through}
-.pw-item-meta{font-size:9px;color:var(--muted);margin-top:2px;font-family:var(--mono)}
-.pw-empty{font-size:10px;color:var(--muted);font-style:italic;padding:4px 0}
-.pw-fetch-btn{font-size:10px;padding:5px 12px;border-radius:6px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;margin-top:6px}
-.pw-loading{font-size:10px;color:var(--muted);font-family:var(--mono);padding:6px 0}
 [data-theme="light"] .summary-box{background:var(--surface2)}
 [data-theme="light"] .countdown-banner.ok{background:#e8f5e9;border-color:#22c55e}
 [data-theme="light"] .countdown-banner.warn{background:#fff8e1;border-color:#f59e0b}
@@ -307,6 +287,7 @@ input[type=checkbox]{accent-color:var(--green)}
           <option value="Dede Sulaiman">Dede Sulaiman</option>
         </select>
         <input type="hidden" id="namaPM" value=""/>
+        <button onclick="togglePMMode()" id="pm-mode-btn" style="margin-top:5px;font-size:9px;padding:4px 10px;border-radius:6px;border:1px solid #3b82f6;background:transparent;color:#3b82f6;cursor:pointer;font-family:var(--mono)">🛠️ Mode PM (Edit Data SM)</button>
       </div>
       <div>
         <div class="fl">Site Manager</div>
@@ -359,6 +340,23 @@ input[type=checkbox]{accent-color:var(--green)}
       <div style="font-size:9px;color:var(--muted);margin-top:5px;font-family:var(--mono)">Tap minggu untuk lihat / edit data tersebut</div>
     </div>
   </div>
+
+  <!-- PM Load & Edit Panel -->
+  <div id="pm-load-panel" style="display:none;margin:10px 0;padding:12px 14px;border-radius:10px;border:1px solid #3b82f6;background:#050e2a">
+    <div style="font-size:10px;font-weight:700;color:#3b82f6;margin-bottom:8px">🛠️ Mode PM — Muat & Edit Data SM dari GSheet</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <select id="pm-load-week-sel" style="flex:1;font-size:11px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text)">
+        <option value="">-- Pilih Minggu --</option>
+        <option value="1">Minggu 1</option>
+        <option value="2">Minggu 2</option>
+        <option value="3">Minggu 3</option>
+        <option value="4">Minggu 4</option>
+        <option value="5">Minggu 5</option>
+      </select>
+      <button onclick="pmLoadFromGAS()" style="font-size:10px;padding:7px 14px;border-radius:6px;border:none;background:#3b82f6;color:#fff;cursor:pointer;font-weight:700;white-space:nowrap">📥 Muat Data</button>
+    </div>
+    <div id="pm-load-status" style="font-size:9px;color:var(--muted);font-family:var(--mono)">Pilih minggu lalu klik Muat Data untuk mengisi form dari GSheet.</div>
+  </div>
   <div id="countdown-banner" class="countdown-banner ok" style="display:none">
     <div class="countdown-days" id="cd-days">—</div>
     <div class="countdown-info">
@@ -401,42 +399,6 @@ input[type=checkbox]{accent-color:var(--green)}
       <tbody id="issue-tbody"></tbody>
     </table>
     <button class="add-btn" onclick="addIssue()">+ Tambah Issue</button>
-  </div>
-  <!-- Panel Ringkasan Minggu Lalu -->
-  <div id="prev-week-panel" class="pw-panel" style="display:none">
-    <div class="pw-header" onclick="togglePWPanel()">
-      <div class="pw-header-left">
-        📋 Ringkasan Minggu Lalu
-        <span id="pw-week-badge" class="pw-badge">W?</span>
-      </div>
-      <span class="pw-toggle" id="pw-toggle-icon">▾</span>
-    </div>
-    <div class="pw-body" id="pw-body">
-      <div id="pw-loading" class="pw-loading" style="display:none">⏳ Memuat dari GSheet...</div>
-      <div id="pw-content">
-        <!-- Progress -->
-        <div class="pw-section">
-          <div class="pw-section-title">📊 Progress Kumulatif</div>
-          <div class="pw-progress-row">
-            <div class="pw-pct" id="pw-pct">—</div>
-            <div class="pw-bar-wrap"><div class="pw-bar-fill" id="pw-bar" style="width:0%"></div></div>
-          </div>
-        </div>
-        <!-- Issue -->
-        <div class="pw-section">
-          <div class="pw-section-title">⚠️ Kendala / Issue</div>
-          <div id="pw-issues"><div class="pw-empty">Tidak ada issue tercatat.</div></div>
-        </div>
-        <!-- Rencana -->
-        <div class="pw-section">
-          <div class="pw-section-title">📌 Rencana yang Ditetapkan</div>
-          <div id="pw-rencana"><div class="pw-empty">Tidak ada rencana tercatat.</div></div>
-        </div>
-        <button class="pw-fetch-btn" id="pw-fetch-btn" onclick="fetchPrevWeekFromGAS()" style="display:none">
-          ☁️ Muat ulang dari GSheet
-        </button>
-      </div>
-    </div>
   </div>
   <div class="card">
     <div class="card-title">🔄 Carry Over Minggu Lalu</div>
@@ -1106,7 +1068,7 @@ function setWeek(w){
   // Deduplication di dalam fungsi mencegah double-add jika sudah ada.
   _loadIssueCarryFromPrevWeek();
   // Panel ringkasan minggu lalu
-  renderPrevWeekPanel();
+
 }
 function setWeekManual(v){
   var n=parseInt(v); if(isNaN(n)||n<1) return;
@@ -1152,7 +1114,7 @@ function loadWeekData(data){
     if(data.extraFotoCount){ extraFotoCount=data.extraFotoCount; renderExtraFotoGrid(); }
     if(data.fotoData){ fotoData=data.fotoData; renderFotoGrid(); }
     updateCountdown(); updatePeriodeDisplay(); lockOpeningDate(); lockSPKDates(); lockPeriodeDates();
-    if(selBrand){ renderWeekGrid(); renderPhaseList(); updateOverall(); }
+    if(selBrand){ renderWeekGrid(); renderPhaseList(); updateOverall(); autoSave(true); } // autoSave silent setelah updateOverall supaya overallPct tersimpan
     updateMBOVisibility(); updateOpeningLabel();
     // Isi periode otomatis jika draft tidak punya periode tersimpan
     if(!g('periodeStart')) autoFillPeriode();
@@ -2260,7 +2222,22 @@ function renderCOList(){
       chk.onchange=function(){
         var cur=coItems[idx];
         var txt=_coText(cur);
-        coItems[idx]={text:txt, done:this.checked};
+        var isDone=this.checked;
+        coItems[idx]={text:txt, done:isDone};
+
+        // Sync dengan issueItems:
+        // - Sudah (done) → hapus dari issueItems jika ada
+        // - Belum (undone) → tambahkan ke issueItems jika belum ada
+        var cleanTxt = txt.replace(/^\[[^\]]+\]\s*/,'').trim(); // hapus prefix [Kategori]
+        var katMatch = txt.match(/^\[([^\]]+)\]/);
+        var kat = katMatch ? katMatch[1] : '';
+        if(isDone){
+          issueItems = issueItems.filter(function(it){ return (it.issue||'').trim() !== cleanTxt; });
+        } else {
+          var exists = issueItems.some(function(it){ return (it.issue||'').trim() === cleanTxt; });
+          if(!exists && cleanTxt) issueItems.push({issue:cleanTxt, kategori:kat, pic:''});
+        }
+        renderIssueTable();
         renderCOList(); updateOverall(); autoSave();
       };
     })(i);
@@ -2315,14 +2292,17 @@ function _loadIssueCarryFromPrevWeek(){
   var existingTexts = coItems.map(function(c){ return _coText(c).trim().toLowerCase(); });
   var added = 0;
   prevIssues.forEach(function(it){
-    var txt = '['+( it.kategori||'Issue')+'] '+it.issue;
+    var txt = '['+(it.kategori||'Issue')+'] '+it.issue;
     if(existingTexts.indexOf(txt.trim().toLowerCase()) === -1){
       coItems.push({text:txt, done:false});
       added++;
+      // Belum selesai → masuk juga ke issueItems minggu ini
+      var exists = issueItems.some(function(ci){ return (ci.issue||'').trim()===it.issue.trim(); });
+      if(!exists) issueItems.push({issue:it.issue.trim(), kategori:it.kategori||'', pic:it.pic||''});
     }
   });
   if(added > 0){
-    renderCOList();
+    renderCOList(); renderIssueTable();
     autoSave();
     _showToast('&#x1F4CB; '+added+' issue minggu lalu dimuat ke Carry Over','ok');
   }
@@ -2899,7 +2879,14 @@ function submitLaporan(){
     rencana      :rencanaItems.filter(function(r){return r.trim();}).join('\n'),
     persiapan    :getKategoriPct(KAT_PERSIAPAN), sipil:getKategoriPct(KAT_SIPIL),
     me           :getKategoriPct(KAT_ME), plumbing:getKategoriPct(KAT_PLUMBING),
-    hvac         :getKategoriPct(KAT_HVAC), fixture:getKategoriPct(KAT_FIXTURE)
+    hvac         :getKategoriPct(KAT_HVAC), fixture:getKategoriPct(KAT_FIXTURE),
+    // [v4-20] Detail progress per item untuk restore lengkap (PM edit)
+    progressDetail: JSON.stringify({
+      itemPct      : itemPct,
+      itemStatus   : itemStatus,
+      optionalActive: optionalActive,
+      wpData       : wpData
+    })
   };
 
   // Loading state
@@ -3115,147 +3102,122 @@ function lockSPKDates(){
 
 // Periode Laporan: selalu dihitung otomatis (anchor SPK di W1, minggu-lalu di W2+),
 // jadi dikunci segera setelah terisi — tidak ada input manual.
-// ── PANEL RINGKASAN MINGGU LALU ─────────────────────────────────────────────
-// Sumber: localStorage W-prev dulu, lalu GAS fallback jika tidak ada.
-// Muncul otomatis saat selWeek > 1.
-
-function togglePWPanel(){
-  var body=document.getElementById('pw-body');
-  var icon=document.getElementById('pw-toggle-icon');
-  if(!body) return;
-  var isOpen=body.classList.contains('open');
-  body.classList.toggle('open',!isOpen);
-  if(icon) icon.classList.toggle('open',!isOpen);
-}
-
-function renderPrevWeekPanel(){
-  var panel=document.getElementById('prev-week-panel');
-  if(!panel) return;
-  if(selWeek<=1){ panel.style.display='none'; return; }
-  panel.style.display='block';
-  var badge=document.getElementById('pw-week-badge');
-  if(badge) badge.textContent='W'+(selWeek-1);
-
-  // Coba dari localStorage dulu
-  var prevKey=getKeyForWeek(selWeek-1);
-  var raw; try{ raw=localStorage.getItem(prevKey); }catch(e){}
-  if(raw){
-    try{
-      var d=JSON.parse(raw);
-      _renderPWContent(d, false);
-      return;
-    }catch(e){}
-  }
-  // Tidak ada di localStorage → coba GAS
-  _renderPWEmpty();
-  fetchPrevWeekFromGAS();
-}
-
-function _renderPWContent(d, fromGAS){
-  var el=function(id){ return document.getElementById(id); };
-  var loading=el('pw-loading'); if(loading) loading.style.display='none';
-  var fetchBtn=el('pw-fetch-btn'); if(fetchBtn) fetchBtn.style.display='block';
-
-  // Progress
-  var pct=0;
-  if(d.overallPct!==undefined) pct=d.overallPct;
-  else if(d.prevProgress!==undefined) pct=d.prevProgress;
-  else if(d.progress!==undefined) pct=d.progress;
-  var pctEl=el('pw-pct'); if(pctEl) pctEl.textContent=pct+'%';
-  var barEl=el('pw-bar'); if(barEl) barEl.style.width=Math.min(pct,100)+'%';
-
-  // Issues — support issueItems array atau issueList string
-  var issueHtml='';
-  var issues=d.issueItems||[];
-  if(!issues.length && d.issueList){
-    // GAS returns as newline-separated string
-    issues=(d.issueList||'').split('\n').filter(Boolean).map(function(t){return {issue:t,kategori:'',pic:''};});
-  }
-  if(issues.length){
-    issues.forEach(function(it){
-      var txt=it.issue||it.text||it;
-      if(!txt||!txt.trim()) return;
-      var meta='';
-      if(it.kategori) meta+=it.kategori;
-      if(it.pic) meta+=(meta?' · ':'')+it.pic;
-      issueHtml+='<div class="pw-item">'+escHtml(txt.trim())+(meta?'<div class="pw-item-meta">'+escHtml(meta)+'</div>':'')+'</div>';
-    });
-  }
-  var issueEl=el('pw-issues');
-  if(issueEl) issueEl.innerHTML=issueHtml||'<div class="pw-empty">Tidak ada issue.</div>';
-
-  // Rencana — support rencanaItems array atau rencanaList string
-  var rencanaHtml='';
-  var rencana=d.rencanaItems||[];
-  if(!rencana.length && d.rencanaList){
-    rencana=(d.rencanaList||'').split('\n').filter(Boolean);
-  }
-  if(rencana.length){
-    rencana.forEach(function(r){
-      var txt=typeof r==='string'?r:(r.text||r.rencana||'');
-      if(!txt||!txt.trim()) return;
-      rencanaHtml+='<div class="pw-item">'+escHtml(txt.trim())+'</div>';
-    });
-  }
-  var rencanaEl=el('pw-rencana');
-  if(rencanaEl) rencanaEl.innerHTML=rencanaHtml||'<div class="pw-empty">Tidak ada rencana.</div>';
-
-  // Auto-expand panel
-  var body=document.getElementById('pw-body');
-  var icon=document.getElementById('pw-toggle-icon');
-  if(body&&!body.classList.contains('open')){ body.classList.add('open'); if(icon) icon.classList.add('open'); }
-}
-
-function _renderPWEmpty(){
-  var el=function(id){ return document.getElementById(id); };
-  var pctEl=el('pw-pct'); if(pctEl) pctEl.textContent='—';
-  var barEl=el('pw-bar'); if(barEl) barEl.style.width='0%';
-  var issueEl=el('pw-issues'); if(issueEl) issueEl.innerHTML='<div class="pw-empty">Memuat...</div>';
-  var rencanaEl=el('pw-rencana'); if(rencanaEl) rencanaEl.innerHTML='<div class="pw-empty">Memuat...</div>';
-}
 
 function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function fetchPrevWeekFromGAS(){
-  var gasUrl; try{ gasUrl=localStorage.getItem('sheets_url')||localStorage.getItem('pm26')||''; }catch(e){}
-  if(!gasUrl){ _pwNoGAS(); return; }
-  var sm=g('namaSM'), proj=g('namaProject'), wk=selWeek-1;
-  if(!sm||!proj||wk<1){ _pwNoGAS(); return; }
+// ── PM MODE: Load & Edit data SM dari GSheet ─────────────────────────────────
+var _pmModeActive = false;
+var _pmUnlocked = false;
+var _PM_PIN = '714MAU';
 
-  var loading=document.getElementById('pw-loading');
-  if(loading) loading.style.display='block';
-  var body=document.getElementById('pw-body');
-  if(body&&!body.classList.contains('open')){ body.classList.add('open'); }
-  var icon=document.getElementById('pw-toggle-icon');
-  if(icon) icon.classList.add('open');
+function togglePMMode(){
+  if(!_pmUnlocked){
+    var input = prompt('🔐 Masukkan PIN PM untuk melanjutkan:');
+    if(input === null) return; // cancelled
+    if(input !== _PM_PIN){
+      alert('❌ PIN salah. Akses ditolak.');
+      return;
+    }
+    _pmUnlocked = true;
+  }
+  _pmModeActive = !_pmModeActive;
+  var panel = document.getElementById('pm-load-panel');
+  var btn   = document.getElementById('pm-mode-btn');
+  if(panel) panel.style.display = _pmModeActive ? 'block' : 'none';
+  if(btn){
+    btn.style.background  = _pmModeActive ? '#3b82f6' : 'transparent';
+    btn.style.color       = _pmModeActive ? '#fff'    : '#3b82f6';
+    btn.textContent       = _pmModeActive ? '✕ Tutup Mode PM' : '🛠️ Mode PM (Edit Data SM)';
+  }
+}
 
-  var url=gasUrl+'?action=getWeekData&namaSM='+encodeURIComponent(sm)+'&namaProject='+encodeURIComponent(proj)+'&week='+wk;
+function pmLoadFromGAS(){
+  var gasUrl; try{ gasUrl=localStorage.getItem('sheets_url')||''; }catch(e){}
+  if(!gasUrl){ _pmSetStatus('❌ GAS URL belum dikonfigurasi.','#ef4444'); return; }
+  var sm   = g('namaSM');
+  var proj = g('namaProject');
+  var wk   = parseInt((document.getElementById('pm-load-week-sel')||{}).value||'0',10);
+  if(!sm)  { _pmSetStatus('⚠️ Pilih SM dulu di dropdown.','#f59e0b'); return; }
+  if(!proj){ _pmSetStatus('⚠️ Pilih Project dulu.','#f59e0b'); return; }
+  if(!wk)  { _pmSetStatus('⚠️ Pilih Minggu dulu.','#f59e0b'); return; }
+
+  _pmSetStatus('⏳ Memuat dari GSheet...','#3b82f6');
+  var url = gasUrl+'?action=getWeekData&namaSM='+encodeURIComponent(sm)+'&namaProject='+encodeURIComponent(proj)+'&week='+wk;
   fetch(url)
     .then(function(r){ return r.json(); })
     .then(function(j){
-      var loading2=document.getElementById('pw-loading');
-      if(loading2) loading2.style.display='none';
-      if(j&&j.data){
-        _renderPWContent(j.data, true);
-      } else {
-        var issueEl=document.getElementById('pw-issues');
-        if(issueEl) issueEl.innerHTML='<div class="pw-empty">Data W'+(selWeek-1)+' belum ditemukan di GSheet.</div>';
-        var rencanaEl=document.getElementById('pw-rencana');
-        if(rencanaEl) rencanaEl.innerHTML='';
+      if(!j||!j.data){ _pmSetStatus('❌ Data W'+wk+' tidak ditemukan di GSheet.','#ef4444'); return; }
+      var d = j.data;
+      // Set minggu
+      selWeek = wk;
+      renderWeekGrid();
+      // Isi field-field dari GAS data
+      if(d.spkStart)      s('spkStart', d.spkStart);
+      if(d.spkEnd)        s('spkEnd',   d.spkEnd);
+      if(d.targetOpening) s('targetOpening', d.targetOpening);
+      if(d.aktualOpening) s('aktualOpening', d.aktualOpening);
+      if(d.periodeStart)  s('periodeStart', d.periodeStart);
+      if(d.periodeEnd)    s('periodeEnd', d.periodeEnd);
+      if(d.kontraktor)    s('kontraktor', d.kontraktor);
+      if(d.brand && !selBrand){ selBrand=d.brand; renderBrandGrid(); }
+      if(d.tipeProject && !selTipeProject){
+        selTipeProject=d.tipeProject;
+        var tp=document.getElementById('tipeProjectSel'); if(tp) tp.value=d.tipeProject;
       }
+      // Isi issue dari GAS (parse format "[Kategori] Teks (PIC:Nama)")
+      if(d.issueList && d.issueList.trim()){
+        issueItems = [];
+        d.issueList.split('\n').forEach(function(t){
+          t = t.trim(); if(!t) return;
+          var m = t.match(/^\[([^\]]+)\]\s*(.*?)(?:\s*\(PIC:([^)]+)\))?$/);
+          if(m) issueItems.push({issue:m[2].trim(),kategori:m[1].trim(),pic:(m[3]||'').trim()});
+          else  issueItems.push({issue:t,kategori:'',pic:''});
+        });
+        renderIssueTable();
+      }
+      // Isi rencana dari GAS
+      if(d.rencanaList && d.rencanaList.trim()){
+        rencanaItems = d.rencanaList.split('\n').filter(function(r){ return r.trim(); });
+        renderRencanaList();
+      }
+      // Isi carry over dari GAS
+      if(d.carryOver && d.carryOver.trim()){
+        coItems = d.carryOver.split(';').map(function(t){
+          t = t.trim(); if(!t) return null;
+          var done = t.indexOf('[✓]') === 0;
+          return {text: t.replace('[✓] ','').trim(), done: done};
+        }).filter(Boolean);
+        renderCOList();
+      }
+      lockSPKDates(); lockPeriodeDates(); updateOverall(); updatePeriodeDisplay();
+
+      // Restore progress detail per item (jika ada — hasil submit v4-20+)
+      if(d.progressDetail && d.progressDetail.trim() && d.progressDetail.trim()!==''){
+        try{
+          var pd = JSON.parse(d.progressDetail);
+          if(pd.itemPct)       Object.assign(itemPct, pd.itemPct);
+          if(pd.itemStatus)    Object.assign(itemStatus, pd.itemStatus);
+          if(pd.optionalActive) optionalActive = Object.assign({fss:true,gas:true,exhaust:false,sprinkler:true}, pd.optionalActive);
+          if(pd.wpData)        Object.assign(wpData, pd.wpData);
+          renderPhaseList();
+          updateOverall();
+          _pmSetStatus('✅ Data W'+wk+' berhasil dimuat lengkap (termasuk progress per item). Silakan edit lalu Submit kembali.','#22c55e');
+        }catch(e){
+          _pmSetStatus('✅ Data W'+wk+' dimuat (metadata+issue+rencana). Progress detail tidak tersedia — submit ulang dari SM untuk aktifkan restore penuh.','#f59e0b');
+        }
+      } else {
+        _pmSetStatus('✅ Data W'+wk+' dimuat (metadata+issue+rencana). Progress detail belum ada di GSheet — tersedia mulai submit berikutnya.','#f59e0b');
+      }
+      _showToast('📥 Data W'+wk+' ('+sm+') dimuat dari GSheet','ok');
     })
-    .catch(function(){
-      var loading2=document.getElementById('pw-loading');
-      if(loading2) loading2.style.display='none';
-      _pwNoGAS();
+    .catch(function(err){
+      _pmSetStatus('❌ Gagal fetch GSheet: '+err.message,'#ef4444');
     });
 }
 
-function _pwNoGAS(){
-  var issueEl=document.getElementById('pw-issues');
-  if(issueEl) issueEl.innerHTML='<div class="pw-empty">GSheet URL belum dikonfigurasi atau tidak tersambung.</div>';
-  var rencanaEl=document.getElementById('pw-rencana');
-  if(rencanaEl) rencanaEl.innerHTML='';
+function _pmSetStatus(msg, color){
+  var el = document.getElementById('pm-load-status');
+  if(el){ el.textContent = msg; el.style.color = color||'var(--muted)'; }
 }
 
 function lockPeriodeDates(){
@@ -3425,7 +3387,7 @@ function loadLocal(){
     updateDraftStatusBar();
     // Carry-over issue saat fresh reload (misal setelah SM tutup dan buka ulang app di W-baru)
     // Delay kecil supaya populateProjectDropdown selesai mengisi namaProject dari GAS dulu
-    setTimeout(function(){ _loadIssueCarryFromPrevWeek(); renderPrevWeekPanel(); }, 1200);
+    setTimeout(function(){ _loadIssueCarryFromPrevWeek(); }, 1200);
   }catch(e){}
   isRestoringData = false;
 }
