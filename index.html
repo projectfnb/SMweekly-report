@@ -3161,15 +3161,20 @@ function pmLoadFromGAS(){
       if(d.periodeStart)  s('periodeStart', d.periodeStart);
       if(d.periodeEnd)    s('periodeEnd', d.periodeEnd);
       if(d.kontraktor)    s('kontraktor', d.kontraktor);
+      if(d.etaMBO1)       s('etaMBO1', d.etaMBO1);
+      if(d.etaMBO2)       s('etaMBO2', d.etaMBO2);
+      if(d.eskalasi)      setEskalasi(d.eskalasi);
+      if(d.detailEskalasi){ var _edEl=document.getElementById('eskalasiDetail'); if(_edEl) _edEl.value=d.detailEskalasi; }
       if(d.brand && !selBrand){ selBrand=d.brand; renderBrandGrid(); }
       if(d.tipeProject && !selTipeProject){
         selTipeProject=d.tipeProject;
         var tp=document.getElementById('tipeProjectSel'); if(tp) tp.value=d.tipeProject;
       }
       // Isi issue dari GAS (parse format "[Kategori] Teks (PIC:Nama)")
-      if(d.issueList && d.issueList.trim()){
+      var _issueRaw = d.issueList||d.kendala;
+      if(_issueRaw && _issueRaw.trim()){
         issueItems = [];
-        d.issueList.split('\n').forEach(function(t){
+        _issueRaw.split('\n').forEach(function(t){
           t = t.trim(); if(!t) return;
           var m = t.match(/^\[([^\]]+)\]\s*(.*?)(?:\s*\(PIC:([^)]+)\))?$/);
           if(m) issueItems.push({issue:m[2].trim(),kategori:m[1].trim(),pic:(m[3]||'').trim()});
@@ -3178,8 +3183,9 @@ function pmLoadFromGAS(){
         renderIssueTable();
       }
       // Isi rencana dari GAS
-      if(d.rencanaList && d.rencanaList.trim()){
-        rencanaItems = d.rencanaList.split('\n').filter(function(r){ return r.trim(); });
+      var _rencanaRaw = d.rencanaList||d.rencana;
+      if(_rencanaRaw && _rencanaRaw.trim()){
+        rencanaItems = _rencanaRaw.split('\n').filter(function(r){ return r.trim(); });
         renderRencanaList();
       }
       // Isi carry over dari GAS
