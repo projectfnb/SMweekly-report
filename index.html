@@ -344,6 +344,16 @@ input[type=checkbox]{accent-color:var(--green)}
   <!-- PM Load & Edit Panel -->
   <div id="pm-load-panel" style="display:none;margin:10px 0;padding:12px 14px;border-radius:10px;border:1px solid #3b82f6;background:#050e2a">
     <div style="font-size:10px;font-weight:700;color:#3b82f6;margin-bottom:8px">🛠️ Mode PM — Muat & Edit Data SM dari GSheet</div>
+
+    <!-- [NEW] Ringkasan minggu aktif & minggu yang sudah disubmit -->
+    <div id="pm-week-overview" style="display:none;margin-bottom:10px;padding:8px 10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:9px;color:var(--muted);font-family:var(--mono)">📊 Ringkasan submit untuk SM/Project ini</span>
+        <button onclick="pmRefreshWeekOverview()" style="font-size:9px;padding:3px 8px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer">🔄 Refresh</button>
+      </div>
+      <div id="pm-week-overview-body" style="font-size:10px;color:var(--text)">—</div>
+    </div>
+
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
       <select id="pm-load-week-sel" style="flex:1;font-size:11px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text)">
         <option value="">-- Pilih Minggu --</option>
@@ -356,8 +366,34 @@ input[type=checkbox]{accent-color:var(--green)}
       <button onclick="pmLoadFromGAS()" style="font-size:10px;padding:7px 14px;border-radius:6px;border:none;background:#3b82f6;color:#fff;cursor:pointer;font-weight:700;white-space:nowrap">📥 Muat Data</button>
     </div>
     <div id="pm-load-status" style="font-size:9px;color:var(--muted);font-family:var(--mono)">Pilih minggu lalu klik Muat Data untuk mengisi form dari GSheet.</div>
+
+    <!-- [NEW] Tool perbaikan nomor minggu yang salah input -->
+    <div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--border)">
+      <div style="font-size:10px;font-weight:700;color:#f59e0b;margin-bottom:6px">🔧 Perbaiki Nomor Minggu yang Salah Input</div>
+      <div style="font-size:9px;color:var(--muted);margin-bottom:8px;font-family:var(--mono)">Contoh: SM submit sebagai W3 padahal seharusnya W2 → pilih "Dari" W3, "Jadi" W2.</div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <select id="pm-fix-week-from" style="flex:1;min-width:90px;font-size:11px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text)">
+          <option value="">Dari Minggu</option>
+        </select>
+        <span style="color:var(--muted);font-size:11px">→</span>
+        <select id="pm-fix-week-to" style="flex:1;min-width:90px;font-size:11px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text)">
+          <option value="">Jadi Minggu</option>
+          <option value="1">Minggu 1</option>
+          <option value="2">Minggu 2</option>
+          <option value="3">Minggu 3</option>
+          <option value="4">Minggu 4</option>
+          <option value="5">Minggu 5</option>
+          <option value="6">Minggu 6</option>
+          <option value="7">Minggu 7</option>
+          <option value="8">Minggu 8</option>
+        </select>
+        <button onclick="pmFixWeekNumber()" style="font-size:10px;padding:7px 14px;border-radius:6px;border:none;background:#f59e0b;color:#1a1200;cursor:pointer;font-weight:700;white-space:nowrap">✏️ Perbaiki</button>
+      </div>
+      <div id="pm-fix-week-status" style="font-size:9px;color:var(--muted);font-family:var(--mono);margin-top:6px"></div>
+    </div>
   </div>
   <div id="countdown-banner" class="countdown-banner ok" style="display:none">
+
     <div class="countdown-days" id="cd-days">—</div>
     <div class="countdown-info">
       <div class="countdown-lbl" id="cd-lbl">Hari menuju Opening</div>
@@ -1394,6 +1430,7 @@ function handleProjectSel(sel){
     if(hidden) hidden.value = '';
     if(note)   note.style.display = 'none';
     renderWeekHistoryBar();
+    var ow=document.getElementById('pm-week-overview'); if(ow) ow.style.display='none';
     return;
   }
 
@@ -1415,6 +1452,7 @@ function handleProjectSel(sel){
   }
 
   renderWeekHistoryBar();
+  if(typeof _pmModeActive!=='undefined' && _pmModeActive) pmRefreshWeekOverview();
 }
 
 // Auto-fill form dari object GAS (Brand, Tipe, Kontraktor, SPK, Target Opening)
@@ -3131,6 +3169,7 @@ function togglePMMode(){
     btn.style.color       = _pmModeActive ? '#fff'    : '#3b82f6';
     btn.textContent       = _pmModeActive ? '✕ Tutup Mode PM' : '🛠️ Mode PM (Edit Data SM)';
   }
+  if(_pmModeActive) pmRefreshWeekOverview();
 }
 
 function pmLoadFromGAS(){
@@ -3225,6 +3264,110 @@ function pmLoadFromGAS(){
 
 function _pmSetStatus(msg, color){
   var el = document.getElementById('pm-load-status');
+  if(el){ el.textContent = msg; el.style.color = color||'var(--muted)'; }
+}
+
+// ── [NEW] PM MODE: Ringkasan minggu aktif + minggu yang sudah disubmit ──
+function pmRefreshWeekOverview(){
+  var gasUrl; try{ gasUrl=localStorage.getItem('sheets_url')||''; }catch(e){}
+  var wrap = document.getElementById('pm-week-overview');
+  var body = document.getElementById('pm-week-overview-body');
+  if(!wrap||!body) return;
+  var sm   = g('namaSM');
+  var proj = g('namaProject');
+  if(!gasUrl||!sm||!proj){ wrap.style.display='none'; return; }
+
+  wrap.style.display='block';
+  body.innerHTML = '<span style="color:var(--muted)">⏳ Memuat ringkasan minggu...</span>';
+
+  var url = gasUrl+'?action=getSubmittedWeeks&namaSM='+encodeURIComponent(sm)+'&namaProject='+encodeURIComponent(proj);
+  fetch(url)
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(!j || !j.ok){ body.innerHTML='<span style="color:var(--red)">Gagal memuat ringkasan.</span>'; return; }
+      var weeks = j.weeks||[];
+      _pmSubmittedWeeks = weeks; // cache untuk dipakai oleh dropdown "Dari Minggu"
+      if(weeks.length===0){
+        body.innerHTML = '<span style="color:var(--muted)">Belum ada data minggu yang disubmit untuk SM/Project ini.</span>';
+      } else {
+        var maxWk = j.currentWeek || weeks[weeks.length-1].week;
+        var dupSet = {}; (j.duplicates||[]).forEach(function(w){ dupSet[w]=true; });
+        var badges = weeks.map(function(w){
+          var isDup = dupSet[w.week];
+          var bg = isDup ? '#7c1d1d' : '#052a10';
+          var fg = isDup ? '#fca5a5' : 'var(--green)';
+          var label = 'W'+w.week + (isDup ? ' ⚠️x'+w.count : ' ✓');
+          var title = isDup ? ('Minggu '+w.week+' tersubmit '+w.count+'x — cek & perbaiki!') : ('Aktual: '+w.aktual+'% · Status: '+(w.status||'-'));
+          return '<span title="'+escHtml(title)+'" style="display:inline-block;padding:3px 7px;margin:2px;border-radius:5px;font-size:9px;font-weight:700;background:'+bg+';color:'+fg+'">'+label+'</span>';
+        }).join('');
+        var dupWarn = (j.duplicates&&j.duplicates.length) ? '<div style="margin-top:5px;color:#fca5a5;font-size:9px">⚠️ Minggu '+j.duplicates.join(', ')+' tersubmit lebih dari sekali — cek di GSheet, kemungkinan ada input ganda/salah minggu.</div>' : '';
+        body.innerHTML = '<div style="margin-bottom:4px"><b>Minggu aktif project (terakhir disubmit):</b> W'+maxWk+'</div>'
+          + '<div>'+badges+'</div>' + dupWarn;
+      }
+      // Isi dropdown "Dari Minggu" di tool perbaikan, hanya minggu yang benar2 ada datanya
+      var selFrom = document.getElementById('pm-fix-week-from');
+      if(selFrom){
+        selFrom.innerHTML = '<option value="">Dari Minggu</option>';
+        weeks.forEach(function(w){
+          var opt = document.createElement('option');
+          opt.value = w.week;
+          opt.textContent = 'Minggu '+w.week + (dupSetSafe(j,w.week) ? ' (⚠️ '+w.count+'x)' : '');
+          selFrom.appendChild(opt);
+        });
+      }
+    })
+    .catch(function(){ body.innerHTML='<span style="color:var(--red)">Gagal terhubung ke GSheet.</span>'; });
+}
+function dupSetSafe(j,wk){ return (j.duplicates||[]).indexOf(wk)!==-1; }
+var _pmSubmittedWeeks = [];
+
+// ── [NEW] PM MODE: Perbaiki nomor minggu yang salah input oleh SM ──
+function pmFixWeekNumber(){
+  var gasUrl; try{ gasUrl=localStorage.getItem('sheets_url')||''; }catch(e){}
+  if(!gasUrl){ _pmFixSetStatus('❌ GAS URL belum dikonfigurasi.','#ef4444'); return; }
+  var sm   = g('namaSM');
+  var proj = g('namaProject');
+  var fromWk = parseInt((document.getElementById('pm-fix-week-from')||{}).value||'0',10);
+  var toWk   = parseInt((document.getElementById('pm-fix-week-to')||{}).value||'0',10);
+  if(!sm)    { _pmFixSetStatus('⚠️ Pilih SM dulu.','#f59e0b'); return; }
+  if(!proj)  { _pmFixSetStatus('⚠️ Pilih Project dulu.','#f59e0b'); return; }
+  if(!fromWk){ _pmFixSetStatus('⚠️ Pilih minggu asal (Dari Minggu).','#f59e0b'); return; }
+  if(!toWk)  { _pmFixSetStatus('⚠️ Pilih minggu tujuan (Jadi Minggu).','#f59e0b'); return; }
+  if(fromWk===toWk){ _pmFixSetStatus('⚠️ Minggu asal dan tujuan sama, tidak ada yang diubah.','#f59e0b'); return; }
+
+  if(!confirm('Ganti data Minggu '+fromWk+' ('+sm+' / '+proj+') menjadi Minggu '+toWk+'?\n\nIni akan mengubah nomor minggu di GSheet secara langsung.')){ return; }
+
+  _pmFixSetStatus('⏳ Memproses...','#3b82f6');
+  _doFixWeekNumber(gasUrl, sm, proj, fromWk, toWk, false);
+}
+
+function _doFixWeekNumber(gasUrl, sm, proj, fromWk, toWk, force){
+  var payload = {action:'fixWeekNumber', namaSM:sm, namaProject:proj, oldWeek:fromWk, newWeek:toWk, force:!!force};
+  fetch(gasUrl,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)})
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(j && j.ok){
+        _pmFixSetStatus('✅ '+(j.message||'Berhasil diganti.'),'#22c55e');
+        _showToast('✅ Minggu '+fromWk+' → Minggu '+toWk+' berhasil','ok');
+        pmRefreshWeekOverview();
+      } else if(j && j.conflict){
+        if(confirm((j.message||'Minggu tujuan sudah ada datanya.')+'\n\nTimpa (hapus data lama) dan lanjutkan?')){
+          _pmFixSetStatus('⏳ Menimpa data lama...','#3b82f6');
+          _doFixWeekNumber(gasUrl, sm, proj, fromWk, toWk, true);
+        } else {
+          _pmFixSetStatus('❌ Dibatalkan — Minggu '+toWk+' sudah ada datanya.','#f59e0b');
+        }
+      } else {
+        _pmFixSetStatus('❌ Gagal: '+((j&&j.message)||'Unknown error'),'#ef4444');
+      }
+    })
+    .catch(function(err){
+      _pmFixSetStatus('❌ Gagal terhubung: '+err.message,'#ef4444');
+    });
+}
+
+function _pmFixSetStatus(msg, color){
+  var el = document.getElementById('pm-fix-week-status');
   if(el){ el.textContent = msg; el.style.color = color||'var(--muted)'; }
 }
 
