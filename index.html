@@ -1948,7 +1948,9 @@ function calcPhasePct(phase){
   var total=0, bobot=0;
   phase.items.forEach(function(item){
     if(item.bobot>0){
-      var active=!item.optKey||optionalActive[item.optKey];
+      var active = item.depAny
+        ? item.depAny.some(function(k){ return optionalActive[k]; })
+        : (!item.optKey || optionalActive[item.optKey]);
       if(!active) return;
       bobot+=item.bobot;
       var pct=item.isTes?(itemStatus[item.id]==='pass'?100:0):(itemPct[item.id]||0);
