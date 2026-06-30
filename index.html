@@ -344,16 +344,6 @@ input[type=checkbox]{accent-color:var(--green)}
   <!-- PM Load & Edit Panel -->
   <div id="pm-load-panel" style="display:none;margin:10px 0;padding:12px 14px;border-radius:10px;border:1px solid #3b82f6;background:#050e2a">
     <div style="font-size:10px;font-weight:700;color:#3b82f6;margin-bottom:8px">🛠️ Mode PM — Muat & Edit Data SM dari GSheet</div>
-
-    <!-- [NEW] Ringkasan minggu aktif & minggu yang sudah disubmit -->
-    <div id="pm-week-overview" style="display:none;margin-bottom:10px;padding:8px 10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border)">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-size:9px;color:var(--muted);font-family:var(--mono)">📊 Ringkasan submit untuk SM/Project ini</span>
-        <button onclick="pmRefreshWeekOverview()" style="font-size:9px;padding:3px 8px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer">🔄 Refresh</button>
-      </div>
-      <div id="pm-week-overview-body" style="font-size:10px;color:var(--text)">—</div>
-    </div>
-
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
       <select id="pm-load-week-sel" style="flex:1;font-size:11px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text)">
         <option value="">-- Pilih Minggu --</option>
@@ -366,34 +356,8 @@ input[type=checkbox]{accent-color:var(--green)}
       <button onclick="pmLoadFromGAS()" style="font-size:10px;padding:7px 14px;border-radius:6px;border:none;background:#3b82f6;color:#fff;cursor:pointer;font-weight:700;white-space:nowrap">📥 Muat Data</button>
     </div>
     <div id="pm-load-status" style="font-size:9px;color:var(--muted);font-family:var(--mono)">Pilih minggu lalu klik Muat Data untuk mengisi form dari GSheet.</div>
-
-    <!-- [NEW] Tool perbaikan nomor minggu yang salah input -->
-    <div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--border)">
-      <div style="font-size:10px;font-weight:700;color:#f59e0b;margin-bottom:6px">🔧 Perbaiki Nomor Minggu yang Salah Input</div>
-      <div style="font-size:9px;color:var(--muted);margin-bottom:8px;font-family:var(--mono)">Contoh: SM submit sebagai W3 padahal seharusnya W2 → pilih "Dari" W3, "Jadi" W2.</div>
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-        <select id="pm-fix-week-from" style="flex:1;min-width:90px;font-size:11px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text)">
-          <option value="">Dari Minggu</option>
-        </select>
-        <span style="color:var(--muted);font-size:11px">→</span>
-        <select id="pm-fix-week-to" style="flex:1;min-width:90px;font-size:11px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text)">
-          <option value="">Jadi Minggu</option>
-          <option value="1">Minggu 1</option>
-          <option value="2">Minggu 2</option>
-          <option value="3">Minggu 3</option>
-          <option value="4">Minggu 4</option>
-          <option value="5">Minggu 5</option>
-          <option value="6">Minggu 6</option>
-          <option value="7">Minggu 7</option>
-          <option value="8">Minggu 8</option>
-        </select>
-        <button onclick="pmFixWeekNumber()" style="font-size:10px;padding:7px 14px;border-radius:6px;border:none;background:#f59e0b;color:#1a1200;cursor:pointer;font-weight:700;white-space:nowrap">✏️ Perbaiki</button>
-      </div>
-      <div id="pm-fix-week-status" style="font-size:9px;color:var(--muted);font-family:var(--mono);margin-top:6px"></div>
-    </div>
   </div>
   <div id="countdown-banner" class="countdown-banner ok" style="display:none">
-
     <div class="countdown-days" id="cd-days">—</div>
     <div class="countdown-info">
       <div class="countdown-lbl" id="cd-lbl">Hari menuju Opening</div>
@@ -918,6 +882,16 @@ function updateOpeningLabel(){
 }
 
 // ── PRORATE WEEK-1 ──
+// ── KURVA TARGET PROPORSIONAL ────────────────────────────────────────────
+// Sebelumnya target hanya prorate di W1 (kalau SPK Mulai tengah minggu),
+// tapi W2 dst kembali ke kurva standar seolah tiap minggu = 7 hari penuh.
+// Ini bikin "hari hilang" di W1 terbawa sampai akhir tanpa pernah
+// dikompensasi. Sekarang target dihitung dari PROPORSI HARI KALENDER
+// yang sudah berjalan terhadap TOTAL DURASI SPK (spkStart→spkEnd),
+// bukan dari nomor minggu laporan — supaya kurva otomatis menyesuaikan
+// berapa pun hari SPK Mulai/Selesai jatuh.
+
+// Hari efektif W1 saja (dipakai utk teks info "Hari efektif: X/7" — W1 only)
 function getDaysElapsed() {
   var spkStart = g('spkStart');
   if (!spkStart) return 7;
@@ -926,14 +900,67 @@ function getDaysElapsed() {
   var diff   = Math.ceil((today - start) / 86400000) + 1;
   return Math.min(Math.max(diff, 1), 7);
 }
-function isProrateActive() {
-  if (selWeek !== 1) return false;
-  return getDaysElapsed() < 7;
+
+// Total hari kalender SPK (spkStart → spkEnd), minimal 1
+function getTotalSpkDays() {
+  var spkStart = g('spkStart'), spkEnd = g('spkEnd');
+  if (!spkStart || !spkEnd) return 0;
+  var start = new Date(spkStart); start.setHours(0,0,0,0);
+  var end   = new Date(spkEnd);   end.setHours(0,0,0,0);
+  var diff  = Math.round((end - start) / 86400000) + 1;
+  return Math.max(diff, 1);
 }
+
+// Total hari kalender yang sudah berjalan sejak spkStart s/d hari ini (clamped 0..totalSpkDays)
+function getTotalDaysElapsed() {
+  var spkStart = g('spkStart');
+  if (!spkStart) return 0;
+  var start = new Date(spkStart); start.setHours(0,0,0,0);
+  var today  = new Date();        today.setHours(0,0,0,0);
+  var diff   = Math.round((today - start) / 86400000) + 1;
+  var total  = getTotalSpkDays();
+  return Math.min(Math.max(diff, 0), total || diff);
+}
+
+// Apakah mode proporsional bisa aktif (butuh spkStart & spkEnd terisi)
+function isProrateActive() {
+  return !!(g('spkStart') && g('spkEnd') && getTotalSpkDays() > 0);
+}
+
+// Target proporsional: interpolasi linear pada kurva checkpoint mingguan,
+// diposisikan berdasarkan FRAKSI WAKTU (hari berjalan / total hari SPK),
+// bukan berdasarkan nomor minggu. Kurva mingguan (mis. 12,30,57,82,100)
+// tetap dipakai sebagai "bentuk" kurva — hanya skala sumbu-X yang berubah
+// dari "per minggu" jadi "per hari proporsional".
 function getProrateTarget() {
-  var baseTarget = (getWeekTargets()[1] || 10);
-  var days = getDaysElapsed();
-  return Math.round((baseTarget * (days / 7)) * 10) / 10;
+  var totalDays = getTotalSpkDays();
+  if (totalDays <= 0) {
+    // Fallback: spkEnd belum diisi → tidak bisa hitung proporsional, pakai kurva mingguan biasa
+    var targets = getWeekTargets();
+    return targets[selWeek] || 20;
+  }
+  var elapsed = getTotalDaysElapsed();
+  var t = Math.min(Math.max(elapsed / totalDays, 0), 1); // fraksi waktu 0..1
+
+  var targets  = getWeekTargets();
+  var maxWeeks = getMaxWeeks();
+
+  // Checkpoint: (0,0), (1/N, target1), (2/N, target2), ..., (1, 100)
+  var points = [{x:0, y:0}];
+  for (var k = 1; k <= maxWeeks; k++) {
+    points.push({x: k / maxWeeks, y: targets[k] || 100});
+  }
+
+  // Cari segmen tempat t berada, interpolasi linear
+  for (var i = 1; i < points.length; i++) {
+    if (t <= points[i].x) {
+      var p0 = points[i-1], p1 = points[i];
+      var segFrac = (p1.x === p0.x) ? 1 : (t - p0.x) / (p1.x - p0.x);
+      var val = p0.y + (p1.y - p0.y) * segFrac;
+      return Math.round(val * 10) / 10;
+    }
+  }
+  return 100; // t >= 1
 }
 
 
@@ -1096,15 +1123,13 @@ function setWeek(w){
   renderWeekHistoryBar();
   _updateSubmitLockUI();
   updateDraftStatusBar();
-  // Reset periode sesuai week baru jika belum ada data tersimpan
-  if(!existing || !existing.periodeStart){
-    s('periodeStart',''); s('periodeEnd',''); autoFillPeriode();
-  }
+  // Periode SELALU dihitung ulang saat pindah minggu — periode bergantung pada
+  // tanggal hari ini (kapan SM submit), BUKAN pada draft lama yang mungkin
+  // tersimpan dari kunjungan sebelumnya dengan tanggal yang sudah usang.
+  s('periodeStart',''); s('periodeEnd',''); autoFillPeriode();
   // Carry-over issue dari minggu lalu — SELALU dicek (bukan hanya saat data kosong).
   // Deduplication di dalam fungsi mencegah double-add jika sudah ada.
   _loadIssueCarryFromPrevWeek();
-  // Panel ringkasan minggu lalu
-
 }
 function setWeekManual(v){
   var n=parseInt(v); if(isNaN(n)||n<1) return;
@@ -1430,7 +1455,6 @@ function handleProjectSel(sel){
     if(hidden) hidden.value = '';
     if(note)   note.style.display = 'none';
     renderWeekHistoryBar();
-    var ow=document.getElementById('pm-week-overview'); if(ow) ow.style.display='none';
     return;
   }
 
@@ -1452,7 +1476,6 @@ function handleProjectSel(sel){
   }
 
   renderWeekHistoryBar();
-  if(typeof _pmModeActive!=='undefined' && _pmModeActive) pmRefreshWeekOverview();
 }
 
 // Auto-fill form dari object GAS (Brand, Tipe, Kontraktor, SPK, Target Opening)
@@ -1790,10 +1813,11 @@ function getEffectiveTotalBobot(phases){
   return total||1;
 }
 function getEffectiveTarget(){
-  // Overrun check
+  // Overrun check — SPK Selesai sudah lewat, target harus 100%
   var spkEnd=g('spkEnd');
   if(spkEnd){var end=new Date(spkEnd);end.setHours(0,0,0,0);var today=new Date();today.setHours(0,0,0,0);if(today>end) return 100;}
-  // Week-1 prorate
+  // Kurva proporsional berbasis total hari SPK (bukan cuma W1) — selalu aktif
+  // selama spkStart & spkEnd terisi. Fallback ke kurva mingguan biasa kalau belum.
   if (isProrateActive()) return getProrateTarget();
   var targets=getWeekTargets(); return targets[selWeek]||20;
 }
@@ -1986,9 +2010,7 @@ function calcPhasePct(phase){
   var total=0, bobot=0;
   phase.items.forEach(function(item){
     if(item.bobot>0){
-      var active = item.depAny
-        ? item.depAny.some(function(k){ return optionalActive[k]; })
-        : (!item.optKey || optionalActive[item.optKey]);
+      var active=!item.optKey||optionalActive[item.optKey];
       if(!active) return;
       bobot+=item.bobot;
       var pct=item.isTes?(itemStatus[item.id]==='pass'?100:0):(itemPct[item.id]||0);
@@ -2028,8 +2050,10 @@ function updateOverall(){
   if(hDev){hDev.textContent=devStr; hDev.style.color=dev>=-5?'var(--green)':dev>=-17?'var(--yellow)':'var(--red)';}
   // ── HEALTH LOGIC (revised) ──
   var critApproval = issueItems.some(function(it){ return it.issue && (it.kategori==='Approval'||it.kategori==='Mall/Landlord'); });
-  var prorate      = isProrateActive();
-  var daysElapsed  = getDaysElapsed();
+  var prorate       = isProrateActive();
+  var daysElapsed   = getDaysElapsed();          // hari efektif W1 saja (utk teks lama)
+  var totalElapsed  = getTotalDaysElapsed();      // hari berjalan total sejak SPK Mulai
+  var totalSpkDays  = getTotalSpkDays();          // total durasi SPK
 
   // SPK deadline check: ≤3 hari atau sudah lewat + progress <100% → Critical
   var spkEndHealth = g('spkEnd');
@@ -2079,9 +2103,9 @@ function updateOverall(){
     bgColor='#2a0505'; borderColor='var(--red)';
   }
 
-  // Prorate note
-  var prorateNote = prorate
-    ? ('Hari efektif: ' + daysElapsed + '/7 hari — target prorate aktif')
+  // Prorate note — sekarang mencakup seluruh durasi SPK, bukan cuma W1
+  var prorateNote = (prorate && totalSpkDays > 0)
+    ? ('Hari berjalan: ' + totalElapsed + '/' + totalSpkDays + ' hari sejak SPK Mulai — target proporsional aktif')
     : '';
 
   // Update banner
@@ -2114,7 +2138,9 @@ function updateOverall(){
   }
   if (hTgt) {
     hTgt.textContent = target + '%' + (prorate ? '*' : '');
-    hTgt.title = prorate ? ('Target prorate: ' + target + '% (basis ' + (getWeekTargets()[1]||10) + '% x ' + daysElapsed + '/7 hari)') : '';
+    hTgt.title = (prorate && totalSpkDays > 0)
+      ? ('Target proporsional: ' + target + '% (basis ' + totalElapsed + '/' + totalSpkDays + ' hari sejak SPK Mulai)')
+      : '';
   }
   if (hDevEl) {
     hDevEl.textContent = devStr;
@@ -2576,7 +2602,7 @@ function generateSummary(){
   txt += '📊 *PROGRESS*'+NL;
   txt += '• Kumulatif : *'+total+'%*'+NL;
   txt += '• Mingguan  : '+deltaStr+' ('+prevProgress+'% → '+total+'%)'+NL;
-  txt += '• Target    : '+target+'%'+(isProrateActive()?' _(prorate W'+week+')_':'')+NL;
+  txt += '• Target    : '+target+'%'+(isProrateActive()?' _(proporsional)_':'')+NL;
   txt += '• Deviasi   : *'+devStr+'* '+devEmoji+NL;
   txt += '• Status    : '+statusEmoji+' *'+status+'*'+NL;
 
@@ -3169,7 +3195,6 @@ function togglePMMode(){
     btn.style.color       = _pmModeActive ? '#fff'    : '#3b82f6';
     btn.textContent       = _pmModeActive ? '✕ Tutup Mode PM' : '🛠️ Mode PM (Edit Data SM)';
   }
-  if(_pmModeActive) pmRefreshWeekOverview();
 }
 
 function pmLoadFromGAS(){
@@ -3200,20 +3225,15 @@ function pmLoadFromGAS(){
       if(d.periodeStart)  s('periodeStart', d.periodeStart);
       if(d.periodeEnd)    s('periodeEnd', d.periodeEnd);
       if(d.kontraktor)    s('kontraktor', d.kontraktor);
-      if(d.etaMBO1)       s('etaMBO1', d.etaMBO1);
-      if(d.etaMBO2)       s('etaMBO2', d.etaMBO2);
-      if(d.eskalasi)      setEskalasi(d.eskalasi);
-      if(d.detailEskalasi){ var _edEl=document.getElementById('eskalasiDetail'); if(_edEl) _edEl.value=d.detailEskalasi; }
       if(d.brand && !selBrand){ selBrand=d.brand; renderBrandGrid(); }
       if(d.tipeProject && !selTipeProject){
         selTipeProject=d.tipeProject;
         var tp=document.getElementById('tipeProjectSel'); if(tp) tp.value=d.tipeProject;
       }
       // Isi issue dari GAS (parse format "[Kategori] Teks (PIC:Nama)")
-      var _issueRaw = d.issueList||d.kendala;
-      if(_issueRaw && _issueRaw.trim()){
+      if(d.issueList && d.issueList.trim()){
         issueItems = [];
-        _issueRaw.split('\n').forEach(function(t){
+        d.issueList.split('\n').forEach(function(t){
           t = t.trim(); if(!t) return;
           var m = t.match(/^\[([^\]]+)\]\s*(.*?)(?:\s*\(PIC:([^)]+)\))?$/);
           if(m) issueItems.push({issue:m[2].trim(),kategori:m[1].trim(),pic:(m[3]||'').trim()});
@@ -3222,9 +3242,8 @@ function pmLoadFromGAS(){
         renderIssueTable();
       }
       // Isi rencana dari GAS
-      var _rencanaRaw = d.rencanaList||d.rencana;
-      if(_rencanaRaw && _rencanaRaw.trim()){
-        rencanaItems = _rencanaRaw.split('\n').filter(function(r){ return r.trim(); });
+      if(d.rencanaList && d.rencanaList.trim()){
+        rencanaItems = d.rencanaList.split('\n').filter(function(r){ return r.trim(); });
         renderRencanaList();
       }
       // Isi carry over dari GAS
@@ -3264,110 +3283,6 @@ function pmLoadFromGAS(){
 
 function _pmSetStatus(msg, color){
   var el = document.getElementById('pm-load-status');
-  if(el){ el.textContent = msg; el.style.color = color||'var(--muted)'; }
-}
-
-// ── [NEW] PM MODE: Ringkasan minggu aktif + minggu yang sudah disubmit ──
-function pmRefreshWeekOverview(){
-  var gasUrl; try{ gasUrl=localStorage.getItem('sheets_url')||''; }catch(e){}
-  var wrap = document.getElementById('pm-week-overview');
-  var body = document.getElementById('pm-week-overview-body');
-  if(!wrap||!body) return;
-  var sm   = g('namaSM');
-  var proj = g('namaProject');
-  if(!gasUrl||!sm||!proj){ wrap.style.display='none'; return; }
-
-  wrap.style.display='block';
-  body.innerHTML = '<span style="color:var(--muted)">⏳ Memuat ringkasan minggu...</span>';
-
-  var url = gasUrl+'?action=getSubmittedWeeks&namaSM='+encodeURIComponent(sm)+'&namaProject='+encodeURIComponent(proj);
-  fetch(url)
-    .then(function(r){ return r.json(); })
-    .then(function(j){
-      if(!j || !j.ok){ body.innerHTML='<span style="color:var(--red)">Gagal memuat ringkasan.</span>'; return; }
-      var weeks = j.weeks||[];
-      _pmSubmittedWeeks = weeks; // cache untuk dipakai oleh dropdown "Dari Minggu"
-      if(weeks.length===0){
-        body.innerHTML = '<span style="color:var(--muted)">Belum ada data minggu yang disubmit untuk SM/Project ini.</span>';
-      } else {
-        var maxWk = j.currentWeek || weeks[weeks.length-1].week;
-        var dupSet = {}; (j.duplicates||[]).forEach(function(w){ dupSet[w]=true; });
-        var badges = weeks.map(function(w){
-          var isDup = dupSet[w.week];
-          var bg = isDup ? '#7c1d1d' : '#052a10';
-          var fg = isDup ? '#fca5a5' : 'var(--green)';
-          var label = 'W'+w.week + (isDup ? ' ⚠️x'+w.count : ' ✓');
-          var title = isDup ? ('Minggu '+w.week+' tersubmit '+w.count+'x — cek & perbaiki!') : ('Aktual: '+w.aktual+'% · Status: '+(w.status||'-'));
-          return '<span title="'+escHtml(title)+'" style="display:inline-block;padding:3px 7px;margin:2px;border-radius:5px;font-size:9px;font-weight:700;background:'+bg+';color:'+fg+'">'+label+'</span>';
-        }).join('');
-        var dupWarn = (j.duplicates&&j.duplicates.length) ? '<div style="margin-top:5px;color:#fca5a5;font-size:9px">⚠️ Minggu '+j.duplicates.join(', ')+' tersubmit lebih dari sekali — cek di GSheet, kemungkinan ada input ganda/salah minggu.</div>' : '';
-        body.innerHTML = '<div style="margin-bottom:4px"><b>Minggu aktif project (terakhir disubmit):</b> W'+maxWk+'</div>'
-          + '<div>'+badges+'</div>' + dupWarn;
-      }
-      // Isi dropdown "Dari Minggu" di tool perbaikan, hanya minggu yang benar2 ada datanya
-      var selFrom = document.getElementById('pm-fix-week-from');
-      if(selFrom){
-        selFrom.innerHTML = '<option value="">Dari Minggu</option>';
-        weeks.forEach(function(w){
-          var opt = document.createElement('option');
-          opt.value = w.week;
-          opt.textContent = 'Minggu '+w.week + (dupSetSafe(j,w.week) ? ' (⚠️ '+w.count+'x)' : '');
-          selFrom.appendChild(opt);
-        });
-      }
-    })
-    .catch(function(){ body.innerHTML='<span style="color:var(--red)">Gagal terhubung ke GSheet.</span>'; });
-}
-function dupSetSafe(j,wk){ return (j.duplicates||[]).indexOf(wk)!==-1; }
-var _pmSubmittedWeeks = [];
-
-// ── [NEW] PM MODE: Perbaiki nomor minggu yang salah input oleh SM ──
-function pmFixWeekNumber(){
-  var gasUrl; try{ gasUrl=localStorage.getItem('sheets_url')||''; }catch(e){}
-  if(!gasUrl){ _pmFixSetStatus('❌ GAS URL belum dikonfigurasi.','#ef4444'); return; }
-  var sm   = g('namaSM');
-  var proj = g('namaProject');
-  var fromWk = parseInt((document.getElementById('pm-fix-week-from')||{}).value||'0',10);
-  var toWk   = parseInt((document.getElementById('pm-fix-week-to')||{}).value||'0',10);
-  if(!sm)    { _pmFixSetStatus('⚠️ Pilih SM dulu.','#f59e0b'); return; }
-  if(!proj)  { _pmFixSetStatus('⚠️ Pilih Project dulu.','#f59e0b'); return; }
-  if(!fromWk){ _pmFixSetStatus('⚠️ Pilih minggu asal (Dari Minggu).','#f59e0b'); return; }
-  if(!toWk)  { _pmFixSetStatus('⚠️ Pilih minggu tujuan (Jadi Minggu).','#f59e0b'); return; }
-  if(fromWk===toWk){ _pmFixSetStatus('⚠️ Minggu asal dan tujuan sama, tidak ada yang diubah.','#f59e0b'); return; }
-
-  if(!confirm('Ganti data Minggu '+fromWk+' ('+sm+' / '+proj+') menjadi Minggu '+toWk+'?\n\nIni akan mengubah nomor minggu di GSheet secara langsung.')){ return; }
-
-  _pmFixSetStatus('⏳ Memproses...','#3b82f6');
-  _doFixWeekNumber(gasUrl, sm, proj, fromWk, toWk, false);
-}
-
-function _doFixWeekNumber(gasUrl, sm, proj, fromWk, toWk, force){
-  var payload = {action:'fixWeekNumber', namaSM:sm, namaProject:proj, oldWeek:fromWk, newWeek:toWk, force:!!force};
-  fetch(gasUrl,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)})
-    .then(function(r){ return r.json(); })
-    .then(function(j){
-      if(j && j.ok){
-        _pmFixSetStatus('✅ '+(j.message||'Berhasil diganti.'),'#22c55e');
-        _showToast('✅ Minggu '+fromWk+' → Minggu '+toWk+' berhasil','ok');
-        pmRefreshWeekOverview();
-      } else if(j && j.conflict){
-        if(confirm((j.message||'Minggu tujuan sudah ada datanya.')+'\n\nTimpa (hapus data lama) dan lanjutkan?')){
-          _pmFixSetStatus('⏳ Menimpa data lama...','#3b82f6');
-          _doFixWeekNumber(gasUrl, sm, proj, fromWk, toWk, true);
-        } else {
-          _pmFixSetStatus('❌ Dibatalkan — Minggu '+toWk+' sudah ada datanya.','#f59e0b');
-        }
-      } else {
-        _pmFixSetStatus('❌ Gagal: '+((j&&j.message)||'Unknown error'),'#ef4444');
-      }
-    })
-    .catch(function(err){
-      _pmFixSetStatus('❌ Gagal terhubung: '+err.message,'#ef4444');
-    });
-}
-
-function _pmFixSetStatus(msg, color){
-  var el = document.getElementById('pm-fix-week-status');
   if(el){ el.textContent = msg; el.style.color = color||'var(--muted)'; }
 }
 
@@ -3445,11 +3360,13 @@ function loadLocal(){
       if(pmEl){ pmEl.value=data.pm; handlePMSel(pmEl); }
     }
     if(data.week) selWeek=data.week;
-    ['namaProject','spkStart','spkEnd','targetOpening','aktualOpening','periodeStart','periodeEnd'].forEach(function(k){if(data[k]) s(k,data[k]);});
+    ['namaProject','spkStart','spkEnd','targetOpening','aktualOpening'].forEach(function(k){if(data[k]) s(k,data[k]);});
     if(data.prevProgress!==undefined) prevProgress=data.prevProgress;
+    // Periode SELALU dihitung ulang berdasarkan tanggal hari ini saat app dibuka —
+    // JANGAN restore dari draft lama karena periode bergantung waktu (bisa sudah
+    // berganti minggu sejak draft terakhir disimpan).
+    s('periodeStart',''); s('periodeEnd',''); autoFillPeriode();
     updatePeriodeDisplay();
-    // Jika periode tidak ada di data lama, auto-fill
-    if(!g('periodeStart')) autoFillPeriode();
     lockOpeningDate();
     lockSPKDates();
     lockPeriodeDates();
