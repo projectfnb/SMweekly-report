@@ -551,6 +551,9 @@ input[type=checkbox]{accent-color:var(--green)}
       </div>
       <div id="pf-project-name-display" style="font-size:14px;font-weight:800;color:var(--accent);font-family:var(--font);margin-bottom:8px;padding:8px 10px;background:var(--surface2);border-radius:8px;border-left:3px solid var(--accent);display:none"></div>
 
+      <!-- [v4-24] Tipe Project — read-only, sumbernya data PM di GSheet -->
+      <div id="pf-tipe-display" style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:10px;padding:6px 10px;background:var(--surface2);border-radius:6px;display:none"></div>
+
       <!-- ALERT H-7 -->
       <div id="pf-alert-blocked" style="display:none;padding:10px 12px;border-radius:8px;background:#2a0505;border:1.5px solid var(--red);margin-bottom:12px">
         <div style="font-size:11px;font-weight:800;color:var(--red);margin-bottom:3px">⚠️ ALERT — H-7 SPK MULAI</div>
@@ -4386,6 +4389,7 @@ var PF_SECTIONS_BASE = [
       {key:'lantaiBare', label:'Lantai Bare',          status:['Sudah','Belum']},
       {key:'dindingBare',label:'Dinding Bare',         status:['Sudah','Belum']},
       {key:'dindingLL',  label:'Dinding Antar Lease Line', status:['Sudah','Belum']},
+      {key:'hoardingPasang', label:'Pemasangan Hoarding', status:['Tidak Ada','Ada - By Tenant','Ada - By Mall/LL'], neutral:true},
     ],
   },
 ];
@@ -4408,6 +4412,7 @@ var PF_SECTIONS_TOUCHUP = [
       {key:'sik',          label:'SIK',             status:['Sudah','Belum'], doneStatus:['Sudah']},
       {key:'deposit',      label:'Deposit',         status:['Ada','Tidak Ada'], neutral:true, hasNote:true},
       {key:'newMbo',       label:'New MBO',         status:['Ada','Tidak Ada'], neutral:true},
+      {key:'hoardingPasang', label:'Pemasangan Hoarding', status:['Tidak Ada','Ada - By Tenant','Ada - By Mall/LL'], neutral:true},
     ],
   },
 ];
@@ -4418,12 +4423,11 @@ var PF_SECTIONS_CLOSING = [
     id:'c1', icon:'📋', title:'Kelengkapan Closing', type:'multi',
     items:[
       {key:'lastDayOps', label:'Tgl Last Day Ops', type:'date'},
-      {key:'bongkaran',  label:'Bongkaran', status:['Bare','As Is'], neutral:true,
-        desc:'As Is = item lain sudah non-aktif, hanya sisa kawal BAST (termasuk BA Utilitas untuk tagihan terakhir)'},
       {key:'sikTerbit',  label:'SIK Terbit (include barang keluar)', status:['Sudah','Belum'], doneStatus:['Sudah']},
       {key:'deposit',    label:'Deposit', status:['Tidak Ada','Ada - Belum Bayar','Ada - Sudah Bayar'],
         doneStatus:['Tidak Ada','Ada - Sudah Bayar']},
       {key:'hoarding',   label:'Hoarding', status:['Flexi','Cat'], neutral:true},
+      {key:'hoardingPasang', label:'Pemasangan Hoarding', status:['Tidak Ada','Ada - By Tenant','Ada - By Mall/LL'], neutral:true},
       {key:'cutOffUtilitas', label:'Cut Off Utilitas', status:['Before Bongkaran','After Bongkaran'], neutral:true},
     ],
   },
@@ -4539,6 +4543,18 @@ function handlePFProjectSel(sel){
 function _loadPFData(projectName, smName){
   var proj = pfProjects.find(function(x){return x.namaProject===projectName;}) || _gasProjectCache[projectName] || {};
   PF_SECTIONS = getPFSectionsForType(proj.tipeProject);
+
+  // [v4-24] Tampilkan Tipe Project (read-only — data diinput PM di GSheet)
+  var tipeDisp = document.getElementById('pf-tipe-display');
+  if(tipeDisp){
+    if(proj.tipeProject){
+      tipeDisp.style.display='block';
+      tipeDisp.innerHTML = '🏗️ Tipe Project: <strong style="color:var(--text)">'+proj.tipeProject+'</strong>';
+    } else {
+      tipeDisp.style.display='block';
+      tipeDisp.innerHTML = '⚠️ Tipe Project belum diisi PM di GSheet — checklist pakai skema default (New Store). Hubungi PM.';
+    }
+  }
 
   var lsKey='pf_'+sanitizeKey(smName)+'_'+sanitizeKey(projectName);
   try{
