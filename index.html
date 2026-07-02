@@ -135,6 +135,8 @@ select option{background:var(--surface2)}
 .pf-status-btn.belum.active{background:#2a0505;border-color:var(--red);color:var(--red)}
 .pf-status-btn.proses.active{background:#2a1500;border-color:var(--yellow);color:var(--yellow)}
 .pf-status-btn.done.active{background:#052a10;border-color:var(--green);color:var(--green)}
+.pf-status-btn.neutral.active{background:#1a0a2e;border-color:#7c3aed;color:#a78bfa}
+.pf-item-desc{font-size:9px;color:var(--muted);margin-top:2px;line-height:1.4}
 .pf-issue-toggle{display:flex;align-items:center;gap:6px;padding:4px 10px 6px;border-top:1px solid var(--border)}
 .pf-issue-toggle-label{font-size:9px;color:var(--muted);flex:1}
 .pf-toggle-btn{padding:3px 8px;border-radius:4px;border:1px solid var(--border);font-size:9px;cursor:pointer;background:var(--surface);color:var(--muted);transition:all .15s}
@@ -235,6 +237,29 @@ input[type=checkbox]{accent-color:var(--green)}
 
 <!-- TAB 0: INFO -->
 <div class="step-content active" id="tab-content-0">
+  <div class="card" style="border-color:var(--accent)66">
+    <div class="card-title">👤 PM & Site Manager</div>
+    <div class="form-row" style="grid-template-columns:1fr 1fr">
+      <div>
+        <div class="fl">Project Manager</div>
+        <select id="pmSel" onchange="handlePMSel(this)">
+          <option value="">-- Pilih PM --</option>
+          <option value="Maulidin">Maulidin</option>
+          <option value="Dede Sulaiman">Dede Sulaiman</option>
+        </select>
+        <input type="hidden" id="namaPM" value=""/>
+        <button onclick="togglePMMode()" id="pm-mode-btn" style="margin-top:5px;font-size:9px;padding:4px 10px;border-radius:6px;border:1px solid #3b82f6;background:transparent;color:#3b82f6;cursor:pointer;font-family:var(--mono)">🛠️ Mode PM (Edit Data SM)</button>
+      </div>
+      <div>
+        <div class="fl">Site Manager</div>
+        <select id="namaSMSel" onchange="handleSMSel(this)" disabled>
+          <option value="">-- Pilih PM dulu --</option>
+        </select>
+        <input type="text" id="namaSMManual" placeholder="Nama SM..." style="display:none;margin-top:5px" oninput="document.getElementById('namaSM').value=this.value;autoSave()"/>
+        <input type="hidden" id="namaSM" value=""/>
+      </div>
+    </div>
+  </div>
   <div class="card">
     <div class="card-title">🏷️ Brand</div>
     <div class="brand-grid" id="brand-grid"></div>
@@ -278,38 +303,18 @@ input[type=checkbox]{accent-color:var(--green)}
       </select>
       <div id="tipe-info" style="font-size:9px;color:var(--muted);margin-top:4px;font-family:var(--mono)"></div>
     </div>
-    <div class="form-row">
-      <div>
-        <div class="fl">Project Manager</div>
-        <select id="pmSel" onchange="handlePMSel(this)">
-          <option value="">-- Pilih PM --</option>
-          <option value="Maulidin">Maulidin</option>
-          <option value="Dede Sulaiman">Dede Sulaiman</option>
-        </select>
-        <input type="hidden" id="namaPM" value=""/>
-        <button onclick="togglePMMode()" id="pm-mode-btn" style="margin-top:5px;font-size:9px;padding:4px 10px;border-radius:6px;border:1px solid #3b82f6;background:transparent;color:#3b82f6;cursor:pointer;font-family:var(--mono)">🛠️ Mode PM (Edit Data SM)</button>
-      </div>
-      <div>
-        <div class="fl">Site Manager</div>
-        <select id="namaSMSel" onchange="handleSMSel(this)" disabled>
-          <option value="">-- Pilih PM dulu --</option>
-        </select>
-        <input type="text" id="namaSMManual" placeholder="Nama SM..." style="display:none;margin-top:5px" oninput="document.getElementById('namaSM').value=this.value;autoSave()"/>
-        <input type="hidden" id="namaSM" value=""/>
-      </div>
-      <div>
-        <div class="fl">Kontraktor</div>
-        <select id="kontraktorSel" onchange="handleKontrSel(this)">
-          <option value="">-- Pilih --</option>
-          <option value="PT. Hutama Yasa Kreasi">PT. Hutama Yasa Kreasi</option>
-          <option value="PT. Inkrea">PT. Inkrea</option>
-          <option value="PT. Cakra Bangun Sukses">PT. Cakra Bangun Sukses</option>
-          <option value="PT. Mitra Bangun Asri">PT. Mitra Bangun Asri</option>
-          <option value="__other__">Lainnya...</option>
-        </select>
-        <input type="text" id="kontraktorManual" placeholder="Nama kontraktor..." style="display:none;margin-top:5px" oninput="document.getElementById('kontraktor').value=this.value;autoSave()"/>
-        <input type="hidden" id="kontraktor" value=""/>
-      </div>
+    <div class="form-full" style="margin-top:4px">
+      <div class="fl">Kontraktor</div>
+      <select id="kontraktorSel" onchange="handleKontrSel(this)">
+        <option value="">-- Pilih --</option>
+        <option value="PT. Hutama Yasa Kreasi">PT. Hutama Yasa Kreasi</option>
+        <option value="PT. Inkrea">PT. Inkrea</option>
+        <option value="PT. Cakra Bangun Sukses">PT. Cakra Bangun Sukses</option>
+        <option value="PT. Mitra Bangun Asri">PT. Mitra Bangun Asri</option>
+        <option value="__other__">Lainnya...</option>
+      </select>
+      <input type="text" id="kontraktorManual" placeholder="Nama kontraktor..." style="display:none;margin-top:5px" oninput="document.getElementById('kontraktor').value=this.value;autoSave()"/>
+      <input type="hidden" id="kontraktor" value=""/>
     </div>
     <div class="form-row">
       <div><div class="fl">SPK Mulai</div><input type="date" id="spkStart" onchange="autoSave()"/><div id="spkStart-locked-note" style="display:none;font-size:9px;color:var(--yellow);margin-top:2px;font-family:var(--mono)">🔒 Terkunci mulai W2</div></div>
@@ -552,41 +557,22 @@ input[type=checkbox]{accent-color:var(--green)}
         <div style="font-size:10px;color:#fca5a5;line-height:1.6">Masih ada item yang belum selesai. Segera koordinasi dengan PM.</div>
       </div>
 
-      <!-- SECTION 1: SPK TERBIT -->
-      <div class="pf-section">
-        <div class="pf-section-title">📄 1. SPK Terbit</div>
-        <div id="pf-s1" class="pf-section-body"></div>
-      </div>
-
-      <!-- SECTION 2: APPROVAL GAMBAR LL -->
-      <div class="pf-section">
-        <div class="pf-section-title">📐 2. Approval Gambar dari LL</div>
-        <div id="pf-s2" class="pf-section-body"></div>
-      </div>
-
-      <!-- SECTION 3: FASILITAS KERJA -->
-      <div class="pf-section">
-        <div class="pf-section-title">🔌 3. Fasilitas Kerja</div>
-        <div id="pf-s3" class="pf-section-body"></div>
-      </div>
-
-      <!-- SECTION 4: BIAYA FITOUT -->
-      <div class="pf-section">
-        <div class="pf-section-title">💰 4. Biaya Fitout</div>
-        <div id="pf-s4" class="pf-section-body"></div>
-      </div>
-
-      <!-- SECTION 5: LOKASI SITE -->
-      <div class="pf-section">
-        <div class="pf-section-title">📍 5. Lokasi Site</div>
-        <div id="pf-s5" class="pf-section-body"></div>
-      </div>
+      <!-- SECTIONS: dibangun dinamis sesuai tipeProject (New Store/Relayout/Touch Up/Bongkaran Bare) -->
+      <div id="pf-sections-container"></div>
 
       <!-- ISSUE & KENDALA -->
       <div class="pf-section" style="border-color:#ef444444">
         <div class="pf-section-title" style="color:var(--red)">🚨 Issue & Kendala</div>
         <div id="pf-issue-list" style="margin-bottom:8px"></div>
         <button class="add-btn" onclick="addPFIssue()">+ Tambah Issue</button>
+      </div>
+
+      <!-- PREVIEW WA -->
+      <div class="summary-box" style="border-color:#7c3aed44">
+        <div class="card-title" style="margin-bottom:8px;color:#a78bfa">📱 Preview WhatsApp</div>
+        <div class="summary-text" id="pf-summary-text">Klik Generate untuk membuat preview.</div>
+        <button class="btn btn-save" style="margin-top:8px;font-size:11px;background:#1a0a2e;border:1px solid #7c3aed;color:#a78bfa" onclick="generatePFSummary()">🔄 Generate Preview</button>
+        <button class="btn btn-save" style="margin-top:6px;font-size:11px;background:#1a0a2e;border:1px solid #7c3aed;color:#a78bfa" onclick="copyPFSummary()">📋 Copy ke WhatsApp</button>
       </div>
 
       <!-- SIMPAN & SUBMIT -->
@@ -1459,8 +1445,21 @@ function handleProjectSel(sel){
   }
 
   var projectName = sel.value;
+  var prevProject = hidden ? hidden.value : '';
   if(hidden) hidden.value = projectName;
   if(note){ note.style.display='block'; note.innerHTML='&#x1F512; <strong>'+projectName+'</strong> — project terkunci'; }
+
+  // [FIX v4-23] Reset minggu terpilih tiap ganti project. Sebelumnya selWeek
+  // yang "nyangkut" dari sesi/project sebelumnya bikin autoSave() otomatis
+  // nyimpen draft ke localStorage begitu project dipilih — padahal SM belum
+  // sempat pilih minggu laporan sendiri. Draft hantu ini lalu kedetect sbg
+  // "W1 sudah ada" dan muncul saran "Lanjut ke W2" walau belum pernah disubmit.
+  if(projectName !== prevProject){
+    selWeek = 0;
+    renderWeekGrid();
+    _updateSubmitLockUI();
+    updateDraftStatusBar();
+  }
 
   // ── AUTO-FILL dari GAS cache ──────────────────────────────
   var cached = _gasProjectCache[projectName];
@@ -1531,33 +1530,34 @@ function _autoFillFromGAS(data){
 }
 
 // Setelah auto-fill dari GAS, cek apakah ada draft lokal → tawarkan lanjut
-function _checkLocalDraftAfterGASFill(smName, projectName){
-  var prefix = LS_PREFIX+'_'+sanitizeKey(smName)+'_'+sanitizeKey(projectName)+'_w';
-  var found = [];
+// [FIX v4-23] Cari minggu tertinggi yang SUDAH DISUBMIT ke GAS (bukan sekadar
+// draft/autosave) untuk kombinasi SM+Project ini. Dipakai utk saran "lanjut ke
+// minggu berikutnya" — draft lokal tersimpan otomatis tiap ada perubahan jadi
+// TIDAK bisa dipakai sbg bukti laporan minggu itu sudah selesai/terkirim.
+function getLatestSubmittedWeek(smName, projectName){
+  var prefix = LS_PREFIX+'_LOCK_'+sanitizeKey(smName)+'_'+sanitizeKey(projectName)+'_w';
+  var maxWeek = 0;
   try{
     for(var i=0;i<localStorage.length;i++){
       var k=localStorage.key(i);
       if(k && k.indexOf(prefix)===0){
-        var wStr=k.replace(prefix,'');
-        var wNum=parseInt(wStr);
-        if(!isNaN(wNum)){
-          var raw=localStorage.getItem(k);
-          if(raw){
-            try{ var d=JSON.parse(raw); found.push({week:wNum,data:d}); }catch(e){}
-          }
-        }
+        var wNum=parseInt(k.replace(prefix,''));
+        if(!isNaN(wNum) && wNum>maxWeek) maxWeek=wNum;
       }
     }
   }catch(e){}
+  return maxWeek; // 0 = belum pernah submit sama sekali
+}
 
-  if(!found.length) return;
-  found.sort(function(a,b){ return b.week - a.week; });
-  var latest = found[0];
+function _checkLocalDraftAfterGASFill(smName, projectName){
+  // [FIX v4-23] Saran "lanjut ke W+1" sekarang berdasarkan minggu yang SUDAH
+  // DISUBMIT (LOCK key), bukan minggu draft terakhir yang cuma tersimpan lokal.
+  var lastSubmitted = getLatestSubmittedWeek(smName, projectName);
+  if(!lastSubmitted) return; // belum pernah submit apapun — biarkan SM pilih minggu sendiri
 
-  // Tampilkan banner saran lanjut dari draft terakhir
-  var nextWeek = latest.week + 1;
+  var nextWeek = lastSubmitted + 1;
   var maxW = getMaxWeeks ? getMaxWeeks() : 5;
-  showProjectLoadBanner(projectName, latest.week, nextWeek <= maxW ? nextWeek : null);
+  showProjectLoadBanner(projectName, lastSubmitted, nextWeek <= maxW ? nextWeek : null);
 }
 
 // [DEPRECATED] syncProjectManual: tidak lagi digunakan sejak v4-4
@@ -1625,14 +1625,16 @@ function loadLatestProjectData(smName, projectName){
     var ti=document.getElementById('tipe-info'); if(ti) ti.textContent=TIPE_INFO_MAP[d.tipeProject]||'';
   }
 
-  // Saran: lanjut ke minggu berikutnya
-  var nextWeek = latest.week + 1;
-  var maxW = getMaxWeeks ? getMaxWeeks(selBrand) : 5;
-  if(nextWeek <= maxW){
-    showProjectLoadBanner(projectName, latest.week, nextWeek);
-  } else {
-    showProjectLoadBanner(projectName, latest.week, null);
+  // [FIX v4-23] Saran "lanjut ke W+1" berdasarkan minggu yang SUDAH DISUBMIT,
+  // bukan minggu draft terakhir (draft tersimpan otomatis, belum tentu terkirim)
+  var lastSubmitted = getLatestSubmittedWeek(smName, projectName);
+  if(lastSubmitted){
+    var nextWeek = lastSubmitted + 1;
+    var maxW = getMaxWeeks ? getMaxWeeks(selBrand) : 5;
+    showProjectLoadBanner(projectName, lastSubmitted, nextWeek <= maxW ? nextWeek : null);
   }
+  // Kalau belum pernah submit sama sekali, gak usah tampilkan banner —
+  // biarkan SM pilih minggu laporan sendiri dari week-grid.
 }
 
 function showProjectLoadBanner(project, lastWeek, nextWeek){
@@ -1955,12 +1957,32 @@ function renderPhaseList(){
         if(item.syarat){var sy=document.createElement('div');sy.style.cssText='font-size:9px;color:var(--yellow);margin-top:2px';sy.textContent=item.syarat;lblSpan.appendChild(sy);}
         var inp=document.createElement('input'); inp.className='pitem-input'; inp.type='number'; inp.min=0; inp.max=100;
         inp.value=pct||''; inp.placeholder='0'; inp.disabled=!isOptActive;
-        (function(id,phRef){inp.oninput=function(){var v=parseInt(this.value)||0;v=Math.min(Math.max(v,0),100);if(this.value!==''&&parseInt(this.value)>100){this.value=100;}itemPct[id]=v;updateOverall();autoSave();var ph2=document.getElementById('phh-'+phRef.id);if(ph2)ph2.textContent=calcPhasePct(phRef)+'%';};})(item.id,phase);
         var pctLbl=document.createElement('span'); pctLbl.style.cssText='font-size:11px;color:var(--muted)'; pctLbl.textContent='%';
         ri.appendChild(lblSpan); ri.appendChild(inp); ri.appendChild(pctLbl); row.appendChild(ri);
         var bar=document.createElement('div'); bar.className='pitem-bar';
-        var fill=document.createElement('div'); fill.className='pitem-fill'; fill.style.cssText='width:'+(isOptActive?pct:0)+'%;background:'+barColor;
+        var fill=document.createElement('div'); fill.className='pitem-fill';
+        fill.setAttribute('data-fill-id', item.id);
+        fill.style.width=(isOptActive?pct:0)+'%';
+        fill.style.background=barColor;
         bar.appendChild(fill); row.appendChild(bar);
+        // oninput: query DOM langsung via data-fill-id — closure ref bisa stale
+        // setelah renderPhaseList di-rebuild (mis. saat klik Ada/Tidak optional)
+        (function(id,phRef){
+          inp.oninput=function(){
+            var v=parseInt(this.value)||0;
+            v=Math.min(Math.max(v,0),100);
+            if(this.value!==''&&parseInt(this.value)>100){this.value=100;}
+            itemPct[id]=v;
+            var liveEl=document.querySelector('[data-fill-id="'+id+'"]');
+            if(liveEl){
+              var col=v>=80?'var(--green)':v>=40?'var(--yellow)':'var(--red)';
+              liveEl.style.width=v+'%'; liveEl.style.background=col;
+            }
+            updateOverall(); autoSave();
+            var ph2=document.getElementById('phh-'+phRef.id);
+            if(ph2) ph2.textContent=calcPhasePct(phRef)+'%';
+          };
+        })(item.id,phase);
         // WP detail
         if(item.isWP){
           var wpDiv=document.createElement('div'); wpDiv.className='wp-detail';
@@ -2010,7 +2032,10 @@ function calcPhasePct(phase){
   var total=0, bobot=0;
   phase.items.forEach(function(item){
     if(item.bobot>0){
-      var active=!item.optKey||optionalActive[item.optKey];
+      // FIX: cek depAny juga, tidak cuma optKey
+      var active;
+      if(item.depAny) active=item.depAny.some(function(k){return optionalActive[k];});
+      else            active=!item.optKey||optionalActive[item.optKey];
       if(!active) return;
       bobot+=item.bobot;
       var pct=item.isTes?(itemStatus[item.id]==='pass'?100:0):(itemPct[item.id]||0);
@@ -4321,52 +4346,111 @@ function _buildPPTCore(){
 
 var PF_KATEGORI = ['Perizinan','Utilitas','Kontraktor','Dokumen','LandLord','Kondisi Site','Lainnya'];
 
-// Schema section-section pre-fitout
-// type: 'single' = satu item, 'multi' = dropdown pilihan sub-item
-var PF_SECTIONS = [
+// Schema section-section pre-fitout — BEDA per tipeProject
+// type section: 'single' = satu item, 'multi' = beberapa item
+// type item   : default = status buttons; 'date' = date picker
+// item.doneStatus = daftar status yg dianggap "selesai" (dipakai utk alert H-7). Kalau tidak ada
+//                   status 'Sudah'/'Done' & doneStatus tidak diisi, item dianggap informatif (tidak nge-block alert)
+// item.neutral    = true kalau pilihan status-nya bukan baik/buruk (mis. Flexi/Cat) → warna netral ungu
+// item.desc       = keterangan kecil di bawah label
+
+// ── New Store (base, dipakai juga New Store/Relokasi) ──
+var PF_SECTIONS_BASE = [
   {
-    id    : 's1',
-    title : 'SPK Terbit',
-    type  : 'single',
-    items : [{key:'spk', label:'SPK Terbit', status:['Sudah','Belum']}],
+    id:'s1', icon:'📄', title:'SPK Terbit', type:'single',
+    items:[{key:'spk', label:'SPK Terbit', status:['Sudah','Belum']}],
   },
   {
-    id    : 's2',
-    title : 'Approval Gambar dari LL',
-    type  : 'single',
-    items : [{key:'approvalGbr', label:'Approval Gambar LL', status:['Belum','Proses','Done']}],
+    id:'s2', icon:'📐', title:'Approval Gambar dari LL', type:'single',
+    items:[{key:'approvalGbr', label:'Approval Gambar LL', status:['Belum','Proses','Done']}],
   },
   {
-    id    : 's3',
-    title : 'Fasilitas Kerja',
-    type  : 'multi',
-    items : [
+    id:'s3', icon:'🔌', title:'Fasilitas Kerja', type:'multi',
+    items:[
       {key:'airBersih',  label:'Air Bersih',     status:['Sudah','Belum']},
       {key:'airKotor',   label:'Coring Air Kotor',status:['Sudah','Belum']},
       {key:'listrik',    label:'Listrik Kerja',   status:['Sudah','Belum']},
     ],
   },
   {
-    id    : 's4',
-    title : 'Biaya Fitout',
-    type  : 'multi',
-    items : [
+    id:'s4', icon:'💰', title:'Biaya Fitout', type:'multi',
+    items:[
       {key:'deposit',    label:'Deposit Fitout',  status:['Sudah','Belum'], hasNote:true},
       {key:'biayaFas',   label:'Biaya Fasilitas', status:['Sudah','Belum'], hasNote:true},
       {key:'lainLain',   label:'Lain-lain',       status:['Sudah','Belum'], hasNote:true},
     ],
   },
   {
-    id    : 's5',
-    title : 'Lokasi Site',
-    type  : 'multi',
-    items : [
+    id:'s5', icon:'📍', title:'Lokasi Site', type:'multi',
+    items:[
       {key:'lantaiBare', label:'Lantai Bare',          status:['Sudah','Belum']},
       {key:'dindingBare',label:'Dinding Bare',         status:['Sudah','Belum']},
       {key:'dindingLL',  label:'Dinding Antar Lease Line', status:['Sudah','Belum']},
     ],
   },
 ];
+
+// ── Relayout = New Store + info Last Day Ops toko lama ──
+var PF_SECTIONS_RELAYOUT = [
+  {
+    id:'r0', icon:'🚪', title:'Info Toko Lama', type:'single',
+    items:[{key:'lastDayOps', label:'Tgl Last Day Ops', type:'date'}],
+  },
+].concat(PF_SECTIONS_BASE);
+
+// ── Touch Up & Touch Up + Hotdak ──
+var PF_SECTIONS_TOUCHUP = [
+  {
+    id:'t1', icon:'🔧', title:'Info Touch Up', type:'multi',
+    items:[
+      {key:'tambahHotdak', label:'Tambahan Hotdak', status:['Ya','Tidak'], neutral:true},
+      {key:'tutupToko',    label:'Tutup Toko',      status:['Ya','Tidak'], neutral:true},
+      {key:'sik',          label:'SIK',             status:['Sudah','Belum'], doneStatus:['Sudah']},
+      {key:'deposit',      label:'Deposit',         status:['Ada','Tidak Ada'], neutral:true, hasNote:true},
+      {key:'newMbo',       label:'New MBO',         status:['Ada','Tidak Ada'], neutral:true},
+    ],
+  },
+];
+
+// ── Bongkaran Bare (checklist closing store) ──
+var PF_SECTIONS_CLOSING = [
+  {
+    id:'c1', icon:'📋', title:'Kelengkapan Closing', type:'multi',
+    items:[
+      {key:'lastDayOps', label:'Tgl Last Day Ops', type:'date'},
+      {key:'bongkaran',  label:'Bongkaran', status:['Bare','As Is'], neutral:true,
+        desc:'As Is = item lain sudah non-aktif, hanya sisa kawal BAST (termasuk BA Utilitas untuk tagihan terakhir)'},
+      {key:'sikTerbit',  label:'SIK Terbit (include barang keluar)', status:['Sudah','Belum'], doneStatus:['Sudah']},
+      {key:'deposit',    label:'Deposit', status:['Tidak Ada','Ada - Belum Bayar','Ada - Sudah Bayar'],
+        doneStatus:['Tidak Ada','Ada - Sudah Bayar']},
+      {key:'hoarding',   label:'Hoarding', status:['Flexi','Cat'], neutral:true},
+      {key:'cutOffUtilitas', label:'Cut Off Utilitas', status:['Before Bongkaran','After Bongkaran'], neutral:true},
+    ],
+  },
+  {
+    id:'c2', icon:'🧱', title:'Detail Bongkaran', type:'multi',
+    items:[
+      {key:'kwhMeter', label:'KWH Meter', status:['Dalam Tenant','R. Panel Gedung'], neutral:true,
+        hasNote:true, notePlaceholder:'Bongkar by siapa?'},
+      {key:'meteranAir', label:'Meteran Air', status:['Milik Tenant','Milik Gedung'], neutral:true},
+      {key:'lantaiEksisting', label:'Lantai Eksisting', status:['Bare','Finishing'], neutral:true},
+      {key:'internet', label:'Internet - Follow Up ke IT', status:['Sudah','Belum'], doneStatus:['Sudah']},
+    ],
+  },
+];
+
+function getPFSectionsForType(tipe){
+  switch(tipe){
+    case 'Touch Up':
+    case 'Touch Up + Hotdak': return PF_SECTIONS_TOUCHUP;
+    case 'Bongkaran Bare':    return PF_SECTIONS_CLOSING;
+    case 'Relayout':          return PF_SECTIONS_RELAYOUT;
+    default:                  return PF_SECTIONS_BASE; // New Store, Relokasi, ''
+  }
+}
+
+// PF_SECTIONS = section aktif skrg (di-set ulang tiap ganti project, sesuai tipeProject-nya)
+var PF_SECTIONS = PF_SECTIONS_BASE;
 
 // State
 // pfData = { s1:{spk:{status,hasIssue,issue:{},note}}, s2:{...}, ... }
@@ -4453,6 +4537,9 @@ function handlePFProjectSel(sel){
 }
 
 function _loadPFData(projectName, smName){
+  var proj = pfProjects.find(function(x){return x.namaProject===projectName;}) || _gasProjectCache[projectName] || {};
+  PF_SECTIONS = getPFSectionsForType(proj.tipeProject);
+
   var lsKey='pf_'+sanitizeKey(smName)+'_'+sanitizeKey(projectName);
   try{
     var raw=localStorage.getItem(lsKey);
@@ -4464,9 +4551,23 @@ function _loadPFData(projectName, smName){
   _checkPFAlert(projectName);
 }
 
-// Render semua 5 section
+// Bangun DOM section secara dinamis sesuai PF_SECTIONS aktif (beda2 per tipeProject)
 function _renderAllSections(){
-  PF_SECTIONS.forEach(function(sec){
+  var container=document.getElementById('pf-sections-container');
+  if(!container) return;
+  container.innerHTML='';
+  PF_SECTIONS.forEach(function(sec,idx){
+    var secDiv=document.createElement('div');
+    secDiv.className='pf-section';
+    var titleDiv=document.createElement('div');
+    titleDiv.className='pf-section-title';
+    titleDiv.textContent=(sec.icon||'🔧')+' '+(idx+1)+'. '+sec.title;
+    var bodyDiv=document.createElement('div');
+    bodyDiv.id='pf-'+sec.id;
+    bodyDiv.className='pf-section-body';
+    secDiv.appendChild(titleDiv);
+    secDiv.appendChild(bodyDiv);
+    container.appendChild(secDiv);
     _renderSection(sec);
   });
 }
@@ -4479,23 +4580,58 @@ function _renderSection(sec){
 
   sec.items.forEach(function(item){
     var itemData  = secData[item.key]||{};
-    var curStatus = itemData.status||item.status[0];
     var noteVal   = itemData.note||'';
 
     var card=document.createElement('div');
     card.className='pf-item';
 
-    // Header: label + status buttons
+    // Header: label (+desc) + status buttons / date input
     var header=document.createElement('div');
     header.className='pf-item-header';
+    var lblWrap=document.createElement('div');
+    lblWrap.style.flex='1';
     var lbl=document.createElement('div');
     lbl.className='pf-item-label';
     lbl.textContent=item.label;
+    lblWrap.appendChild(lbl);
+    if(item.desc){
+      var descEl=document.createElement('div');
+      descEl.className='pf-item-desc';
+      descEl.textContent=item.desc;
+      lblWrap.appendChild(descEl);
+    }
+    header.appendChild(lblWrap);
+
+    if(item.type==='date'){
+      // Field tanggal, bukan status buttons
+      var dateInp=document.createElement('input');
+      dateInp.type='date';
+      dateInp.value=itemData.value||'';
+      dateInp.style.cssText='font-size:10px;flex-shrink:0;max-width:140px';
+      (function(sid,k){
+        dateInp.onchange=function(){
+          if(!pfData[sid]) pfData[sid]={};
+          if(!pfData[sid][k]) pfData[sid][k]={};
+          pfData[sid][k].value=this.value;
+          _checkPFAlert(pfProjectName);
+          _autoSavePF();
+        };
+      })(sec.id,item.key);
+      header.appendChild(dateInp);
+      card.appendChild(header);
+      wrap.appendChild(card);
+      return; // lanjut ke item berikutnya
+    }
+
+    var curStatus = itemData.status||item.status[0];
     var btns=document.createElement('div');
     btns.className='pf-status-btns';
     item.status.forEach(function(st){
       var b=document.createElement('button');
-      var cls=st==='Sudah'||st==='Done'?'done':st==='Proses'?'proses':'belum';
+      var cls;
+      if(item.neutral){ cls='neutral'; }
+      else if(item.doneStatus){ cls=item.doneStatus.indexOf(st)>=0?'done':'belum'; }
+      else { cls=(st==='Sudah'||st==='Done')?'done':st==='Proses'?'proses':'belum'; }
       b.className='pf-status-btn '+cls+(curStatus===st?' active':'');
       b.textContent=st;
       (function(sid,k,s){
@@ -4510,15 +4646,15 @@ function _renderSection(sec){
       })(sec.id,item.key,st);
       btns.appendChild(b);
     });
-    header.appendChild(lbl); header.appendChild(btns);
+    header.appendChild(btns);
     card.appendChild(header);
 
-    // Keterangan/nominal (Section 4 - Biaya Fitout)
+    // Keterangan/nominal (opsional, tergantung item.hasNote)
     if(item.hasNote){
       var noteRow=document.createElement('div');
       noteRow.style.cssText='padding:4px 10px 6px;border-top:1px solid var(--border)';
       var noteInp=document.createElement('input');
-      noteInp.type='text'; noteInp.placeholder='Keterangan/nominal (opsional)';
+      noteInp.type='text'; noteInp.placeholder=item.notePlaceholder||'Keterangan/nominal (opsional)';
       noteInp.value=noteVal; noteInp.style.cssText='width:100%;font-size:10px';
       (function(sid,k){
         noteInp.oninput=function(){
@@ -4614,6 +4750,88 @@ function _renderPFIssues(){
 function addPFIssue(){ pfIssues.push({text:'',kategori:'',pic:'',target:''}); _renderPFIssues(); }
 function deletePFIssue(idx){ pfIssues.splice(idx,1); _renderPFIssues(); _autoSavePF(); }
 
+// ── [v4-23] PREVIEW WHATSAPP — Pre-Fitout ────────────────────
+// Format teks disamakan gaya dgn generateSummary() (weekly report): pakai
+// markdown WA (*bold*, _italic_) + emoji status per item, dikelompokkan per section.
+function _pfFmtDate(d){
+  return d ? new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '-';
+}
+function _pfItemLine(item, itemData){
+  if(item.type==='date'){
+    return '📅 '+item.label+': *'+_pfFmtDate(itemData.value)+'*';
+  }
+  var st = itemData.status || item.status[0];
+  var icon;
+  if(item.neutral){ icon='🔹'; }
+  else if(item.doneStatus){ icon = item.doneStatus.indexOf(st)>=0 ? '✅' : '🔴'; }
+  else { icon = (st==='Sudah'||st==='Done') ? '✅' : (st==='Proses'?'🟡':'🔴'); }
+  var line = icon+' '+item.label+': *'+st+'*';
+  if(item.hasNote && itemData.note) line += ' _('+itemData.note+')_';
+  return line;
+}
+function generatePFSummary(){
+  var project = pfProjectName || g('namaProject') || '-';
+  var sm      = (document.getElementById('namaSM')||{}).value || '-';
+  var proj    = pfProjects.find(function(p){ return p.namaProject===project; }) || {};
+  var tipe    = proj.tipeProject || '';
+  var SEP     = '━━━━━━━━━━━━━━━';
+  var NL      = '\n';
+
+  var txt = '';
+  txt += '📋 *PRE-FITOUT READINESS*'+NL;
+  txt += SEP+NL+NL;
+  txt += '🏪 *'+project+'*'+NL;
+  if(tipe) txt += '🏗️ Tipe : *'+tipe+'*'+NL;
+  txt += '👤 SM   : '+sm+NL;
+  txt += '📅 Tgl  : '+new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})+NL;
+  if(proj.spkStart) txt += '📌 SPK Mulai : '+_pfFmtDate(proj.spkStart)+NL;
+
+  PF_SECTIONS.forEach(function(sec, idx){
+    txt += NL+SEP+NL;
+    txt += (sec.icon||'🔧')+' *'+(idx+1)+'. '+sec.title.toUpperCase()+'*'+NL;
+    var secData = pfData[sec.id]||{};
+    sec.items.forEach(function(item){
+      txt += _pfItemLine(item, secData[item.key]||{})+NL;
+    });
+  });
+
+  // Issues
+  txt += NL+SEP+NL;
+  txt += '🚨 *ISSUE & KENDALA*'+NL;
+  var validIssues = pfIssues.filter(function(it){ return (it.text||'').trim(); });
+  if(validIssues.length>0){
+    validIssues.forEach(function(it){
+      txt += '• ['+(it.kategori||'—')+'] '+it.text+(it.pic?' → PIC: '+it.pic:'')+(it.target?' _(target: '+_pfFmtDate(it.target)+')_':'')+NL;
+    });
+  } else {
+    txt += '• Tidak ada issue 🎉'+NL;
+  }
+
+  txt += NL+'_Generated by SM Report FnB 2026 — '+sm+'_';
+
+  var el=document.getElementById('pf-summary-text'); if(el) el.textContent=txt;
+  return txt;
+}
+function copyPFSummary(){
+  var txt=generatePFSummary();
+  if(!txt) return;
+  try {
+    var ta=document.createElement('textarea');
+    ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    var ok=document.execCommand('copy');
+    document.body.removeChild(ta);
+    if(ok){ alert('✅ Preview Pre-Fitout tersalin! Buka WhatsApp lalu paste.'); return; }
+  } catch(e){}
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){
+      alert('✅ Preview Pre-Fitout tersalin! Buka WhatsApp lalu paste.');
+    }).catch(function(){
+      showCopyModal(txt);
+    });
+  } else { showCopyModal(txt); }
+}
+
 function _checkPFAlert(projectName){
   var alertEl=document.getElementById('pf-alert-blocked');
   if(!alertEl||!projectName) return;
@@ -4622,13 +4840,17 @@ function _checkPFAlert(projectName){
   var spk=new Date(proj.spkStart); spk.setHours(0,0,0,0);
   var today=new Date(); today.setHours(0,0,0,0);
   var diff=Math.ceil((spk-today)/86400000);
-  // Cek semua item apakah ada yang belum selesai
+  // Cek semua item apakah ada yang belum selesai (skip item date & item yg gak punya konsep "selesai")
   var hasUnfinished=false;
   PF_SECTIONS.forEach(function(sec){
     sec.items.forEach(function(item){
+      if(item.type==='date') return; // field tanggal gak jadi penentu blocking
+      var doneVals=item.doneStatus||['Sudah','Done'];
+      var hasDoneOption=item.status.some(function(s){ return doneVals.indexOf(s)>=0; });
+      if(!hasDoneOption) return; // status set tanpa konsep "selesai" → informatif saja, gak nge-block
       var s=(pfData[sec.id]||{})[item.key]||{};
       var st=s.status||item.status[0];
-      if(st!=='Sudah'&&st!=='Done') hasUnfinished=true;
+      if(doneVals.indexOf(st)===-1) hasUnfinished=true;
     });
   });
   alertEl.style.display=(diff<=7&&diff>=0&&hasUnfinished)?'block':'none';
@@ -4680,7 +4902,11 @@ function _submitPFToGAS(url, smName){
   PF_SECTIONS.forEach(function(sec){
     sec.items.forEach(function(item){
       var d=(pfData[sec.id]||{})[item.key]||{};
-      checklistFlat[item.key]={status:d.status||item.status[0], note:d.note||''};
+      if(item.type==='date'){
+        checklistFlat[item.key]={value:d.value||'', type:'date'};
+      } else {
+        checklistFlat[item.key]={status:d.status||item.status[0], note:d.note||''};
+      }
     });
   });
 
@@ -4690,6 +4916,7 @@ function _submitPFToGAS(url, smName){
     namaPM      :(document.getElementById('namaPM')||{}).value||'',
     namaProject :pfProjectName,
     brand       :proj.brand||'',
+    tipeProject :proj.tipeProject||'',
     spkStart    :proj.spkStart||'',
     checklist   :checklistFlat,
     itemIssues  :itemIssues,
