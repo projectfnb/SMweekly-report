@@ -2533,6 +2533,7 @@ function renderFotoGrid(){
 }
 
 // ── SUMMARY ──
+function repeatChar(ch,n){ var s=''; for(var i=0;i<n;i++) s+=ch; return s; }
 function generateSummary(){
   if(!selBrand){
     var el=document.getElementById('summary-text');
@@ -2579,11 +2580,23 @@ function generateSummary(){
   }
   // SPK sudah lewat atau ≤3 hari lagi + progress belum 100% → Critical
   var spkCritical = (daysToSpkEnd !== null) && (daysToSpkEnd <= 3) && (total < 100);
-  if(week===1 && dev>=-10) status='Early Stage / Mobilisasi';
-  else if(spkCritical)     status='Critical Delay';
-  else if(dev>=-5)         status='On Track';
-  else if(dev>=-10)        status='Minor Delay';
-  else                     status='Critical Delay';
+  var statusReason = ''; // sub-alasan, ditampilkan di teks WA supaya tidak membingungkan
+  if(week===1 && dev>=-10){
+    status='Early Stage / Mobilisasi';
+  } else if(spkCritical){
+    status='Critical Delay';
+    statusReason = daysToSpkEnd<=0
+      ? 'SPK sudah lewat '+Math.abs(daysToSpkEnd)+' hari, progress belum 100%'
+      : 'SPK habis H-'+daysToSpkEnd+', progress belum 100% (bukan berarti tren mingguan turun)';
+  } else if(dev>=-5){
+    status='On Track';
+  } else if(dev>=-10){
+    status='Minor Delay';
+    statusReason = 'Deviasi ringan dari target';
+  } else {
+    status='Critical Delay';
+    statusReason = 'Deviasi signifikan dari target';
+  }
 
   // Testing status
   var tesItems=[];
@@ -2626,13 +2639,32 @@ function generateSummary(){
   txt += '📅 Tgl : '+new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})+' | Minggu ke-'+week+NL;
   txt += '_Periode: '+periode+'_'+NL+NL;
 
+  var spkStartStr = g('spkStart');
+  var spkRangeStr = (spkStartStr||spkEndStr) ? (fmt(spkStartStr)+' – '+fmt(spkEndStr)) : '—';
+  var spkCountdownStr = daysToSpkEnd===null ? '' : (daysToSpkEnd>0?' (H-'+daysToSpkEnd+', tersisa '+daysToSpkEnd+' hari)':daysToSpkEnd===0?' (Hari ini)':' (Overrun '+Math.abs(daysToSpkEnd)+' hari)');
+
   txt += SEP2+NL;
   txt += '📊 *PROGRESS*'+NL;
-  txt += '• Kumulatif : *'+total+'%*'+NL;
-  txt += '• Mingguan  : '+deltaStr+' ('+prevProgress+'% → '+total+'%)'+NL;
-  txt += '• Target    : '+target+'%'+(isProrateActive()?' _(proporsional)_':'')+NL;
-  txt += '• Deviasi   : *'+devStr+'* '+devEmoji+NL;
-  txt += '• Status    : '+statusEmoji+' *'+status+'*'+NL;
+  txt += '• Progress saat ini    : *'+total+'%*'+NL;
+  txt += '• Kenaikan minggu ini  : '+deltaStr+' ('+prevProgress+'% → '+total+'%)'+NL;
+  txt += '• Target rencana       : '+target+'%'+(isProrateActive()?' _(proporsional)_':'')+NL;
+  txt += '• Selisih vs target    : *'+devStr+'* '+devEmoji+NL;
+  txt += '• SPK                  : '+spkRangeStr+spkCountdownStr+NL;
+  txt += '• Status               : '+statusEmoji+' *'+status+'*'+NL;
+  if(statusReason) txt += '  ↳ '+statusReason+NL;
+
+  // Progress detail per tahapan/kategori (reuse getKategoriConfig/getKategoriPct dari Tab progress)
+  var kategoriList = getKategoriConfig();
+  if(kategoriList && kategoriList.length){
+    txt += NL+SEP2+NL;
+    txt += '📐 *PROGRESS DETAIL PER TAHAPAN*'+NL;
+    kategoriList.forEach(function(kat){
+      var kp = getKategoriPct(kat.ids);
+      var kEmoji = kp>=80?'✅':kp>=40?'⚠️':'🔴';
+      var namePad = kat.label.length<24 ? kat.label+repeatChar(' ',24-kat.label.length) : kat.label;
+      txt += '• '+namePad+': '+kp+'% '+kEmoji+NL;
+    });
+  }
 
   // Testing — hanya tampil jika ada yang pass/fail
   var tesDone = tesItems.filter(function(t){return t.indexOf('PASS')>-1||t.indexOf('FAIL')>-1;});
