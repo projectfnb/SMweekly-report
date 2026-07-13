@@ -358,7 +358,7 @@ input[type=checkbox]{accent-color:var(--green)}
         <option value="4">Minggu 4</option>
         <option value="5">Minggu 5</option>
       </select>
-      <button onclick="pmLoadFromGAS()" style="font-size:10px;padding:7px 14px;border-radius:6px;border:none;background:#3b82f6;color:#fff;cursor:pointer;font-weight:700;white-space:nowrap">📥 Muat Data</button>
+      <button id="pm-load-btn" onclick="pmLoadFromGAS()" style="font-size:10px;padding:7px 14px;border-radius:6px;border:none;background:#3b82f6;color:#fff;cursor:pointer;font-weight:700;white-space:nowrap">📥 Muat Data</button>
     </div>
     <div id="pm-load-status" style="font-size:9px;color:var(--muted);font-family:var(--mono)">Pilih minggu lalu klik Muat Data untuk mengisi form dari GSheet.</div>
   </div>
@@ -3322,6 +3322,8 @@ function pmLoadFromGAS(){
   if(!wk)  { _pmSetStatus('⚠️ Pilih Minggu dulu.','#f59e0b'); return; }
 
   _pmSetStatus('⏳ Memuat dari GSheet...','#3b82f6');
+  var btnEl = document.getElementById('pm-load-btn');
+  if(btnEl){ btnEl.disabled = true; btnEl.textContent = '⏳ Memuat...'; }
   var url = gasUrl+'?action=getWeekData&namaSM='+encodeURIComponent(sm)+'&namaProject='+encodeURIComponent(proj)+'&week='+wk;
   fetch(url)
     .then(function(r){ return r.json(); })
@@ -3371,23 +3373,26 @@ function pmLoadFromGAS(){
       }
       lockSPKDates(); lockPeriodeDates(); updateOverall(); updatePeriodeDisplay();
 
-      // [FIX v4-31] Mode PM pakai jalur load terpisah (getWeekData), belum pernah
-      // set prevProgress sama sekali sebelumnya -> "Kenaikan minggu ini" selalu
-      // dari 0%. Tarik progress minggu SEBELUMNYA (wk-1) langsung dari GSheet.
-      if(wk<=1){
-        prevProgress = 0;
-      } else {
-        var prevUrl = gasUrl+'?action=getWeekData&namaSM='+encodeURIComponent(sm)+'&namaProject='+encodeURIComponent(proj)+'&week='+(wk-1);
-        fetch(prevUrl)
-          .then(function(r2){ return r2.json(); })
-          .then(function(j2){
-            var pd2 = (j2&&j2.data)||null;
-            prevProgress = (pd2 && pd2.overallPct!==undefined && pd2.overallPct!==null) ? Number(pd2.overallPct) : 0;
-            console.log('[FIX v4-31] Mode PM: prevProgress (W'+(wk-1)+') = '+prevProgress+'%');
-            _showToast('📊 Baseline W'+(wk-1)+' = '+prevProgress+'% (utk hitung kenaikan minggu ini)','ok');
-          })
-          .catch(function(){ prevProgress = 0; });
-      }
+      // [FIX v4-32] Baseline prevProgress sekarang WAJIB selesai dulu sebelum status
+      // "data siap" ditampilkan — sebelumnya (v4-31) jalan paralel (fire-and-forget)
+      // jadi kalau PM buru-buru klik Generate Summary, baseline bisa belum sempat
+      // masuk dan tetap kebaca 0%. Sekarang statusnya baru muncul SETELAH baseline
+      // beres, jadi tidak ada lagi jendela race condition.
+      var baselineP = (wk<=1)
+        ? Promise.resolve(0)
+        : fetch(gasUrl+'?action=getWeekData&namaSM='+encodeURIComponent(sm)+'&namaProject='+encodeURIComponent(proj)+'&week='+(wk-1))
+            .then(function(r2){ return r2.json(); })
+            .then(function(j2){
+              var pd2 = (j2&&j2.data)||null;
+              return (pd2 && pd2.overallPct!==undefined && pd2.overallPct!==null) ? Number(pd2.overallPct) : 0;
+            })
+            .catch(function(){ return 0; });
+
+      _pmSetStatus('⏳ Menghitung baseline minggu ke-'+(wk-1>0?wk-1:0)+'...','#3b82f6');
+
+      baselineP.then(function(bp){
+      prevProgress = bp;
+      console.log('[FIX v4-32] Mode PM: prevProgress (W'+(wk-1)+') = '+prevProgress+'%');
 
       // Restore progress detail per item (jika ada — hasil submit v4-20+)
       if(d.progressDetail && d.progressDetail.trim() && d.progressDetail.trim()!==''){
@@ -3399,17 +3404,20 @@ function pmLoadFromGAS(){
           if(pd.wpData)        Object.assign(wpData, pd.wpData);
           renderPhaseList();
           updateOverall();
-          _pmSetStatus('✅ Data W'+wk+' berhasil dimuat lengkap (termasuk progress per item). Silakan edit lalu Submit kembali.','#22c55e');
+          _pmSetStatus('✅ Data W'+wk+' siap (baseline W'+(wk-1)+'='+prevProgress+'%). Silakan edit lalu Submit kembali.','#22c55e');
         }catch(e){
-          _pmSetStatus('✅ Data W'+wk+' dimuat (metadata+issue+rencana). Progress detail tidak tersedia — submit ulang dari SM untuk aktifkan restore penuh.','#f59e0b');
+          _pmSetStatus('✅ Data W'+wk+' siap (baseline W'+(wk-1)+'='+prevProgress+'%). Progress detail per-item tidak tersedia.','#f59e0b');
         }
       } else {
-        _pmSetStatus('✅ Data W'+wk+' dimuat (metadata+issue+rencana). Progress detail belum ada di GSheet — tersedia mulai submit berikutnya.','#f59e0b');
+        _pmSetStatus('✅ Data W'+wk+' siap (baseline W'+(wk-1)+'='+prevProgress+'%). Progress detail per-item belum ada di GSheet.','#f59e0b');
       }
-      _showToast('📥 Data W'+wk+' ('+sm+') dimuat dari GSheet','ok');
+      _showToast('📥 Data W'+wk+' ('+sm+') siap — baseline W'+(wk-1)+'='+prevProgress+'%. Boleh Generate Summary sekarang.','ok');
+      if(btnEl){ btnEl.disabled = false; btnEl.textContent = '📥 Muat Data'; }
+      });
     })
     .catch(function(err){
       _pmSetStatus('❌ Gagal fetch GSheet: '+err.message,'#ef4444');
+      if(btnEl){ btnEl.disabled = false; btnEl.textContent = '📥 Muat Data'; }
     });
 }
 
