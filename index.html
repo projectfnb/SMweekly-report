@@ -1102,7 +1102,16 @@ function setWeek(w){
     // Ada data tersimpan untuk minggu ini — tanya SM mau load atau mulai baru
     if(confirm('Ada data tersimpan untuk Minggu '+w+' ('+existing.namaProject+').\n\nLoad data tersebut?')){
       loadWeekData(existing);
+    } else {
+      // Mulai baru — tetap tarik prevProgress asli dari GSheet (server truth)
+      _syncPrevProgressFromServer();
     }
+  } else {
+    // Tidak ada draft lokal untuk minggu ini — tarik prevProgress asli dari GSheet.
+    // Ini yang tadinya bolong: kalau project/SM ke-restore otomatis oleh loadLocal()
+    // (bukan lewat pilih dropdown), prevProgress bisa nyangkut di 0 walau di GSheet
+    // sudah ada progress minggu sebelumnya.
+    _syncPrevProgressFromServer();
   }
 
   lockOpeningDate();
@@ -1471,26 +1480,12 @@ function handleProjectSel(sel){
     // Setelah auto-fill, cek apakah ada draft lokal untuk dilanjutkan
     var smName = (document.getElementById('namaSM')||{}).value||'';
     if(smName) _checkLocalDraftAfterGASFill(smName, projectName);
-    // [FIX v4-27] Tarik progress minggu terakhir dari GSheet (server truth)
-    _fetchServerPrevProgress(projectName, function(res){
-      if(res && res.progress!==null){
-        prevProgress = res.progress;
-        console.log('[FIX v4-27] prevProgress diset dari GSheet = '+prevProgress+'% (minggu terakhir: '+res.week+')');
-      }
-    });
+    _syncPrevProgressFromServer(); // [FIX v4-27/30]
   } else {
     // Tidak ada cache (fallback localStorage) — pakai loadLatestProjectData seperti sebelumnya
     var smName2 = (document.getElementById('namaSM')||{}).value||'';
     if(smName2 && projectName) loadLatestProjectData(smName2, projectName);
-    // [FIX v4-27] Tetap tarik progress minggu terakhir dari GSheet walau cache kosong
-    if(projectName){
-      _fetchServerPrevProgress(projectName, function(res){
-        if(res && res.progress!==null){
-          prevProgress = res.progress;
-          console.log('[FIX v4-27] prevProgress diset dari GSheet = '+prevProgress+'% (minggu terakhir: '+res.week+')');
-        }
-      });
-    }
+    _syncPrevProgressFromServer(); // [FIX v4-27/30]
   }
 
   renderWeekHistoryBar();
@@ -2575,6 +2570,21 @@ function renderFotoGrid(){
 // ── SUMMARY ──
 function repeatChar(ch,n){ var s=''; for(var i=0;i<n;i++) s+=ch; return s; }
 function padLabel(label,width){ return label.length<width ? label+repeatChar(' ',width-label.length) : label; }
+
+// [FIX v4-30] Helper terpusat: sinkronkan prevProgress dari GSheet (server truth).
+// Dipanggil dari setWeek() -- bukan cuma saat pilih project -- supaya tetap benar
+// walau project/SM ke-restore otomatis lewat loadLocal() (buka app ulang, draft
+// device lama) yang TIDAK lewat handleProjectSel().
+function _syncPrevProgressFromServer(){
+  var projectName = (document.getElementById('namaProject')||{}).value||'';
+  if(!projectName) return;
+  _fetchServerPrevProgress(projectName, function(res){
+    if(res && res.progress!==null){
+      prevProgress = res.progress;
+      console.log('[FIX v4-30] prevProgress disinkron dari GSheet = '+prevProgress+'% (minggu terakhir: '+res.week+')');
+    }
+  });
+}
 function generateSummary(){
   if(!selBrand){
     var el=document.getElementById('summary-text');
