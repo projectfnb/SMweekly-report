@@ -2259,7 +2259,7 @@ function getKategoriConfig(){
     {label:'Persiapan',          ids: KAT_PERSIAPAN},
     {label:'Sipil & Arsitektur', ids: KAT_SIPIL},
     {label:'ME',                 ids: KAT_ME},
-    {label:'Plumbing & Gas',     ids: KAT_PLUMBING},
+    {label:'Plumbing',           ids: KAT_PLUMBING},
     {label:'HVAC',               ids: KAT_HVAC},
     {label:'Furniture & Fixture',ids: KAT_FIXTURE},
   ];
@@ -3370,6 +3370,24 @@ function pmLoadFromGAS(){
         renderCOList();
       }
       lockSPKDates(); lockPeriodeDates(); updateOverall(); updatePeriodeDisplay();
+
+      // [FIX v4-31] Mode PM pakai jalur load terpisah (getWeekData), belum pernah
+      // set prevProgress sama sekali sebelumnya -> "Kenaikan minggu ini" selalu
+      // dari 0%. Tarik progress minggu SEBELUMNYA (wk-1) langsung dari GSheet.
+      if(wk<=1){
+        prevProgress = 0;
+      } else {
+        var prevUrl = gasUrl+'?action=getWeekData&namaSM='+encodeURIComponent(sm)+'&namaProject='+encodeURIComponent(proj)+'&week='+(wk-1);
+        fetch(prevUrl)
+          .then(function(r2){ return r2.json(); })
+          .then(function(j2){
+            var pd2 = (j2&&j2.data)||null;
+            prevProgress = (pd2 && pd2.overallPct!==undefined && pd2.overallPct!==null) ? Number(pd2.overallPct) : 0;
+            console.log('[FIX v4-31] Mode PM: prevProgress (W'+(wk-1)+') = '+prevProgress+'%');
+            _showToast('📊 Baseline W'+(wk-1)+' = '+prevProgress+'% (utk hitung kenaikan minggu ini)','ok');
+          })
+          .catch(function(){ prevProgress = 0; });
+      }
 
       // Restore progress detail per item (jika ada — hasil submit v4-20+)
       if(d.progressDetail && d.progressDetail.trim() && d.progressDetail.trim()!==''){
