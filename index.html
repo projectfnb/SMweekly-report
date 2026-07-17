@@ -4506,6 +4506,40 @@ var PF_SECTIONS_BASE = [
   },
 ];
 
+// ── New Store (khusus): SPK Mulai/Selesai otomatis dari GSheet, Pemasangan Hoarding
+//    & Pemasangan Fleksi dipisah jadi 2 item, + item Internet, + Daya Listrik ──
+var PF_SECTIONS_NEWSTORE = [
+  {
+    id:'s1', icon:'📄', title:'SPK Terbit', type:'single',
+    items:[
+      {key:'spk', label:'SPK Terbit', status:['Sudah','Belum']},
+      {key:'spkDates', label:'Tanggal SPK', type:'autoSpk'},
+    ],
+  },
+  PF_SECTIONS_BASE[1], // Approval Gambar dari LL
+  PF_SECTIONS_BASE[2], // Fasilitas Kerja
+  {
+    id:'s4', icon:'💰', title:'Biaya Fitout', type:'multi',
+    items:[
+      {key:'deposit',    label:'Deposit Fitout',  status:['Sudah','Belum','Tidak Ada'], doneStatus:['Sudah','Tidak Ada'], hasNote:true},
+      {key:'biayaFas',   label:'Biaya Fasilitas', status:['Sudah','Belum','Tidak Ada'], doneStatus:['Sudah','Tidak Ada'], hasNote:true},
+      {key:'lainLain',   label:'Lain-lain',       status:['Sudah','Belum','Tidak Ada'], doneStatus:['Sudah','Tidak Ada'], hasNote:true},
+    ],
+  },
+  {
+    id:'s5', icon:'📍', title:'Lokasi Site', type:'multi',
+    items:[
+      {key:'lantaiBare', label:'Lantai Bare',          status:['Sudah','Belum','Eksisting'], doneStatus:['Sudah','Eksisting'], hasNote:true},
+      {key:'dindingBare',label:'Dinding Bare',         status:['Sudah','Belum','Eksisting'], doneStatus:['Sudah','Eksisting'], hasNote:true},
+      {key:'dindingLL',  label:'Dinding Antar Lease Line', status:['Sudah','Belum','Eksisting'], doneStatus:['Sudah','Eksisting'], hasNote:true},
+      {key:'pemasanganHoarding', label:'Pemasangan Hoarding', status:['Tidak Ada','Ada - By Tenant','Ada - By Mall/LL'], neutral:true},
+      {key:'pemasanganFleksi',   label:'Pemasangan Fleksi',   status:['Tidak Ada','Ada - By Tenant','Ada - By Mall/LL'], neutral:true},
+      {key:'internet',   label:'Internet', status:['By Internal','By Vendor'], neutral:true, hasNote:true, notePlaceholder:'Keterangan (opsional)'},
+      {key:'dayaListrik', label:'Daya Listrik', type:'daya'},
+    ],
+  },
+];
+
 // ── Relayout = New Store + info Last Day Ops toko lama ──
 var PF_SECTIONS_RELAYOUT = [
   {
@@ -4561,7 +4595,8 @@ function getPFSectionsForType(tipe){
     case 'Touch Up + Hotdak': return PF_SECTIONS_TOUCHUP;
     case 'Bongkaran Bare':    return PF_SECTIONS_CLOSING;
     case 'Relayout':          return PF_SECTIONS_RELAYOUT;
-    default:                  return PF_SECTIONS_BASE; // New Store, Relokasi, ''
+    case 'New Store':         return PF_SECTIONS_NEWSTORE;
+    default:                  return PF_SECTIONS_BASE; // Relokasi, ''
   }
 }
 
@@ -4730,6 +4765,18 @@ function _renderSection(sec){
     }
     header.appendChild(lblWrap);
 
+    if(item.type==='autoSpk'){
+      // Tampilan read-only: tanggal mulai/selesai SPK diambil langsung dari data project (GSheet)
+      var proj = pfProjects.find(function(x){return x.namaProject===pfProjectName;}) || _gasProjectCache[pfProjectName] || {};
+      var spkDisp=document.createElement('div');
+      spkDisp.style.cssText='font-size:10px;color:var(--text);text-align:right;flex-shrink:0;line-height:1.6';
+      spkDisp.innerHTML='Mulai: <strong>'+_pfFmtDate(proj.spkStart)+'</strong><br>Selesai: <strong>'+_pfFmtDate(proj.spkEnd)+'</strong>';
+      header.appendChild(spkDisp);
+      card.appendChild(header);
+      wrap.appendChild(card);
+      return; // lanjut ke item berikutnya
+    }
+
     if(item.type==='date'){
       // Field tanggal, bukan status buttons
       var dateInp=document.createElement('input');
@@ -4747,6 +4794,118 @@ function _renderSection(sec){
       })(sec.id,item.key);
       header.appendChild(dateInp);
       card.appendChild(header);
+      wrap.appendChild(card);
+      return; // lanjut ke item berikutnya
+    }
+
+    if(item.type==='daya'){
+      // Field khusus Daya Listrik: eksisting (kVA), tambah daya (Ada/Tidak) + sub-field, keterangan
+      card.appendChild(header);
+
+      var dRow1=document.createElement('div');
+      dRow1.style.cssText='padding:6px 10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px';
+      var dLbl1=document.createElement('div');
+      dLbl1.textContent='Daya Eksisting (kVA)'; dLbl1.style.cssText='font-size:10px;color:var(--muted);flex-shrink:0;min-width:110px';
+      var dInp1=document.createElement('input');
+      dInp1.type='text'; dInp1.placeholder='cth: 23 kVA'; dInp1.value=itemData.eksisting||'';
+      dInp1.style.cssText='font-size:10px;flex:1';
+      (function(sid,k){
+        dInp1.oninput=function(){
+          if(!pfData[sid]) pfData[sid]={};
+          if(!pfData[sid][k]) pfData[sid][k]={};
+          pfData[sid][k].eksisting=this.value;
+          _autoSavePF();
+        };
+      })(sec.id,item.key);
+      dRow1.appendChild(dLbl1); dRow1.appendChild(dInp1);
+      card.appendChild(dRow1);
+
+      var dRow2=document.createElement('div');
+      dRow2.style.cssText='padding:6px 10px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:6px';
+      var dLbl2=document.createElement('div');
+      dLbl2.textContent='Tambah Daya'; dLbl2.style.cssText='font-size:10px;color:var(--muted)';
+      var dBtns2=document.createElement('div');
+      dBtns2.className='pf-status-btns';
+      var tambahStatus=itemData.tambahStatus||'Tidak';
+      ['Ada','Tidak'].forEach(function(st){
+        var b=document.createElement('button');
+        b.className='pf-status-btn neutral'+(tambahStatus===st?' active':'');
+        b.textContent=st;
+        (function(sid,k,s){
+          b.onclick=function(){
+            if(!pfData[sid]) pfData[sid]={};
+            if(!pfData[sid][k]) pfData[sid][k]={};
+            pfData[sid][k].tambahStatus=s;
+            _renderSection(PF_SECTIONS.find(function(x){return x.id===sid;}));
+            _autoSavePF();
+          };
+        })(sec.id,item.key,st);
+        dBtns2.appendChild(b);
+      });
+      dRow2.appendChild(dLbl2); dRow2.appendChild(dBtns2);
+      card.appendChild(dRow2);
+
+      if(tambahStatus==='Ada'){
+        var dRow3=document.createElement('div');
+        dRow3.style.cssText='padding:6px 10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px';
+        var dLbl3=document.createElement('div');
+        dLbl3.textContent='Tambah Daya (kVA)'; dLbl3.style.cssText='font-size:10px;color:var(--muted);flex-shrink:0;min-width:110px';
+        var dInp3=document.createElement('input');
+        dInp3.type='text'; dInp3.placeholder='cth: 10 kVA'; dInp3.value=itemData.tambahNilai||'';
+        dInp3.style.cssText='font-size:10px;flex:1';
+        (function(sid,k){
+          dInp3.oninput=function(){
+            if(!pfData[sid]) pfData[sid]={};
+            if(!pfData[sid][k]) pfData[sid][k]={};
+            pfData[sid][k].tambahNilai=this.value;
+            _autoSavePF();
+          };
+        })(sec.id,item.key);
+        dRow3.appendChild(dLbl3); dRow3.appendChild(dInp3);
+        card.appendChild(dRow3);
+
+        var dRow4=document.createElement('div');
+        dRow4.style.cssText='padding:6px 10px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:6px';
+        var dLbl4=document.createElement('div');
+        dLbl4.textContent='Proses By'; dLbl4.style.cssText='font-size:10px;color:var(--muted)';
+        var dBtns4=document.createElement('div');
+        dBtns4.className='pf-status-btns';
+        var prosesBy=itemData.prosesBy||'';
+        ['Tenant','LL'].forEach(function(st){
+          var b=document.createElement('button');
+          b.className='pf-status-btn neutral'+(prosesBy===st?' active':'');
+          b.textContent=st;
+          (function(sid,k,s){
+            b.onclick=function(){
+              if(!pfData[sid]) pfData[sid]={};
+              if(!pfData[sid][k]) pfData[sid][k]={};
+              pfData[sid][k].prosesBy=s;
+              _renderSection(PF_SECTIONS.find(function(x){return x.id===sid;}));
+              _autoSavePF();
+            };
+          })(sec.id,item.key,st);
+          dBtns4.appendChild(b);
+        });
+        dRow4.appendChild(dLbl4); dRow4.appendChild(dBtns4);
+        card.appendChild(dRow4);
+      }
+
+      var dRowNote=document.createElement('div');
+      dRowNote.style.cssText='padding:4px 10px 6px;border-top:1px solid var(--border)';
+      var dInpNote=document.createElement('input');
+      dInpNote.type='text'; dInpNote.placeholder='Keterangan (opsional)'; dInpNote.value=itemData.note||'';
+      dInpNote.style.cssText='width:100%;font-size:10px';
+      (function(sid,k){
+        dInpNote.oninput=function(){
+          if(!pfData[sid]) pfData[sid]={};
+          if(!pfData[sid][k]) pfData[sid][k]={};
+          pfData[sid][k].note=this.value;
+          _autoSavePF();
+        };
+      })(sec.id,item.key);
+      dRowNote.appendChild(dInpNote);
+      card.appendChild(dRowNote);
+
       wrap.appendChild(card);
       return; // lanjut ke item berikutnya
     }
@@ -4885,8 +5044,22 @@ function _pfFmtDate(d){
   return d ? new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '-';
 }
 function _pfItemLine(item, itemData){
+  if(item.type==='autoSpk'){
+    var proj = pfProjects.find(function(p){return p.namaProject===pfProjectName;}) || {};
+    return '📌 '+item.label+': Mulai *'+_pfFmtDate(proj.spkStart)+'* — Selesai *'+_pfFmtDate(proj.spkEnd)+'*';
+  }
   if(item.type==='date'){
     return '📅 '+item.label+': *'+_pfFmtDate(itemData.value)+'*';
+  }
+  if(item.type==='daya'){
+    var line = '🔌 '+item.label+': Eksisting *'+(itemData.eksisting||'-')+'*';
+    var tambahStatus = itemData.tambahStatus||'Tidak';
+    line += ', Tambah Daya: *'+tambahStatus+'*';
+    if(tambahStatus==='Ada'){
+      line += ' ('+(itemData.tambahNilai||'-')+', by '+(itemData.prosesBy||'-')+')';
+    }
+    if(itemData.note) line += ' _('+itemData.note+')_';
+    return line;
   }
   var st = itemData.status || item.status[0];
   var icon;
@@ -4972,7 +5145,7 @@ function _checkPFAlert(projectName){
   var hasUnfinished=false;
   PF_SECTIONS.forEach(function(sec){
     sec.items.forEach(function(item){
-      if(item.type==='date') return; // field tanggal gak jadi penentu blocking
+      if(item.type==='date'||item.type==='daya'||item.type==='autoSpk') return; // field tanggal/daya/autoSpk gak jadi penentu blocking
       var doneVals=item.doneStatus||['Sudah','Done'];
       var hasDoneOption=item.status.some(function(s){ return doneVals.indexOf(s)>=0; });
       if(!hasDoneOption) return; // status set tanpa konsep "selesai" → informatif saja, gak nge-block
@@ -5030,8 +5203,19 @@ function _submitPFToGAS(url, smName){
   PF_SECTIONS.forEach(function(sec){
     sec.items.forEach(function(item){
       var d=(pfData[sec.id]||{})[item.key]||{};
-      if(item.type==='date'){
+      if(item.type==='autoSpk'){
+        checklistFlat[item.key]={type:'autoSpk', spkStart:proj.spkStart||'', spkEnd:proj.spkEnd||''};
+      } else if(item.type==='date'){
         checklistFlat[item.key]={value:d.value||'', type:'date'};
+      } else if(item.type==='daya'){
+        checklistFlat[item.key]={
+          type:'daya',
+          eksisting:d.eksisting||'',
+          tambahStatus:d.tambahStatus||'Tidak',
+          tambahNilai:d.tambahNilai||'',
+          prosesBy:d.prosesBy||'',
+          note:d.note||'',
+        };
       } else {
         checklistFlat[item.key]={status:d.status||item.status[0], note:d.note||''};
       }
@@ -5046,6 +5230,7 @@ function _submitPFToGAS(url, smName){
     brand       :proj.brand||'',
     tipeProject :proj.tipeProject||'',
     spkStart    :proj.spkStart||'',
+    spkEnd      :proj.spkEnd||'',
     checklist   :checklistFlat,
     itemIssues  :itemIssues,
     issues      :pfIssues,
