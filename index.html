@@ -206,6 +206,39 @@ input[type=checkbox]{accent-color:var(--green)}
 </head>
 <body>
 
+<!-- ============================================================
+     MAINTENANCE MODE — dibaca otomatis dari GSheet tab "Config" sel A1.
+     Ganti sel itu ON/OFF di GSheet — TIDAK perlu ganti file / deploy ulang.
+     Fail-safe: kalau fetch gagal (offline dll), app tetap jalan normal.
+     ============================================================ -->
+<div id="maintenance-screen" style="display:none;position:fixed;inset:0;z-index:99999;background:#0f172a;color:#fff;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:sans-serif">
+  <div style="font-size:48px;margin-bottom:12px">🛠️</div>
+  <div style="font-size:18px;font-weight:700;margin-bottom:8px">Sedang Maintenance</div>
+  <div style="font-size:13px;color:#94a3b8;max-width:320px;line-height:1.5">
+    Sistem Weekly Report SM sedang dalam perbaikan sementara.<br/>
+    Silakan coba lagi beberapa saat lagi. Data minggu lalu Anda tetap aman.
+  </div>
+</div>
+<script>
+(function(){
+  var url = localStorage.getItem('sheets_url')
+    || "https://script.google.com/macros/s/AKfycbzP0ejKcJOBhVcXwLKRe2HnMWSf78i9iHt1CePYGzf-2p1UohF8iaKxPsYNNs3JNHZhRg/exec";
+  if(!url) return;
+  fetch(url + (url.indexOf('?')>=0?'&':'?') + 'action=getMaintenance')
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(j && j.maintenance === true){
+        document.querySelectorAll('body > *').forEach(function(el){
+          if(el.id !== 'maintenance-screen') el.style.display='none';
+        });
+        var ms = document.getElementById('maintenance-screen');
+        if(ms) ms.style.display='flex';
+      }
+    })
+    .catch(function(){ /* fail-safe: gagal fetch, app tetap jalan normal */ });
+})();
+</script>
+
 <div class="app-header">
   <div class="app-header-row">
     <div class="app-icon">📋</div>
