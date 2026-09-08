@@ -832,39 +832,44 @@ function getActivePhases(){
   }
 }
 
-// ── WEEK TARGETS PER BRAND — S-CURVE ──
-// Delta terbesar di minggu tengah (puncak konstruksi: close ceiling, dinding, fixture)
-// Chatime 4W : 15 → 40 → 72 → 100  | delta: +15, +25, +32, +28
-// Others  5W : 12 → 30 → 57 → 82 → 100 | delta: +12, +18, +27, +25, +18
-// MStand  8W : 8 → 20 → 35 → 52 → 68 → 82 → 93 → 100 | delta: +8,+12,+15,+17,+16,+14,+11,+7 (SPK 27 Jul–23 Sep)
-var WEEK_TARGETS_BY_BRAND = {
-  chatime:   {1:15, 2:40, 3:72, 4:100},
-  gindaco:   {1:12, 2:30, 3:57, 4:82, 5:100},
-  gogocurry: {1:12, 2:30, 3:57, 4:82, 5:100},
-  '88seoul': {1:12, 2:30, 3:57, 4:82, 5:100},
-  mollytea:  {1:12, 2:30, 3:57, 4:82, 5:100},
-  mstand:    {1:8, 2:20, 3:35, 4:52, 5:68, 6:82, 7:93, 8:100},
-};
-var MAX_WEEKS_BY_BRAND = {chatime:4, gindaco:5, gogocurry:5, '88seoul':5, mollytea:5, mstand:8};
-function getWeekTargets(){
-  if(selTipeProject==='Touch Up'||selTipeProject==='Bongkaran Bare') return {1:45,2:100};
-  if(selTipeProject==='Touch Up + Hotdak') return {1:22,2:62,3:100};
-  return WEEK_TARGETS_BY_BRAND[selBrand]||WEEK_TARGETS_BY_BRAND.gindaco;
+// ── [v5-36] UNIVERSAL S-CURVE BERBASIS SPK MULAI–SELESAI ──
+// GANTI dari kurva per-brand/tipe (WEEK_TARGETS_BY_BRAND, dulu: Chatime 4W,
+// Touch Up 2W, dst — semua hardcode). Sekarang SEMUA brand & tipe project
+// pakai 1 rumus S-curve yang sama; jumlah minggu & posisi kurva mengikuti
+// durasi SPK Mulai→Selesai project itu sendiri, bukan tabel tetap.
+// Bentuk kurva: smoothstep kubik y = 3t² - 2t³ (t = fraksi waktu 0..1) —
+// lambat di awal (mobilisasi), cepat di tengah (puncak konstruksi), landai
+// di akhir (finishing/QC) — pola S yang sama seperti kurva lama, tapi
+// generik untuk durasi berapa pun.
+// CATATAN: laporan yang SUDAH disubmit sebelumnya TIDAK dihitung ulang —
+// perubahan ini hanya berlaku untuk submit baru mulai sekarang.
+function sCurveY(t) {
+  t = Math.min(Math.max(t, 0), 1);
+  return 3 * t * t - 2 * t * t * t; // 0..1
 }
-function getMaxWeeks(){
-  if(selTipeProject==='Touch Up'||selTipeProject==='Bongkaran Bare') return 2;
-  if(selTipeProject==='Touch Up + Hotdak') return 3;
-  return MAX_WEEKS_BY_BRAND[selBrand]||5;
+// Jumlah minggu efektif dari total hari SPK (dibulatkan ke atas, min 1).
+// Dipakai HANYA untuk UI (jumlah tombol "Minggu N" & label target per tombol) —
+// perhitungan target aktual saat submit tetap proporsional per-hari (lihat getProrateTarget).
+function getMaxWeeks() {
+  var totalDays = getTotalSpkDays();
+  if (totalDays <= 0) return 5; // fallback kalau SPK Selesai belum diisi
+  return Math.max(Math.ceil(totalDays / 7), 1);
+}
+// Target % di AKHIR minggu ke-w (dipakai untuk label tombol "Minggu N")
+function getTargetForWeekNumber(w) {
+  var maxW = getMaxWeeks();
+  var t = Math.min(w / maxW, 1);
+  return Math.round(sCurveY(t) * 1000) / 10;
 }
 
 // ── TIPE PROJECT HANDLERS ──────────────────────────────────────
 var TIPE_INFO_MAP = {
-  'New Store'       : '🏪 Fase standar 5 fasa | Timeline brand (Chatime 4W, MStand 8W, lainnya 5W)',
-  'Relayout'        : '🔄 Tambah Fase 0 Pembongkaran | Timeline brand normal',
-  'Relokasi'        : '📦 Fase standar + Pemindahan Equipment H-10 | Timeline brand normal',
-  'Touch Up'        : '🔧 3 fasa ramping | Maks 2 minggu | W1:45% W2:100%',
-  'Touch Up + Hotdak': '🔧🏗️ 3 fasa + Waterproofing Hotdak | Maks 3 minggu | W1:22% W2:62% W3:100%',
-  'Bongkaran Bare'  : '🏚️ Bongkar total 4 fasa | Maks 2 minggu | Target → BAST',
+  'New Store'       : '🏪 Fase standar 5 fasa | Kurva S mengikuti durasi SPK Mulai–Selesai',
+  'Relayout'        : '🔄 Tambah Fase 0 Pembongkaran | Kurva S mengikuti durasi SPK Mulai–Selesai',
+  'Relokasi'        : '📦 Fase standar + Pemindahan Equipment H-10 | Kurva S mengikuti durasi SPK Mulai–Selesai',
+  'Touch Up'        : '🔧 3 fasa ramping | Kurva S mengikuti durasi SPK Mulai–Selesai',
+  'Touch Up + Hotdak': '🔧🏗️ 3 fasa + Waterproofing Hotdak | Kurva S mengikuti durasi SPK Mulai–Selesai',
+  'Bongkaran Bare'  : '🏚️ Bongkar total 4 fasa | Kurva S mengikuti durasi SPK Mulai–Selesai | Target → BAST',
 };
 function handleTipeChange(val){
   selTipeProject = val;
@@ -962,32 +967,13 @@ function isProrateActive() {
 function getProrateTarget() {
   var totalDays = getTotalSpkDays();
   if (totalDays <= 0) {
-    // Fallback: spkEnd belum diisi → tidak bisa hitung proporsional, pakai kurva mingguan biasa
-    var targets = getWeekTargets();
-    return targets[selWeek] || 20;
+    // Fallback: spkEnd belum diisi → tidak bisa hitung proporsional harian,
+    // pakai posisi kurva berdasarkan nomor minggu generik (asumsi 5 minggu).
+    return getTargetForWeekNumber(selWeek || 1);
   }
   var elapsed = getTotalDaysElapsed();
   var t = Math.min(Math.max(elapsed / totalDays, 0), 1); // fraksi waktu 0..1
-
-  var targets  = getWeekTargets();
-  var maxWeeks = getMaxWeeks();
-
-  // Checkpoint: (0,0), (1/N, target1), (2/N, target2), ..., (1, 100)
-  var points = [{x:0, y:0}];
-  for (var k = 1; k <= maxWeeks; k++) {
-    points.push({x: k / maxWeeks, y: targets[k] || 100});
-  }
-
-  // Cari segmen tempat t berada, interpolasi linear
-  for (var i = 1; i < points.length; i++) {
-    if (t <= points[i].x) {
-      var p0 = points[i-1], p1 = points[i];
-      var segFrac = (p1.x === p0.x) ? 1 : (t - p0.x) / (p1.x - p0.x);
-      var val = p0.y + (p1.y - p0.y) * segFrac;
-      return Math.round(val * 10) / 10;
-    }
-  }
-  return 100; // t >= 1
+  return Math.round(sCurveY(t) * 1000) / 10;
 }
 
 
@@ -1104,12 +1090,12 @@ function setBrand(b){
 function renderWeekGrid(){
   var grid=document.getElementById('week-grid'); if(!grid) return; grid.innerHTML='';
   if(!selBrand){grid.innerHTML='<div style="color:var(--muted);font-size:11px;padding:8px">Pilih brand terlebih dahulu</div>';return;}
-  var targets=getWeekTargets(), maxW=getMaxWeeks();
+  var maxW=getMaxWeeks();
   for(var w=1;w<=maxW;w++){
     var div=document.createElement('div');
     div.className='week-btn'+(selWeek===w?' active':'');
     div.id='wb-'+w;
-    div.innerHTML='Minggu '+w+'<div class="week-btn-sub">Target '+(targets[w]||100)+'%</div>';
+    div.innerHTML='Minggu '+w+'<div class="week-btn-sub">Target '+getTargetForWeekNumber(w)+'%</div>';
     (function(wk){div.onclick=function(){setWeek(wk);};})(w);
     grid.appendChild(div);
   }
@@ -1897,7 +1883,7 @@ function getEffectiveTarget(){
   // Kurva proporsional berbasis total hari SPK (bukan cuma W1) — selalu aktif
   // selama spkStart & spkEnd terisi. Fallback ke kurva mingguan biasa kalau belum.
   if (isProrateActive()) return getProrateTarget();
-  var targets=getWeekTargets(); return targets[selWeek]||20;
+  return getTargetForWeekNumber(selWeek || 1);
 }
 
 // ── PHASE RENDERING ──
