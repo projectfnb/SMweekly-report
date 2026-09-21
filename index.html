@@ -281,7 +281,7 @@ input[type=checkbox]{accent-color:var(--green)}
           <option value="Dede Sulaiman">Dede Sulaiman</option>
         </select>
         <input type="hidden" id="namaPM" value=""/>
-        <button onclick="togglePMMode()" id="pm-mode-btn" style="margin-top:5px;font-size:9px;padding:4px 10px;border-radius:6px;border:1px solid #3b82f6;background:transparent;color:#3b82f6;cursor:pointer;font-family:var(--mono)">🛠️ Mode PM (Edit Data SM)</button>
+        <button onclick="togglePMMode()" id="pm-mode-btn" style="margin-top:5px;font-size:9px;padding:4px 10px;border-radius:6px;border:1px solid #3b82f6;background:transparent;color:#3b82f6;cursor:pointer;font-family:var(--mono)">✏️ Edit / Revisi Laporan Lama</button>
       </div>
       <div>
         <div class="fl">Site Manager</div>
@@ -379,9 +379,10 @@ input[type=checkbox]{accent-color:var(--green)}
     </div>
   </div>
 
-  <!-- PM Load & Edit Panel -->
+  <!-- Panel Edit / Revisi Laporan Lama (bisa dipakai SM utk revisi laporannya sendiri) -->
   <div id="pm-load-panel" style="display:none;margin:10px 0;padding:12px 14px;border-radius:10px;border:1px solid #3b82f6;background:#050e2a">
-    <div style="font-size:10px;font-weight:700;color:#3b82f6;margin-bottom:8px">🛠️ Mode PM — Muat & Edit Data SM dari GSheet</div>
+    <div style="font-size:10px;font-weight:700;color:#3b82f6;margin-bottom:8px">✏️ Muat & Revisi Laporan yang Sudah Disubmit</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:8px;font-family:var(--mono)">Pilih minggu yang mau direvisi (SM & Project mengikuti yang sedang dipilih di atas). Data lama akan dimuat ke form — submit ulang akan MENIMPA laporan lama, bukan menambah baris baru.</div>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
       <select id="pm-load-week-sel" style="flex:1;font-size:11px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text)">
         <option value="">-- Pilih Minggu --</option>
@@ -527,8 +528,9 @@ input[type=checkbox]{accent-color:var(--green)}
     <div class="card-title" style="margin-bottom:8px">📝 Summary Otomatis</div>
     <div class="summary-text" id="summary-text">Klik Generate untuk membuat summary.</div>
     <button class="btn btn-save" style="margin-top:8px;font-size:11px" onclick="generateSummary()">🔄 Generate Summary</button>
-    <button class="btn btn-save" style="margin-top:6px;font-size:11px" onclick="copySummary()">📋 Copy ke WhatsApp</button>
-    <button class="btn btn-save" style="margin-top:6px;font-size:11px;background:#1e6b3f" onclick="exportPPT()">📊 Export PPT</button>
+    <button class="btn btn-save" id="btn-copy-wa" style="margin-top:6px;font-size:11px" onclick="copySummary()">📋 Copy ke WhatsApp</button>
+    <button class="btn btn-save" id="btn-export-ppt" style="margin-top:6px;font-size:11px;background:#1e6b3f" onclick="exportPPT()">📊 Export PPT</button>
+    <div id="copy-export-lock-note" style="display:none;font-size:9px;color:var(--yellow);margin-top:6px;font-family:var(--mono)">🔒 Submit laporan dulu untuk membuka Copy WhatsApp &amp; Export PPT.</div>
   </div>
   <!-- SIMPAN DRAFT & SUBMIT -->
   <div class="card" style="margin-bottom:0">
@@ -1492,6 +1494,7 @@ function handleProjectSel(sel){
   // "W1 sudah ada" dan muncul saran "Lanjut ke W2" walau belum pernah disubmit.
   if(projectName !== prevProject){
     selWeek = 0;
+    _isEditModeSubmit = false; // [v4-39] ganti project → reset, submit berikutnya default append lagi
     renderWeekGrid();
     _updateSubmitLockUI();
     updateDraftStatusBar();
@@ -2833,6 +2836,10 @@ function generateSummary(){
   return txt;
 }
 function copySummary(){
+  if(!_isCopyExportUnlocked()){
+    alert('🔒 Submit laporan minggu ini dulu (W'+(selWeek||'-')+') sebelum copy ke WhatsApp.');
+    return;
+  }
   var txt=generateSummary();
   if(!txt) return;
   // Fallback copy for Android WebView / content:// URLs
@@ -3010,9 +3017,9 @@ function submitLaporan(){
     return;
   }
 
-  // Cek submit lock
+  // Cek submit lock (dilewati kalau sedang mode revisi — lihat _isEditModeSubmit)
   var lockKey = _getSubmitLockKey();
-  if(lockKey && localStorage.getItem(lockKey)){
+  if(lockKey && localStorage.getItem(lockKey) && !_isEditModeSubmit){
     _showToast('&#x26A0;&#xFE0F; Laporan W'+selWeek+' sudah pernah disubmit.','warn');
     return;
   }
@@ -3030,7 +3037,10 @@ function submitLaporan(){
     return;
   }
 
-  if(!confirm('Submit laporan W'+selWeek+' untuk project "'+g('namaProject')+'"?\n\nSetelah submit, data akan dikunci.')){return;}
+  if(!confirm((_isEditModeSubmit
+      ? 'Submit REVISI W'+selWeek+' untuk project "'+g('namaProject')+'"?\n\nData lama akan DITIMPA dengan data ini.'
+      : 'Submit laporan W'+selWeek+' untuk project "'+g('namaProject')+'"?\n\nSetelah submit, data akan dikunci.'
+    ))){return;}
 
   // Simpan draft terakhir dulu (overwrite-safe)
   simpanDraft();
@@ -3084,6 +3094,9 @@ function submitLaporan(){
     persiapan    :getKategoriPct(KAT_PERSIAPAN), sipil:getKategoriPct(KAT_SIPIL),
     me           :getKategoriPct(KAT_ME), plumbing:getKategoriPct(KAT_PLUMBING),
     hvac         :getKategoriPct(KAT_HVAC), fixture:getKategoriPct(KAT_FIXTURE),
+    // [v4-39] Kalau data minggu ini dimuat lewat Mode PM (edit laporan lama),
+    // backend akan MENIMPA baris SM+Project+Minggu Ke yang sama, bukan nambah baru.
+    isEditSubmit : _isEditModeSubmit,
     // [v4-20] Detail progress per item untuk restore lengkap (PM edit)
     progressDetail: JSON.stringify({
       itemPct      : itemPct,
@@ -3171,7 +3184,14 @@ function _getSubmitLockKey(){
 function _lockSubmit(){
   var k = _getSubmitLockKey();
   if(k) try{ localStorage.setItem(k, new Date().toISOString()); }catch(e){}
+  // [v4-41] Catat SM yang barusan submit dari device ini — dipakai utk cek
+  // cross-edit di togglePMMode() (SM lain buka panel revisi = perlu PIN).
+  try{
+    var smNow=(g('namaSM')||'').trim();
+    if(smNow) localStorage.setItem(LS_PREFIX+'_last_submitted_sm', smNow);
+  }catch(e){}
   _updateSubmitLockUI();
+  _isEditModeSubmit = false; // [v4-39] submit sukses → reset, submit berikutnya default append lagi
 }
 
 function _updateSubmitLockUI(){
@@ -3179,14 +3199,38 @@ function _updateSubmitLockUI(){
   var lockBar  = document.getElementById('submit-lock-bar');
   var weekSpan = document.getElementById('submit-lock-week');
   var btn      = document.getElementById('btn-submit-laporan');
-  var isLocked = k && !!localStorage.getItem(k);
+  // [v4-39] Mode revisi (_isEditModeSubmit) SELALU membuka kunci submit,
+  // walau minggu ini sebelumnya sudah pernah disubmit dari device yang sama.
+  var isLocked = k && !!localStorage.getItem(k) && !_isEditModeSubmit;
   if(lockBar)  lockBar.style.display  = isLocked ? 'block' : 'none';
   if(weekSpan) weekSpan.textContent   = selWeek||'';
   if(btn){
     btn.disabled = isLocked;
     btn.style.opacity = isLocked ? '0.5' : '1';
-    btn.textContent = isLocked ? 'Sudah Disubmit — W'+selWeek : 'Submit Laporan ke Google Sheets';
+    btn.textContent = isLocked ? 'Sudah Disubmit — W'+selWeek
+      : (_isEditModeSubmit ? '✏️ Submit Revisi ke Google Sheets' : 'Submit Laporan ke Google Sheets');
   }
+  _updateCopyExportLockUI();
+}
+
+// [v4-39] Copy ke WhatsApp & Export PPT DIKUNCI sampai laporan minggu ini
+// (SM+Project+Minggu aktif) sudah sukses disubmit — pakai key lock yang sama
+// dengan _getSubmitLockKey(), jadi otomatis sinkron dgn status submit.
+function _isCopyExportUnlocked(){
+  var k = _getSubmitLockKey();
+  return !!(k && localStorage.getItem(k));
+}
+function _updateCopyExportLockUI(){
+  var unlocked = _isCopyExportUnlocked();
+  ['btn-copy-wa','btn-export-ppt'].forEach(function(id){
+    var b = document.getElementById(id);
+    if(!b) return;
+    b.disabled = !unlocked;
+    b.style.opacity = unlocked ? '1' : '0.5';
+    b.style.cursor  = unlocked ? 'pointer' : 'not-allowed';
+  });
+  var note = document.getElementById('copy-export-lock-note');
+  if(note) note.style.display = unlocked ? 'none' : 'block';
 }
 
 // ── SAVE / LOAD ──
@@ -3311,18 +3355,32 @@ function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').r
 
 // ── PM MODE: Load & Edit data SM dari GSheet ─────────────────────────────────
 var _pmModeActive = false;
-var _pmUnlocked = false;
+// [v4-39] true kalau data minggu ini dimuat lewat Mode PM (pmLoadFromGAS) —
+// artinya SM/PM sengaja membuka laporan LAMA untuk direvisi. Submit berikutnya
+// akan MENIMPA baris lama (match by SM+Project+Minggu Ke) alih-alih menambah
+// baris baru. Direset lagi setelah submit sukses / ganti SM atau Project,
+// supaya submit normal berikutnya tetap default aman (selalu append).
+var _isEditModeSubmit = false;
+// [v4-41] PIN cuma diminta kalau SM yang dipilih BEDA dari SM terakhir yang
+// submit di device ini — jadi SM sendiri bisa langsung revisi tanpa PIN,
+// tapi cross-edit (buka punya SM lain) tetap perlu izin PM.
 var _PM_PIN = '714MAU';
-
+function _getLastSubmittedSM(){
+  try{ return (localStorage.getItem(LS_PREFIX+'_last_submitted_sm')||'').trim(); }catch(e){ return ''; }
+}
 function togglePMMode(){
-  if(!_pmUnlocked){
-    var input = prompt('🔐 Masukkan PIN PM untuk melanjutkan:');
-    if(input === null) return; // cancelled
-    if(input !== _PM_PIN){
-      alert('❌ PIN salah. Akses ditolak.');
-      return;
+  if(!_pmModeActive){
+    var currentSM = (g('namaSM')||'').trim();
+    var lastSM    = _getLastSubmittedSM();
+    var isCrossEdit = lastSM && currentSM && lastSM.toLowerCase() !== currentSM.toLowerCase();
+    if(isCrossEdit){
+      var input = prompt('🔐 Laporan terakhir di perangkat ini disubmit oleh "'+lastSM+'", bukan "'+currentSM+'".\nMasukkan PIN PM untuk mengedit laporan SM lain:');
+      if(input === null) return; // cancelled
+      if(input !== _PM_PIN){
+        alert('❌ PIN salah. Akses ditolak.');
+        return;
+      }
     }
-    _pmUnlocked = true;
   }
   _pmModeActive = !_pmModeActive;
   var panel = document.getElementById('pm-load-panel');
@@ -3331,7 +3389,7 @@ function togglePMMode(){
   if(btn){
     btn.style.background  = _pmModeActive ? '#3b82f6' : 'transparent';
     btn.style.color       = _pmModeActive ? '#fff'    : '#3b82f6';
-    btn.textContent       = _pmModeActive ? '✕ Tutup Mode PM' : '🛠️ Mode PM (Edit Data SM)';
+    btn.textContent       = _pmModeActive ? '✕ Tutup' : '✏️ Edit / Revisi Laporan Lama';
   }
 }
 
@@ -3354,6 +3412,9 @@ function pmLoadFromGAS(){
     .then(function(j){
       if(!j||!j.data){ _pmSetStatus('❌ Data W'+wk+' tidak ditemukan di GSheet.','#ef4444'); return; }
       var d = j.data;
+      // [v4-39] Data lama berhasil dimuat → submit berikutnya akan MENIMPA
+      // baris ini (bukan tambah baru). Lihat _isEditModeSubmit di deklarasi var.
+      _isEditModeSubmit = true;
       // Set minggu
       selWeek = wk;
       renderWeekGrid();
@@ -3909,6 +3970,10 @@ function getKategoriPct(idArray){
 
 // ── HTML REPORT EXPORT (no library needed) ──
 function exportPPT(){
+  if(!_isCopyExportUnlocked()){
+    alert('🔒 Submit laporan minggu ini dulu (W'+(selWeek||'-')+') sebelum export PPT.');
+    return;
+  }
   if(!selBrand){alert('Pilih brand terlebih dahulu.');return;}
   var project = g('namaProject');
   var periode = g('periodeStart');
