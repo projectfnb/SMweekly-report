@@ -515,7 +515,8 @@ input[type=checkbox]{accent-color:var(--green)}
     <div class="card-title" id="lbl-aktual-title">🏁 Aktual Opening (isi setelah semua fase selesai)</div>
     <div class="form-full">
       <div class="fl" id="lbl-aktual-opening">Tanggal Aktual Opening</div>
-      <input type="date" id="aktualOpening" onchange="autoSave()"/>
+      <input type="date" id="aktualOpening" onchange="validateAktualOpening();autoSave()"/>
+      <div style="font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)">Isi tanggal ini PADA HARI-H opening atau setelahnya — tidak bisa diisi untuk tanggal yang belum terjadi.</div>
     </div>
   </div>
   <div class="card" style="margin-bottom:10px">
@@ -1045,7 +1046,15 @@ document.addEventListener('DOMContentLoaded', function(){
   lockSPKDates();
   renderWeekHistoryBar();
   autoFillPeriode(); // Auto-fill Periode Start/End saat load
+  // [v4-43] Kunci date-picker Aktual Opening di level UI juga — tidak bisa pilih tanggal depan
+  var aoInp=document.getElementById('aktualOpening');
+  if(aoInp) aoInp.max = _todayDateStr();
 });
+function _todayDateStr(){
+  var t=new Date();
+  var mm=String(t.getMonth()+1).padStart(2,'0'), dd=String(t.getDate()).padStart(2,'0');
+  return t.getFullYear()+'-'+mm+'-'+dd;
+}
 
 // ── TABS ──
 var curTab=0;
@@ -1841,16 +1850,62 @@ function handleKontrSel(sel){
   else{m.style.display='none';h.value=sel.value;autoSave();}
 }
 
+// [v4-43] Aktual Opening TIDAK BOLEH diisi tanggal yang belum terjadi — SM
+// kadang input tanggal opening padahal belum benar-benar opening. Kunci:
+// kalau tanggal yang diisi > hari ini, tolak & kosongkan lagi.
+function validateAktualOpening(){
+  var inp = document.getElementById('aktualOpening');
+  if(!inp || !inp.value) return;
+  var val = new Date(inp.value); val.setHours(0,0,0,0);
+  var today = new Date(); today.setHours(0,0,0,0);
+  if(val > today){
+    alert('⚠️ Tanggal Aktual Opening tidak boleh lebih dari hari ini.\n\nIsi tanggal ini PADA HARI-H opening beneran terjadi, atau setelahnya — bukan tanggal rencana/perkiraan.');
+    inp.value = '';
+  }
+}
+
+// [v4-42] Kalau Aktual Opening sudah diisi, project SUDAH opening — jangan
+// lagi ditandai "Overrun" (itu cuma relevan utk yg BELUM opening & target
+// sudah lewat). Bandingkan Aktual vs Target: onTime kalau Aktual <= Target.
+function _openingAlreadyStatus(){
+  var akt = g('aktualOpening');
+  if(!akt) return null;
+  var aktD = new Date(akt); aktD.setHours(0,0,0,0);
+  var tgt = g('targetOpening');
+  if(!tgt) return {onTime:true, lateDays:0};
+  var tgtD = new Date(tgt); tgtD.setHours(0,0,0,0);
+  var diff = Math.round((aktD-tgtD)/86400000); // >0 = telat sekian hari, <=0 = on time/lebih cepat
+  return {onTime: diff<=0, lateDays: diff};
+}
+
 // ── COUNTDOWN ──
 function updateCountdown(){
   var toVal=g('targetOpening'), banner=document.getElementById('countdown-banner');
+  var already=_openingAlreadyStatus();
+  var dEl=document.getElementById('cd-days');
+  if(already){
+    banner.style.display='flex';
+    if(already.onTime){
+      banner.className='countdown-banner ok'; dEl.style.color='var(--green)';
+      dEl.textContent='✅';
+      document.getElementById('cd-lbl').textContent='Sudah Opening — On Time';
+      document.getElementById('cd-sub').textContent = already.lateDays<0
+        ? ('Lebih cepat '+Math.abs(already.lateDays)+' hari dari target')
+        : 'Sesuai tanggal target';
+    } else {
+      banner.className='countdown-banner warn'; dEl.style.color='var(--yellow)';
+      dEl.textContent=already.lateDays;
+      document.getElementById('cd-lbl').textContent='Sudah Opening';
+      document.getElementById('cd-sub').textContent='Telat '+already.lateDays+' hari dari target';
+    }
+    return;
+  }
   if(!toVal){banner.style.display='none';return;}
   var target=new Date(toVal); target.setHours(0,0,0,0);
   var today=new Date(); today.setHours(0,0,0,0);
   var diff=Math.ceil((target-today)/86400000);
   banner.style.display='flex';
   document.getElementById('cd-days').textContent=Math.abs(diff);
-  var dEl=document.getElementById('cd-days');
   if(diff>14){banner.className='countdown-banner ok';dEl.style.color='var(--green)';document.getElementById('cd-lbl').textContent='Hari menuju Opening';document.getElementById('cd-sub').textContent='H-'+diff+' - On schedule';}
   else if(diff>0){banner.className='countdown-banner warn';dEl.style.color='var(--yellow)';document.getElementById('cd-lbl').textContent='Hari menuju Opening';document.getElementById('cd-sub').textContent='H-'+diff+' - Urgency tinggi!';}
   else if(diff===0){banner.className='countdown-banner urgent';dEl.style.color='var(--red)';document.getElementById('cd-lbl').textContent='HARI INI OPENING!';document.getElementById('cd-sub').textContent='D-Day!';}
@@ -2697,7 +2752,12 @@ function generateSummary(){
 
   // Opening countdown
   var daysToOpen = '—';
-  if(g('targetOpening')){
+  var alreadyOpen = _openingAlreadyStatus();
+  if(alreadyOpen){
+    daysToOpen = alreadyOpen.onTime
+      ? '✅ Sudah Opening (On Time)'
+      : '✅ Sudah Opening (Telat '+alreadyOpen.lateDays+' hari)';
+  } else if(g('targetOpening')){
     var d=new Date(g('targetOpening')); d.setHours(0,0,0,0);
     var today2=new Date(); today2.setHours(0,0,0,0);
     var diff2=Math.ceil((d-today2)/86400000);
@@ -2818,7 +2878,13 @@ function generateSummary(){
   var isBAST2 = (selTipeProject==='Bongkaran Bare');
   txt += NL+SEP2+NL;
   txt += (isBAST2?'🏁 *TARGET BAST : ':'🏁 *TARGET OPENING : ')+fmt(g('targetOpening'))+'*';
-  if(g('targetOpening')){
+  var alreadyOpen2 = _openingAlreadyStatus();
+  if(alreadyOpen2){
+    var hMinus2 = alreadyOpen2.onTime
+      ? '✅ Sudah '+(isBAST2?'BAST':'Opening')+' — On Time'
+      : '⚠️ Sudah '+(isBAST2?'BAST':'Opening')+' — Telat '+alreadyOpen2.lateDays+' hari dari target';
+    txt += NL+hMinus2;
+  } else if(g('targetOpening')){
     var openD=new Date(g('targetOpening')); openD.setHours(0,0,0,0);
     var todayA=new Date(); todayA.setHours(0,0,0,0);
     var diffA=Math.ceil((openD-todayA)/86400000);
@@ -3030,6 +3096,15 @@ function submitLaporan(){
   if(!g('namaProject').trim()) errors.push('Nama Project (Tab 1)');
   if(!selWeek)                 errors.push('Minggu Ke- (Tab 1)');
   if(!g('namaSM').trim())      errors.push('Site Manager (Tab 1)');
+  // [v4-43] Jaga-jaga: Aktual Opening tidak boleh tanggal yang belum terjadi
+  if(g('aktualOpening')){
+    var aoVal=new Date(g('aktualOpening')); aoVal.setHours(0,0,0,0);
+    var todayAo=new Date(); todayAo.setHours(0,0,0,0);
+    if(aoVal>todayAo){
+      alert('⚠️ Tanggal Aktual Opening ('+g('aktualOpening')+') belum terjadi (di masa depan). Kosongkan dulu atau perbaiki sebelum submit.');
+      return;
+    }
+  }
   if(!g('periodeStart').trim())errors.push('Periode Laporan Mulai (Tab 1)');
   if(!g('targetOpening').trim())errors.push('Tanggal Opening/BAST (Tab 1)');
   if(errors.length){
