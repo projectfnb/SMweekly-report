@@ -3240,7 +3240,11 @@ function submitLaporan(){
           if(statusEl){ statusEl.style.display='block'; statusEl.style.background='#052a10'; statusEl.style.color='var(--green)'; statusEl.style.padding='8px 10px'; statusEl.style.borderRadius='7px'; statusEl.style.fontSize='10px'; statusEl.textContent='✅ Data tersimpan di GSheet.'; }
           // Upload file terpisah jika ada
           if(pptBlob){
+            _markPendingUpload(textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'');
             _uploadViaIframeForm(pptBlob, fileName||'Report.pptx', textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'', j.baris||0, null);
+          } else if(statusEl){
+            statusEl.style.background='#2a1500'; statusEl.style.color='var(--yellow)';
+            statusEl.innerHTML='⚠️ Data tersimpan, tetapi <b>file PPT gagal dibuat</b> di perangkat ini sehingga File URL kosong. Buka Console (F12) untuk detail, lalu hubungi admin.';
           }
         } else {
           alert('⚠️ GAS error: '+(j.message||'Unknown'));
@@ -3255,6 +3259,7 @@ function submitLaporan(){
         var statusEl=document.getElementById('weekly-submit-status');
         if(statusEl){ statusEl.style.display='block'; statusEl.style.background='#052a10'; statusEl.style.color='var(--green)'; statusEl.style.padding='8px 10px'; statusEl.style.borderRadius='7px'; statusEl.style.fontSize='10px'; statusEl.textContent='✅ Data terkirim. Mencoba upload file…'; }
         if(pptBlob){
+          _markPendingUpload(textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'');
           _uploadViaIframeForm(pptBlob, fileName||'Report.pptx', textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'', 0, null);
         }
       });
@@ -4156,9 +4161,10 @@ function _uploadViaIframeForm(blob, fileName, namaProject, mingguKe, namaSM, row
         if(statusEl){
           if(j.fileUrl&&j.fileUrl.indexOf('http')===0){
             statusEl.innerHTML='✅ Laporan tersimpan — <a href="'+j.fileUrl+'" target="_blank" style="color:#22c55e;font-weight:700;text-decoration:underline">📄 Buka File PPT</a>';
-            _showToast('📎 File laporan terupload!','ok');
+            _showToast('📎 File laporan terupload!','ok'); _clearPendingUpload(namaProject, mingguKe, namaSM);
           } else {
-            statusEl.textContent='✅ Data tersimpan. '+(j.message||'');
+            // [v4-45] Data laporan tersimpan, tapi FILE gagal → tampilkan jelas + tombol coba ulang
+            _showUploadFail(statusEl, blob, fileName, namaProject, mingguKe, namaSM, rowIndex, (j&&j.message)||'File belum masuk ke Drive');
           }
         }
       })
@@ -4171,7 +4177,7 @@ function _uploadViaIframeForm(blob, fileName, namaProject, mingguKe, namaSM, row
             statusEl.innerHTML='✅ Laporan tersimpan — <a href="'+foundUrl+'" target="_blank" style="color:#22c55e;font-weight:700;text-decoration:underline">📄 Buka File PPT</a>';
             _showToast('📎 File laporan terupload!','ok');
           } else if(statusEl){
-            statusEl.textContent='✅ Data tersimpan. File diproses server — refresh dashboard dalam 1 menit.';
+            _showUploadFail(statusEl, blob, fileName, namaProject, mingguKe, namaSM, rowIndex, 'Belum ada konfirmasi dari server setelah ±30 detik');
           }
           if(onDone) onDone(foundUrl||null);
         });
@@ -4181,11 +4187,29 @@ function _uploadViaIframeForm(blob, fileName, namaProject, mingguKe, namaSM, row
   reader.readAsDataURL(blob);
 }
 
+
+// ── [v4-45] Upload PPT: penanda pending + tampilan gagal + coba ulang ──
+function _pendKey(p,w,sm){ return LS_PREFIX+'_PENDUP_'+sanitizeKey(sm||'')+'_'+sanitizeKey(p||'')+'_w'+w; }
+function _markPendingUpload(p,w,sm){ try{ localStorage.setItem(_pendKey(p,w,sm), new Date().toISOString()); }catch(e){} }
+function _clearPendingUpload(p,w,sm){ try{ localStorage.removeItem(_pendKey(p,w,sm)); }catch(e){} }
+function _showUploadFail(statusEl, blob, fileName, p, w, sm, rowIndex, reason){
+  if(!statusEl) return;
+  statusEl.style.background='#2a1500'; statusEl.style.color='var(--yellow)';
+  statusEl.innerHTML='⚠️ <b>Data laporan sudah tersimpan, tetapi file PPT belum masuk ke Drive</b> (File URL masih kosong).<br>'
+    +'<span style="font-size:10px;opacity:.85">'+String(reason||'').replace(/</g,'&lt;')+'</span><br>'
+    +'<button type="button" id="btn-retry-upload" class="btn" style="margin-top:8px;width:auto;padding:8px 12px;font-size:11px">🔄 Coba Upload Ulang</button>';
+  var b=document.getElementById('btn-retry-upload');
+  if(b) b.onclick=function(){
+    b.disabled=true; b.textContent='⏳ Mengupload…';
+    _uploadViaIframeForm(blob, fileName, p, w, sm, rowIndex, null);
+  };
+}
+
 // Polling getLastData untuk cek apakah fileUrl sudah terisi di GSheet
 function _pollForFileUrl(namaProject, mingguKe, maxTry, cb){
   var url=(document.getElementById('sheets-url')||{}).value||localStorage.getItem('sheets_url')||'';
   if(!url||maxTry<=0){ cb(null); return; }
-  var pollUrl=url+(url.indexOf('?')>=0?'&':'?')+'action=getLastData&namaProject='+encodeURIComponent(namaProject);
+  var pollUrl=url+(url.indexOf('?')>=0?'&':'?')+'action=getLastData&namaProject='+encodeURIComponent(namaProject)+'&_='+Date.now();
   setTimeout(function(){
     fetch(pollUrl)
       .then(function(r){ return r.json(); })
