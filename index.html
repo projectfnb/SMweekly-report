@@ -515,7 +515,8 @@ input[type=checkbox]{accent-color:var(--green)}
     <div class="card-title" id="lbl-aktual-title">🏁 Aktual Opening (isi setelah semua fase selesai)</div>
     <div class="form-full">
       <div class="fl" id="lbl-aktual-opening">Tanggal Aktual Opening</div>
-      <input type="date" id="aktualOpening" onchange="validateAktualOpening();autoSave()"/>
+      <div style="display:flex;gap:6px;align-items:center"><input type="date" id="aktualOpening" style="flex:1" onchange="validateAktualOpening();autoSave();_updateAoReminder()"/><button type="button" class="btn" style="width:auto;padding:8px 10px;font-size:11px;background:var(--surface2);border:1px solid var(--border);color:var(--muted)" onclick="clearAktualOpening()">✕ Kosongkan</button></div>
+      <div id="ao-reminder" style="display:none;margin-top:8px;padding:9px 11px;border-radius:8px;background:#2a1500;border:1.5px solid var(--yellow);font-size:10px;color:#fde68a;line-height:1.6">🏁 <b>Progress sudah 100%</b> — isi <b>Tanggal Aktual Opening</b> agar project dianggap SELESAI. Selama kosong, project tetap ditagih laporan mingguan &amp; muncul di “Belum Submit”.</div>
       <div style="font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)">Isi tanggal ini PADA HARI-H opening atau setelahnya — tidak bisa diisi untuk tanggal yang belum terjadi.</div>
     </div>
   </div>
@@ -553,11 +554,10 @@ input[type=checkbox]{accent-color:var(--green)}
   <!-- [v4-14] URL GAS di-hardcode, card Konfigurasi disembunyikan -->
   <input type="hidden" id="sheets-url" value="https://script.google.com/macros/s/AKfycbzP0ejKcJOBhVcXwLKRe2HnMWSf78i9iHt1CePYGzf-2p1UohF8iaKxPsYNNs3JNHZhRg/exec"/>
   <div class="card" style="margin-top:12px;border-color:#ef4444">
-    <div class="card-title" style="color:#ef4444">⚠️ Manajemen Data Project</div>
-    <p style="font-size:10px;color:var(--muted);margin-bottom:10px">Gunakan tombol ini untuk mengelola data project di memori browser.</p>
-    <button class="btn" id="btn-hapus-draft" style="width:100%;background:#1a1200;border:1px solid var(--yellow);color:var(--yellow);font-size:11px;margin-bottom:6px" onclick="hapusDraftSaja()">🗑 Hapus Draft — Project Masih Aktif</button>
-    <button class="btn" id="btn-hapus-selesai" style="width:100%;background:#7f1d1d;border:1px solid #ef4444;color:#fca5a5;font-size:11px;margin-bottom:6px" onclick="hapusProjectSelesai()">✅ Selesai 100% — Arsip & Sembunyikan Project</button>
-    <button class="btn" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:10px" onclick="resetArsipSM()">🔓 Reset Arsip — Tampilkan Kembali Project Tersembunyi</button>
+    <div class="card-title" style="color:#ef4444">⚠️ Reset Draft di Perangkat Ini</div>
+    <p style="font-size:10px;color:var(--muted);margin-bottom:10px">Hanya menghapus draft di browser ini. Data di Google Sheets tidak berubah. Project otomatis hilang dari daftar setelah Aktual Opening diisi &amp; minggu opening berlalu.</p>
+    <button class="btn" id="btn-hapus-draft" style="width:100%;background:#1a1200;border:1px solid var(--yellow);color:var(--yellow);font-size:11px;margin-bottom:6px" onclick="hapusDraftSaja()">🗑 Hapus Draft Project Ini</button>
+    <button class="btn" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:10px" onclick="resetArsipSM()">🔓 Tampilkan Kembali Project yang Pernah Disembunyikan</button>
     <div id="hapus-info" style="font-size:9px;color:var(--muted);margin-top:6px;font-family:var(--mono);line-height:1.5;display:none"></div>
   </div>
 </div>
@@ -1185,6 +1185,7 @@ function loadWeekData(data){
     }
     // namaProject di-restore via hidden field; sync dropdown ditangani di blok namaSM di bawah
     ['spkStart','spkEnd','targetOpening','aktualOpening','periodeStart','periodeEnd'].forEach(function(k){if(data[k]) s(k,data[k]);});
+    s('aktualOpening', data.aktualOpening||''); // [v4-44] kosong = kosong (tidak nyangkut)
     if(data.prevProgress!==undefined) prevProgress=data.prevProgress;
     if(data.overallPct!==undefined) currentOverallPct=data.overallPct;
     if(data.itemPct)     itemPct=data.itemPct;
@@ -1853,6 +1854,24 @@ function handleKontrSel(sel){
 // [v4-43] Aktual Opening TIDAK BOLEH diisi tanggal yang belum terjadi — SM
 // kadang input tanggal opening padahal belum benar-benar opening. Kunci:
 // kalau tanggal yang diisi > hari ini, tolak & kosongkan lagi.
+
+// ── [v4-44] Aktual Opening: kosongkan + pengingat 100% ──
+function clearAktualOpening(){
+  var el=document.getElementById('aktualOpening'); if(!el) return;
+  el.value='';
+  try{ updateCountdown(); }catch(e){}
+  autoSave(); _updateAoReminder();
+  _showToast('Aktual Opening dikosongkan','ok');
+}
+function _updateAoReminder(){
+  var box=document.getElementById('ao-reminder'); if(!box) return;
+  box.style.display = (currentOverallPct>=100 && !g('aktualOpening')) ? 'block' : 'none';
+}
+(function(){
+  var _uo = updateOverall;
+  updateOverall = function(){ var r=_uo.apply(this,arguments); try{_updateAoReminder();}catch(e){} return r; };
+})();
+
 function validateAktualOpening(){
   var inp = document.getElementById('aktualOpening');
   if(!inp || !inp.value) return;
@@ -2212,7 +2231,11 @@ function updateOverall(){
 
   var icon, label, sub, bgColor, borderColor;
 
-  if (critApproval) {
+  if (total>=100) {
+    icon='🏁'; label='Selesai 100%'; sub=g('aktualOpening') ? 'Aktual Opening sudah terisi' : 'Isi Aktual Opening (Tab Submit) agar project dianggap selesai';
+    bgColor='#052a10'; borderColor='var(--green)';
+
+  } else if (critApproval) {
     // Predictive alert: approval/landlord issue → langsung critical
     icon='🔴'; label='Critical — Risiko Approval'; sub='Issue Approval/Mall terdeteksi — perlu eskalasi PM';
     bgColor='#2a0505'; borderColor='var(--red)';
@@ -2714,7 +2737,9 @@ function generateSummary(){
   // SPK sudah lewat atau ≤3 hari lagi + progress belum 100% → Critical
   var spkCritical = (daysToSpkEnd !== null) && (daysToSpkEnd <= 3) && (total < 100);
   var statusReason = ''; // sub-alasan, ditampilkan di teks WA supaya tidak membingungkan
-  if(week===1 && dev>=-10){
+  if(total>=100){
+    status='Selesai'; // [v4-44] progress 100% = Selesai (bukan On Track)
+  } else if(week===1 && dev>=-10){
     status='Early Stage / Mobilisasi';
   } else if(spkCritical){
     status='Critical Delay';
@@ -3140,11 +3165,19 @@ function submitLaporan(){
   prevProgress = Math.round(tot2*10)/10;
   if(prevProgress>100) prevProgress=100;
   var total = prevProgress;
+  // [v4-44] Progress 100% tapi Aktual Opening kosong → jangan sampai terlewat
+  if(total>=100 && !g('aktualOpening')){
+    if(confirm('🏁 Progress sudah 100% tetapi Tanggal Aktual Opening BELUM diisi.\n\nSelama kosong, project dianggap belum selesai: tetap ditagih laporan mingguan & muncul di "Belum Submit".\n\nOK = kembali isi Aktual Opening sekarang\nBatal = tetap submit tanpa Aktual Opening (belum opening)')){
+      goTab(5); _updateAoReminder();
+      var _ao=document.getElementById('aktualOpening'); if(_ao){ try{_ao.scrollIntoView({behavior:'smooth',block:'center'});_ao.focus();}catch(e){} }
+      return;
+    }
+  }
   var dev   = Math.round((total-getEffectiveTarget())*10)/10;
   var _spkEndS=g('spkEnd'), _daysSpk=null;
   if(_spkEndS){var _se=new Date(_spkEndS);_se.setHours(0,0,0,0);var _td=new Date();_td.setHours(0,0,0,0);_daysSpk=Math.ceil((_se-_td)/86400000);}
   var _spkCrit=(_daysSpk!==null)&&(_daysSpk<=3)&&(total<100);
-  var statusVal = selWeek===1&&dev>=-10?'Early Stage':_spkCrit?'Critical Delay':dev>=-5?'On Track':dev>=-10?'Minor Delay':'Critical Delay';
+  var statusVal = total>=100?'Selesai':selWeek===1&&dev>=-10?'Early Stage':_spkCrit?'Critical Delay':dev>=-5?'On Track':dev>=-10?'Minor Delay':'Critical Delay';
   var kendalaList = issueItems.filter(function(it){return it.issue&&it.issue.trim();});
 
   var payload={
@@ -3497,7 +3530,7 @@ function pmLoadFromGAS(){
       if(d.spkStart)      s('spkStart', d.spkStart);
       if(d.spkEnd)        s('spkEnd',   d.spkEnd);
       if(d.targetOpening) s('targetOpening', d.targetOpening);
-      if(d.aktualOpening) s('aktualOpening', d.aktualOpening);
+      s('aktualOpening', d.aktualOpening||''); // [v4-44]
       if(d.periodeStart)  s('periodeStart', d.periodeStart);
       if(d.periodeEnd)    s('periodeEnd', d.periodeEnd);
       if(d.kontraktor)    s('kontraktor', d.kontraktor);
@@ -3661,6 +3694,7 @@ function loadLocal(){
     }
     if(data.week) selWeek=data.week;
     ['namaProject','spkStart','spkEnd','targetOpening','aktualOpening'].forEach(function(k){if(data[k]) s(k,data[k]);});
+    s('aktualOpening', data.aktualOpening||''); // [v4-44]
     if(data.prevProgress!==undefined) prevProgress=data.prevProgress;
     // Periode SELALU dihitung ulang berdasarkan tanggal hari ini saat app dibuka —
     // JANGAN restore dari draft lama karena periode bergantung waktu (bisa sudah
@@ -4203,7 +4237,7 @@ function _buildPPTCore(){
   var target=getEffectiveTarget();
   var dev=Math.round((total-target)*10)/10;
   var devStr=(dev>=0?'+':'')+dev+'%';
-  var statusTxt=dev>=-5?'ON TRACK':dev>=-10?'MINOR DELAY':'CRITICAL DELAY';
+  var statusTxt=total>=100?'SELESAI':dev>=-5?'ON TRACK':dev>=-10?'MINOR DELAY':'CRITICAL DELAY';
   var SC=dev>=-5?'22C55E':dev>=-10?'F59E0B':'EF4444';
   var delta=Math.round((total-(prevProgress||0))*10)/10;
   var issueList=issueItems.filter(function(it){return it.issue&&it.issue.trim();});
