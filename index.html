@@ -539,8 +539,9 @@ input[type=checkbox]{accent-color:var(--green)}
     <div class="card-title">&#x1F4BE; Simpan &amp; Kirim Laporan</div>
     <div id="draft-status-bar" style="display:none;padding:8px 10px;border-radius:7px;margin-bottom:10px;font-size:10px;font-family:var(--mono)"></div>
     <div id="submit-lock-bar" style="display:none;padding:10px 12px;border-radius:8px;background:#052a10;border:1px solid var(--green);margin-bottom:10px;font-size:10px;color:var(--green);font-family:var(--mono)">
-      &#x2705; Laporan W<span id="submit-lock-week"></span> sudah tersubmit &mdash; data dikunci dari double submit.
-      <br/><span style="color:var(--muted);font-size:9px">Untuk revisi hubungi PM.</span>
+      &#x2705; Laporan W<span id="submit-lock-week"></span> sudah tersubmit &mdash; data aman dari double submit.
+      <br/><span style="color:var(--muted);font-size:9px">Ada yang perlu diperbaiki? SM bisa revisi sendiri.</span>
+      <button type="button" onclick="revisiMingguIni()" style="display:block;width:100%;margin-top:8px;padding:9px;border-radius:7px;border:1.5px solid #3b82f6;background:transparent;color:#3b82f6;font-weight:700;font-size:11px;cursor:pointer">&#x270F;&#xFE0F; Revisi Laporan W<span id="submit-lock-week2"></span></button>
     </div>
     <button class="btn" id="btn-simpan-draft" onclick="simpanDraft()"
       style="background:var(--surface2);border:1.5px solid var(--accent);color:var(--accent);margin-top:0;margin-bottom:8px">
@@ -3317,6 +3318,7 @@ function _updateSubmitLockUI(){
   var isLocked = k && !!localStorage.getItem(k) && !_isEditModeSubmit;
   if(lockBar)  lockBar.style.display  = isLocked ? 'block' : 'none';
   if(weekSpan) weekSpan.textContent   = selWeek||'';
+  var weekSpan2 = document.getElementById('submit-lock-week2'); if(weekSpan2) weekSpan2.textContent = selWeek||'';
   if(btn){
     btn.disabled = isLocked;
     btn.style.opacity = isLocked ? '0.5' : '1';
@@ -3506,6 +3508,15 @@ function togglePMMode(){
   }
 }
 
+// [v4-46] Revisi satu klik dari bar kunci submit: buka panel, pilih minggu aktif, muat data lama.
+function revisiMingguIni(){
+  if(!_pmModeActive) togglePMMode();
+  if(!_pmModeActive) return; // PIN dibatalkan / salah
+  var sel=document.getElementById('pm-load-week-sel');
+  if(sel && selWeek) sel.value=String(selWeek);
+  pmLoadFromGAS();
+}
+
 function pmLoadFromGAS(){
   var gasUrl; try{ gasUrl=localStorage.getItem('sheets_url')||''; }catch(e){}
   if(!gasUrl){ _pmSetStatus('❌ GAS URL belum dikonfigurasi.','#ef4444'); return; }
@@ -3531,6 +3542,7 @@ function pmLoadFromGAS(){
       // Set minggu
       selWeek = wk;
       renderWeekGrid();
+      _updateSubmitLockUI(); // [v4-46] buka kunci tombol submit setelah data lama dimuat
       // Isi field-field dari GAS data
       if(d.spkStart)      s('spkStart', d.spkStart);
       if(d.spkEnd)        s('spkEnd',   d.spkEnd);
