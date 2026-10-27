@@ -549,7 +549,7 @@ input[type=checkbox]{accent-color:var(--green)}
     <button class="btn btn-submit" id="btn-submit-laporan" onclick="submitLaporan()">
       Submit Laporan ke Google Sheets
     </button>
-    <div id="form-version" style="font-size:9px;color:var(--muted);text-align:right;margin-top:6px">Form SM v4-48</div>
+    <div id="form-version" style="font-size:9px;color:var(--muted);text-align:right;margin-top:6px">Form SM v4-49</div>
     <div id="weekly-submit-status" style="display:none;margin-top:8px;padding:8px 10px;border-radius:7px;font-size:10px;font-family:var(--mono)"></div>
   </div>
   <!-- [v4-14] URL GAS di-hardcode, card Konfigurasi disembunyikan -->
@@ -3256,7 +3256,7 @@ function submitLaporan(){
           // Upload file terpisah jika ada
           if(pptBlob){
             _markPendingUpload(textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'');
-            _uploadViaIframeForm(pptBlob, fileName||'Report.pptx', textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'', j.baris||0, null);
+            _uploadViaIframeForm(pptBlob, fileName||'Laporan.pptx', textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'', j.baris||0, null);
           } else if(statusEl){
             _clientLog('PPT_NULL','pembuat PPT mengembalikan kosong', textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'');
             statusEl.style.background='#2a1500'; statusEl.style.color='var(--yellow)';
@@ -3277,7 +3277,7 @@ function submitLaporan(){
         if(statusEl){ statusEl.style.display='block'; statusEl.style.background='#052a10'; statusEl.style.color='var(--green)'; statusEl.style.padding='8px 10px'; statusEl.style.borderRadius='7px'; statusEl.style.fontSize='10px'; statusEl.textContent='✅ Data terkirim. Mencoba upload file…'; }
         if(pptBlob){
           _markPendingUpload(textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'');
-          _uploadViaIframeForm(pptBlob, fileName||'Report.pptx', textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'', 0, null);
+          _uploadViaIframeForm(pptBlob, fileName||'Laporan.pptx', textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'', 0, null);
         }
       });
   }
@@ -3289,7 +3289,7 @@ function submitLaporan(){
     _buildPPTBlob(function(blob){
       pptBlob=blob||null;
       var proj=(g('namaProject')||'Report').replace(/[^a-zA-Z0-9]/g,'_').substring(0,30);
-      payload.fileName=proj+'_W'+selWeek+'_Report.pptx';
+      payload.fileName='Laporan.pptx';
       payload.mimeType='application/vnd.openxmlformats-officedocument.presentationml.presentation';
       // Tidak set fileBase64 di payload — dikirim terpisah via _uploadViaIframeForm
       doFetch(payload);
@@ -4211,7 +4211,7 @@ function _uploadViaIframeForm(blob, fileName, namaProject, mingguKe, namaSM, row
 
 
 // ── [v4-48] Jejak upload: versi form, log ke server (UploadLog), pesan gagal yang tidak pernah diam ──
-var SM_FORM_VERSION='v4-48';
+var SM_FORM_VERSION='v4-49';
 function _clientLog(stage, detail, p, w, sm){
   try{
     var url=(document.getElementById('sheets-url')||{}).value||localStorage.getItem('sheets_url')||'';
@@ -4274,6 +4274,18 @@ function _buildPPT(){
   var url2=URL.createObjectURL(blob);
   var a=document.createElement('a');a.href=url2;a.download=fname;document.body.appendChild(a);a.click();
   setTimeout(function(){URL.revokeObjectURL(url2);document.body.removeChild(a);},1000);
+
+  // [v4-49] Tombol Export PPT juga MENGUNGGAH file yang sama ke Drive dan mengisi kolom File URL
+  // (baris laporan minggu ini sudah ada karena Export baru terbuka setelah Submit).
+  try{
+    var urlU=(document.getElementById('sheets-url')||{}).value||localStorage.getItem('sheets_url')||'';
+    var projU=g('namaProject'), smU=g('namaSM')||g('sm')||'';
+    if(urlU && projU){
+      _showToast('📤 PPT diunduh — mengunggah ke Drive…','ok');
+      _clientLog('EXPORT_UPLOAD','dari tombol Export PPT, blob='+Math.round(blob.size/1024)+'KB',projU,selWeek,smU);
+      _uploadViaIframeForm(blob,'Laporan.pptx',projU,selWeek,smU,0,null);
+    }
+  }catch(eU){ _clientLog('EXPORT_UPLOAD_EXC',String(eU),g('namaProject'),selWeek,g('namaSM')||''); }
 }
 
 // ── _buildPPTCore: inti builder, return Blob ──────────────────
