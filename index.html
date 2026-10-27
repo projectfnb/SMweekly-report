@@ -539,9 +539,8 @@ input[type=checkbox]{accent-color:var(--green)}
     <div class="card-title">&#x1F4BE; Simpan &amp; Kirim Laporan</div>
     <div id="draft-status-bar" style="display:none;padding:8px 10px;border-radius:7px;margin-bottom:10px;font-size:10px;font-family:var(--mono)"></div>
     <div id="submit-lock-bar" style="display:none;padding:10px 12px;border-radius:8px;background:#052a10;border:1px solid var(--green);margin-bottom:10px;font-size:10px;color:var(--green);font-family:var(--mono)">
-      &#x2705; Laporan W<span id="submit-lock-week"></span> sudah tersubmit &mdash; data aman dari double submit.
-      <br/><span style="color:var(--muted);font-size:9px">Ada yang perlu diperbaiki? SM bisa revisi sendiri.</span>
-      <button type="button" onclick="revisiMingguIni()" style="display:block;width:100%;margin-top:8px;padding:9px;border-radius:7px;border:1.5px solid #3b82f6;background:transparent;color:#3b82f6;font-weight:700;font-size:11px;cursor:pointer">&#x270F;&#xFE0F; Revisi Laporan W<span id="submit-lock-week2"></span></button>
+      &#x2705; Laporan W<span id="submit-lock-week"></span> sudah tersubmit &mdash; data dikunci dari double submit.
+      <br/><span style="color:var(--muted);font-size:9px">Untuk revisi hubungi PM.</span>
     </div>
     <button class="btn" id="btn-simpan-draft" onclick="simpanDraft()"
       style="background:var(--surface2);border:1.5px solid var(--accent);color:var(--accent);margin-top:0;margin-bottom:8px">
@@ -550,6 +549,7 @@ input[type=checkbox]{accent-color:var(--green)}
     <button class="btn btn-submit" id="btn-submit-laporan" onclick="submitLaporan()">
       Submit Laporan ke Google Sheets
     </button>
+    <div id="form-version" style="font-size:9px;color:var(--muted);text-align:right;margin-top:6px">Form SM v4-48</div>
     <div id="weekly-submit-status" style="display:none;margin-top:8px;padding:8px 10px;border-radius:7px;font-size:10px;font-family:var(--mono)"></div>
   </div>
   <!-- [v4-14] URL GAS di-hardcode, card Konfigurasi disembunyikan -->
@@ -1189,6 +1189,7 @@ function loadWeekData(data){
     s('aktualOpening', data.aktualOpening||''); // [v4-44] kosong = kosong (tidak nyangkut)
     if(data.prevProgress!==undefined) prevProgress=data.prevProgress;
     if(data.overallPct!==undefined) currentOverallPct=data.overallPct;
+    setTimeout(function(){ try{ _syncPrevProgressFromServer(); }catch(e){} }, 0); // [v4-47] baseline dari server menang atas draft lama
     if(data.itemPct)     itemPct=data.itemPct;
     if(data.itemStatus)  itemStatus=data.itemStatus;
     if(data.wpData)      wpData=data.wpData;
@@ -1592,22 +1593,33 @@ function _autoFillFromGAS(data){
 // ada data minggu lalu — bikin delta mingguan salah tampil (mis. "+52.2% (0%→52.2%)"
 // padahal minggu lalu sudah 41%).
 function _fetchServerPrevProgress(projectName, cb){
+  // [v4-47] Baseline = progress minggu SEBELUM minggu yang dipilih (SM+Project sama).
+  // Sebelumnya pakai getLastData = baris TERAKHIR project, jadi setelah submit minggu ini
+  // baseline ikut berubah jadi progress minggu ini → kenaikan tampil +0%.
   var url=(document.getElementById('sheets-url')||{}).value||localStorage.getItem('sheets_url')||'';
+  var sm=(document.getElementById('namaSM')||{}).value||'';
+  var wk=parseInt(selWeek)||0;
   if(!url || !projectName){ if(cb) cb(null); return; }
-  var reqUrl=url+(url.indexOf('?')>=0?'&':'?')+'action=getLastData&namaProject='+encodeURIComponent(projectName);
-  fetch(reqUrl)
+  if(wk<=1){ if(cb) cb({progress:0, week:0}); return; } // Minggu 1: tidak ada minggu sebelumnya
+  var sep=(url.indexOf('?')>=0?'&':'?');
+  var q='&namaProject='+encodeURIComponent(projectName)+'&namaSM='+encodeURIComponent(sm)+'&_='+Date.now();
+  function fromWeekData(w){
+    return fetch(url+sep+'action=getWeekData&week='+w+q).then(function(r){return r.json();}).then(function(j2){
+      var pd=(j2&&j2.data)||null;
+      return (pd && pd.overallPct!==undefined && pd.overallPct!==null) ? {progress:Number(pd.overallPct), week:w} : null;
+    });
+  }
+  fetch(url+sep+'action=getPrevProgress&week='+wk+q)
     .then(function(r){ return r.json(); })
     .then(function(j){
-      var row=(j&&j.data)||null;
-      if(!row){ if(cb) cb(null); return; }
-      // Konfirmasi dari source GAS handleGetLastData(): field asli = 'aktual' & 'mingguKe'
-      var raw = row.aktual!==undefined ? row.aktual : undefined;
-      var pct = (raw!==undefined && raw!=='') ? parseFloat(raw) : null;
-      var wkRaw = row.mingguKe;
-      var wk = (wkRaw!==undefined && wkRaw!=='') ? parseInt(wkRaw) : null;
-      if(cb) cb({ progress: (pct!==null && !isNaN(pct)) ? pct : null, week: (wk!==null && !isNaN(wk)) ? wk : null });
+      if(j && j.ok && j.progress!==undefined){
+        if(cb) cb({progress:(j.progress===null?0:Number(j.progress)), week:(j.week||null)});
+        return;
+      }
+      // GAS belum versi baru → fallback: ambil minggu persis sebelumnya
+      return fromWeekData(wk-1).then(function(res){ if(cb) cb(res || null); });
     })
-    .catch(function(err){ console.warn('[FIX v4-27] Gagal ambil prevProgress dari server:', err); if(cb) cb(null); });
+    .catch(function(err){ console.warn('[v4-47] Gagal ambil baseline minggu lalu dari server:', err); if(cb) cb(null); });
 }
 
 function getLatestSubmittedWeek(smName, projectName){
@@ -3163,9 +3175,10 @@ function submitLaporan(){
       }
     });
   });
-  prevProgress = Math.round(tot2*10)/10;
-  if(prevProgress>100) prevProgress=100;
-  var total = prevProgress;
+  // [v4-47] JANGAN menimpa prevProgress (baseline minggu lalu) — dulu baris ini menyamakan
+  // prevProgress dengan total minggu ini, sehingga Summary WA & PPT jadi "+0% (21% → 21%)".
+  var total = Math.round(tot2*10)/10;
+  if(total>100) total=100;
   // [v4-44] Progress 100% tapi Aktual Opening kosong → jangan sampai terlewat
   if(total>=100 && !g('aktualOpening')){
     if(confirm('🏁 Progress sudah 100% tetapi Tanggal Aktual Opening BELUM diisi.\n\nSelama kosong, project dianggap belum selesai: tetap ditagih laporan mingguan & muncul di "Belum Submit".\n\nOK = kembali isi Aktual Opening sekarang\nBatal = tetap submit tanpa Aktual Opening (belum opening)')){
@@ -3237,6 +3250,7 @@ function submitLaporan(){
           _lockSubmit();
           _showToast('✅ Data W'+selWeek+' tersimpan!','ok');
           _submitPFIfAny(url);
+          _clientLog('SUBMIT_OK','ppt='+(pptBlob?Math.round(pptBlob.size/1024)+'KB':'NULL')+' baris='+(j.baris||''), textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'');
           var statusEl=document.getElementById('weekly-submit-status');
           if(statusEl){ statusEl.style.display='block'; statusEl.style.background='#052a10'; statusEl.style.color='var(--green)'; statusEl.style.padding='8px 10px'; statusEl.style.borderRadius='7px'; statusEl.style.fontSize='10px'; statusEl.textContent='✅ Data tersimpan di GSheet.'; }
           // Upload file terpisah jika ada
@@ -3244,6 +3258,7 @@ function submitLaporan(){
             _markPendingUpload(textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'');
             _uploadViaIframeForm(pptBlob, fileName||'Report.pptx', textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'', j.baris||0, null);
           } else if(statusEl){
+            _clientLog('PPT_NULL','pembuat PPT mengembalikan kosong', textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'');
             statusEl.style.background='#2a1500'; statusEl.style.color='var(--yellow)';
             statusEl.innerHTML='⚠️ Data tersimpan, tetapi <b>file PPT gagal dibuat</b> di perangkat ini sehingga File URL kosong. Buka Console (F12) untuk detail, lalu hubungi admin.';
           }
@@ -3256,6 +3271,7 @@ function submitLaporan(){
         if(btn){ btn.disabled=false; btn.textContent=origText; }
         _lockSubmit();
         _showToast('✅ Laporan terkirim (konfirmasi di GSheet).','ok');
+        _clientLog('SUBMIT_FETCH_ERR', String(err)+' ppt='+(pptBlob?Math.round(pptBlob.size/1024)+'KB':'NULL'), textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'');
         _submitPFIfAny(url);
         var statusEl=document.getElementById('weekly-submit-status');
         if(statusEl){ statusEl.style.display='block'; statusEl.style.background='#052a10'; statusEl.style.color='var(--green)'; statusEl.style.padding='8px 10px'; statusEl.style.borderRadius='7px'; statusEl.style.fontSize='10px'; statusEl.textContent='✅ Data terkirim. Mencoba upload file…'; }
@@ -3318,7 +3334,6 @@ function _updateSubmitLockUI(){
   var isLocked = k && !!localStorage.getItem(k) && !_isEditModeSubmit;
   if(lockBar)  lockBar.style.display  = isLocked ? 'block' : 'none';
   if(weekSpan) weekSpan.textContent   = selWeek||'';
-  var weekSpan2 = document.getElementById('submit-lock-week2'); if(weekSpan2) weekSpan2.textContent = selWeek||'';
   if(btn){
     btn.disabled = isLocked;
     btn.style.opacity = isLocked ? '0.5' : '1';
@@ -3508,15 +3523,6 @@ function togglePMMode(){
   }
 }
 
-// [v4-46] Revisi satu klik dari bar kunci submit: buka panel, pilih minggu aktif, muat data lama.
-function revisiMingguIni(){
-  if(!_pmModeActive) togglePMMode();
-  if(!_pmModeActive) return; // PIN dibatalkan / salah
-  var sel=document.getElementById('pm-load-week-sel');
-  if(sel && selWeek) sel.value=String(selWeek);
-  pmLoadFromGAS();
-}
-
 function pmLoadFromGAS(){
   var gasUrl; try{ gasUrl=localStorage.getItem('sheets_url')||''; }catch(e){}
   if(!gasUrl){ _pmSetStatus('❌ GAS URL belum dikonfigurasi.','#ef4444'); return; }
@@ -3542,7 +3548,6 @@ function pmLoadFromGAS(){
       // Set minggu
       selWeek = wk;
       renderWeekGrid();
-      _updateSubmitLockUI(); // [v4-46] buka kunci tombol submit setelah data lama dimuat
       // Isi field-field dari GAS data
       if(d.spkStart)      s('spkStart', d.spkStart);
       if(d.spkEnd)        s('spkEnd',   d.spkEnd);
@@ -3713,6 +3718,7 @@ function loadLocal(){
     ['namaProject','spkStart','spkEnd','targetOpening','aktualOpening'].forEach(function(k){if(data[k]) s(k,data[k]);});
     s('aktualOpening', data.aktualOpening||''); // [v4-44]
     if(data.prevProgress!==undefined) prevProgress=data.prevProgress;
+    setTimeout(function(){ try{ _syncPrevProgressFromServer(); }catch(e){} }, 400); // [v4-47]
     // Periode SELALU dihitung ulang berdasarkan tanggal hari ini saat app dibuka —
     // JANGAN restore dari draft lama karena periode bergantung waktu (bisa sudah
     // berganti minggu sejak draft terakhir disimpan).
@@ -4137,7 +4143,8 @@ function _buildPPTBlob(callback){
 // Setelah ~5 detik, cari URL via polling getLastData.
 function _uploadViaIframeForm(blob, fileName, namaProject, mingguKe, namaSM, rowIndex, onDone){
   var url=(document.getElementById('sheets-url')||{}).value||localStorage.getItem('sheets_url')||'';
-  if(!url){ if(onDone) onDone(null); return; }
+  if(!url){ _clientLog('NO_URL','sheets-url kosong',namaProject,mingguKe,namaSM); _uploadFailMsg('URL server (GAS) kosong di form ini.'); if(onDone) onDone(null); return; }
+  _clientLog('UPLOAD_BEGIN','blob='+(blob?Math.round(blob.size/1024)+'KB type='+blob.type:'NULL'),namaProject,mingguKe,namaSM);
 
   // Convert blob ke base64 dulu (tetap perlu), tapi kirim via form POST
   // yang TIDAK trigger preflight CORS karena Content-Type: multipart/form-data
@@ -4145,7 +4152,7 @@ function _uploadViaIframeForm(blob, fileName, namaProject, mingguKe, namaSM, row
   reader.onload=function(ev){
     var b64='';
     try{ b64=ev.target.result.split(',')[1]; }catch(ex){}
-    if(!b64||b64.length<100){ if(onDone) onDone(null); return; }
+    if(!b64||b64.length<100){ _clientLog('B64_EMPTY','b64 len='+(b64?b64.length:0)+' blob='+(blob?blob.size:0)+'B',namaProject,mingguKe,namaSM); _uploadFailMsg('File PPT kosong/tidak terbaca di perangkat ini (ukuran '+(blob?blob.size:0)+' byte).'); if(onDone) onDone(null); return; }
 
     console.log('[UPLOAD] b64 size='+Math.round(b64.length/1024)+'KB fileName='+fileName);
 
@@ -4165,9 +4172,11 @@ function _uploadViaIframeForm(blob, fileName, namaProject, mingguKe, namaSM, row
     var statusEl=document.getElementById('weekly-submit-status');
     if(statusEl) statusEl.textContent='⏳ Mengupload file laporan ('+Math.round(b64.length/1024)+'KB)…';
 
+    _clientLog('UPLOAD_START','b64='+Math.round(b64.length/1024)+'KB',namaProject,mingguKe,namaSM);
     fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:uploadPayload})
       .then(function(r){ return r.json(); })
       .then(function(j){
+        _clientLog('UPLOAD_RESP','ok='+(j&&j.ok)+' url='+(j&&j.fileUrl?'ya':'tidak')+' msg='+((j&&j.message)||''),namaProject,mingguKe,namaSM);
         console.log('[UPLOAD] Response ok='+j.ok+' fileUrl='+j.fileUrl);
         if(onDone) onDone(j.fileUrl||null);
         if(statusEl){
@@ -4182,6 +4191,7 @@ function _uploadViaIframeForm(blob, fileName, namaProject, mingguKe, namaSM, row
       })
       .catch(function(err){
         // CORS catch — GAS mungkin sudah proses, polling untuk cek
+        _clientLog('UPLOAD_FETCH_ERR',String(err),namaProject,mingguKe,namaSM);
         console.warn('[UPLOAD] CORS catch, polling GSheet untuk URL…',err);
         if(statusEl) statusEl.textContent='✅ Data tersimpan. Memeriksa status file upload…';
         _pollForFileUrl(namaProject, mingguKe, 8, function(foundUrl){
@@ -4195,10 +4205,30 @@ function _uploadViaIframeForm(blob, fileName, namaProject, mingguKe, namaSM, row
         });
       });
   };
-  reader.onerror=function(){ if(onDone) onDone(null); };
+  reader.onerror=function(){ _clientLog('READER_ERR','FileReader gagal membaca blob',namaProject,mingguKe,namaSM); _uploadFailMsg('Perangkat gagal membaca file PPT (FileReader error).'); if(onDone) onDone(null); };
   reader.readAsDataURL(blob);
 }
 
+
+// ── [v4-48] Jejak upload: versi form, log ke server (UploadLog), pesan gagal yang tidak pernah diam ──
+var SM_FORM_VERSION='v4-48';
+function _clientLog(stage, detail, p, w, sm){
+  try{
+    var url=(document.getElementById('sheets-url')||{}).value||localStorage.getItem('sheets_url')||'';
+    if(!url) return;
+    fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({
+      action:'clientLog', stage:String(stage||''), detail:String(detail||'').substring(0,300),
+      namaProject:p||'', mingguKe:w||'', namaSM:sm||'', ver:SM_FORM_VERSION,
+      ua:(navigator.userAgent||'').substring(0,120)
+    })}).catch(function(){});
+  }catch(e){}
+}
+function _uploadFailMsg(reason){
+  var el=document.getElementById('weekly-submit-status'); if(!el) return;
+  el.style.display='block'; el.style.background='#2a1500'; el.style.color='var(--yellow)';
+  el.innerHTML='⚠️ <b>Data laporan tersimpan, tetapi file PPT TIDAK terupload</b> (File URL kosong).<br><span style="font-size:10px;opacity:.85">'
+    +String(reason||'').replace(/</g,'&lt;')+'</span>';
+}
 
 // ── [v4-45] Upload PPT: penanda pending + tampilan gagal + coba ulang ──
 function _pendKey(p,w,sm){ return LS_PREFIX+'_PENDUP_'+sanitizeKey(sm||'')+'_'+sanitizeKey(p||'')+'_w'+w; }
