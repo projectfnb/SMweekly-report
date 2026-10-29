@@ -549,7 +549,7 @@ input[type=checkbox]{accent-color:var(--green)}
     <button class="btn btn-submit" id="btn-submit-laporan" onclick="submitLaporan()">
       Submit Laporan ke Google Sheets
     </button>
-    <div id="form-version" style="font-size:9px;color:var(--muted);text-align:right;margin-top:6px">Form SM v4-49</div>
+    <div id="form-version" style="font-size:9px;color:var(--muted);text-align:right;margin-top:6px">Form SM v4-50</div>
     <div id="weekly-submit-status" style="display:none;margin-top:8px;padding:8px 10px;border-radius:7px;font-size:10px;font-family:var(--mono)"></div>
   </div>
   <!-- [v4-14] URL GAS di-hardcode, card Konfigurasi disembunyikan -->
@@ -3249,7 +3249,7 @@ function submitLaporan(){
         if(j.ok){
           _lockSubmit();
           _showToast('✅ Data W'+selWeek+' tersimpan!','ok');
-          _submitPFIfAny(url);
+          try{ _submitPFIfAny(url); }catch(ePF){ console.warn('[PF]',ePF); }
           _clientLog('SUBMIT_OK','ppt='+(pptBlob?Math.round(pptBlob.size/1024)+'KB':'NULL')+' baris='+(j.baris||''), textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'');
           var statusEl=document.getElementById('weekly-submit-status');
           if(statusEl){ statusEl.style.display='block'; statusEl.style.background='#052a10'; statusEl.style.color='var(--green)'; statusEl.style.padding='8px 10px'; statusEl.style.borderRadius='7px'; statusEl.style.fontSize='10px'; statusEl.textContent='✅ Data tersimpan di GSheet.'; }
@@ -3272,7 +3272,7 @@ function submitLaporan(){
         _lockSubmit();
         _showToast('✅ Laporan terkirim (konfirmasi di GSheet).','ok');
         _clientLog('SUBMIT_FETCH_ERR', String(err)+' ppt='+(pptBlob?Math.round(pptBlob.size/1024)+'KB':'NULL'), textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'');
-        _submitPFIfAny(url);
+        try{ _submitPFIfAny(url); }catch(ePF2){ console.warn('[PF]',ePF2); }
         var statusEl=document.getElementById('weekly-submit-status');
         if(statusEl){ statusEl.style.display='block'; statusEl.style.background='#052a10'; statusEl.style.color='var(--green)'; statusEl.style.padding='8px 10px'; statusEl.style.borderRadius='7px'; statusEl.style.fontSize='10px'; statusEl.textContent='✅ Data terkirim. Mencoba upload file…'; }
         if(pptBlob){
@@ -4211,7 +4211,7 @@ function _uploadViaIframeForm(blob, fileName, namaProject, mingguKe, namaSM, row
 
 
 // ── [v4-48] Jejak upload: versi form, log ke server (UploadLog), pesan gagal yang tidak pernah diam ──
-var SM_FORM_VERSION='v4-49';
+var SM_FORM_VERSION='v4-50';
 function _clientLog(stage, detail, p, w, sm){
   try{
     var url=(document.getElementById('sheets-url')||{}).value||localStorage.getItem('sheets_url')||'';
@@ -5449,6 +5449,11 @@ function _autoSavePF(){
 }
 
 function simpanDraftPF(){ _autoSavePF(); _showToast('💾 Draft Pre-Fitout tersimpan','ok'); }
+
+// [v4-50] _submitPFIfAny dulu DIPANGGIL setelah submit laporan mingguan tetapi fungsinya sudah tidak ada
+// (Pre-Fitout kini punya tombol Submit sendiri) → ReferenceError di SETIAP submit sukses, sehingga langkah
+// sesudahnya (upload PPT ke Drive) tidak pernah dijalankan. Dibuat no-op yang aman.
+function _submitPFIfAny(url){ /* Pre-Fitout tidak dikirim otomatis bersama laporan mingguan — pakai tombol Submit di tab Pre-Fitout */ }
 
 // Submit standalone (tombol sendiri di tab Pre-Fitout)
 function submitPFStandalone(){
