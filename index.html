@@ -391,7 +391,17 @@ input[type=checkbox]{accent-color:var(--green)}
         <option value="3">Minggu 3</option>
         <option value="4">Minggu 4</option>
         <option value="5">Minggu 5</option>
-      </select>
+        <option value="6">Minggu 6</option>
+        <option value="7">Minggu 7</option>
+        <option value="8">Minggu 8</option>
+        <option value="9">Minggu 9</option>
+        <option value="10">Minggu 10</option>
+        <option value="11">Minggu 11</option>
+        <option value="12">Minggu 12</option>
+        <option value="13">Minggu 13</option>
+        <option value="14">Minggu 14</option>
+        <option value="15">Minggu 15</option>
+</select>
       <button id="pm-load-btn" onclick="pmLoadFromGAS()" style="font-size:10px;padding:7px 14px;border-radius:6px;border:none;background:#3b82f6;color:#fff;cursor:pointer;font-weight:700;white-space:nowrap">📥 Muat Data</button>
     </div>
     <div id="pm-load-status" style="font-size:9px;color:var(--muted);font-family:var(--mono)">Pilih minggu lalu klik Muat Data untuk mengisi form dari GSheet.</div>
@@ -549,7 +559,7 @@ input[type=checkbox]{accent-color:var(--green)}
     <button class="btn btn-submit" id="btn-submit-laporan" onclick="submitLaporan()">
       Submit Laporan ke Google Sheets
     </button>
-    <div id="form-version" style="font-size:9px;color:var(--muted);text-align:right;margin-top:6px">Form SM v4-50</div>
+    <div id="form-version" style="font-size:9px;color:var(--muted);text-align:right;margin-top:6px">Form SM v4-51</div>
     <div id="weekly-submit-status" style="display:none;margin-top:8px;padding:8px 10px;border-radius:7px;font-size:10px;font-family:var(--mono)"></div>
   </div>
   <!-- [v4-14] URL GAS di-hardcode, card Konfigurasi disembunyikan -->
@@ -1318,6 +1328,7 @@ function populateProjectDropdown(smName){
       if(j && j.ok && Array.isArray(j.projects) && j.projects.length > 0){
         var today = new Date(); today.setHours(0,0,0,0);
         var activeNames = [];
+        var doneNames = [];   // [v4-51] project tersembunyi karena sudah ada Aktual Opening → tetap bisa dipilih utk REVISI
         var pfList = [];
 
         j.projects.forEach(function(p){
@@ -1344,7 +1355,7 @@ function populateProjectDropdown(smName){
                 var daysToSun = (cdDay === 0) ? 0 : 7 - cdDay;
                 var cutoffSunday = new Date(cd);
                 cutoffSunday.setDate(cd.getDate() + daysToSun);
-                if(today > cutoffSunday){ isActive = false; }
+                if(today > cutoffSunday){ isActive = false; doneNames.push(p.namaProject); }
               }
             }
 
@@ -1357,7 +1368,7 @@ function populateProjectDropdown(smName){
         });
 
         // Tab Info: hanya project aktif
-        _renderProjectOptions(sel, activeNames, smName);
+        _renderProjectOptions(sel, activeNames, smName, doneNames);
         if(pmInfoEl)   pmInfoEl.style.display   = 'block';
         if(fallbackEl) fallbackEl.style.display = 'none';
 
@@ -1378,7 +1389,7 @@ function populateProjectDropdown(smName){
 
 // Render opsi project ke select dari array nama project
 // Tambahkan info tanggal terakhir draft dari localStorage jika ada
-function _renderProjectOptions(sel, projectNames, smName){
+function _renderProjectOptions(sel, projectNames, smName, doneNames){
   sel.innerHTML = '<option value="">-- Pilih Project --</option>';
   sel.disabled = false;
 
@@ -1402,13 +1413,20 @@ function _renderProjectOptions(sel, projectNames, smName){
     }
   }catch(e){}
 
+  // [v4-51] Project selesai / diarsip tidak lagi "hilang": tampil di grup REVISI (bisa dipilih utk memperbaiki
+  // laporan, mis. Aktual Opening yang salah isi) TANPA harus Reset Arsip yang memunculkan semua project lama.
+  var revNames = [];
+  (doneNames||[]).concat(archived).forEach(function(nm){
+    if(nm && revNames.indexOf(nm)<0 && filtered.indexOf(nm)<0) revNames.push(nm);
+  });
+  revNames.sort();
+
   if(filtered.length === 0){
     var oEmpty = document.createElement('option');
     oEmpty.value=''; oEmpty.disabled=true;
-    oEmpty.textContent = archived.length > 0
-      ? '— Semua project diarsip — (Reset Arsip jika perlu)'
-      : '— Tidak ada project aktif —';
+    oEmpty.textContent = '— Tidak ada project aktif —';
     sel.appendChild(oEmpty);
+    _appendRevisiGroup(sel, revNames);
     return;
   }
 
@@ -1421,13 +1439,21 @@ function _renderProjectOptions(sel, projectNames, smName){
     sel.appendChild(o);
   });
 
-  // Info arsip: tampilkan jika ada project yang disembunyikan
-  if(archived.length > 0){
-    var oInfo = document.createElement('option');
-    oInfo.value=''; oInfo.disabled=true;
-    oInfo.textContent = '── '+archived.length+' project diarsip (tersembunyi) ──';
-    sel.appendChild(oInfo);
-  }
+  _appendRevisiGroup(sel, revNames);
+}
+
+// [v4-51] Grup "Revisi" di dropdown project: project selesai / diarsip, khusus untuk memperbaiki laporan lama.
+function _appendRevisiGroup(sel, names){
+  if(!names || !names.length) return;
+  var og = document.createElement('optgroup');
+  og.label = '✏️ Revisi — project selesai / diarsip ('+names.length+')';
+  names.forEach(function(nm){
+    var o = document.createElement('option');
+    o.value = nm; o.textContent = nm + '  [revisi]';
+    o.setAttribute('data-revisi','1');
+    og.appendChild(o);
+  });
+  sel.appendChild(og);
 }
 
 // Fallback: populate project dari localStorage SM (jika GAS tidak tersedia)
@@ -1497,7 +1523,15 @@ function handleProjectSel(sel){
   var projectName = sel.value;
   var prevProject = hidden ? hidden.value : '';
   if(hidden) hidden.value = projectName;
-  if(note){ note.style.display='block'; note.innerHTML='&#x1F512; <strong>'+projectName+'</strong> — project terkunci'; }
+  var _selOpt = sel.options[sel.selectedIndex];
+  var _isRevisi = !!(_selOpt && _selOpt.getAttribute('data-revisi')==='1');
+  if(note){
+    note.style.display='block';
+    note.innerHTML = _isRevisi
+      ? '&#x270F;&#xFE0F; <strong>'+projectName+'</strong> — <b>mode revisi</b> (project selesai/diarsip). Pilih minggu yang mau diperbaiki di panel biru, lalu tekan <b>Muat Data</b>.'
+      : '&#x1F512; <strong>'+projectName+'</strong> — project terkunci';
+  }
+  if(_isRevisi && !_pmModeActive){ try{ togglePMMode(); }catch(eRv){} }   // buka panel "Edit / Revisi Laporan Lama" otomatis
 
   // [FIX v4-23] Reset minggu terpilih tiap ganti project. Sebelumnya selWeek
   // yang "nyangkut" dari sesi/project sebelumnya bikin autoSave() otomatis
@@ -3249,6 +3283,7 @@ function submitLaporan(){
         if(j.ok){
           _lockSubmit();
           _showToast('✅ Data W'+selWeek+' tersimpan!','ok');
+          try{ if(!g('aktualOpening')) _removeFromArchive(textOnly.namaSM||textOnly.sm||'', textOnly.namaProject); }catch(eAr){}   // [v4-51] revisi: Aktual Opening dikosongkan → project aktif lagi
           try{ _submitPFIfAny(url); }catch(ePF){ console.warn('[PF]',ePF); }
           _clientLog('SUBMIT_OK','ppt='+(pptBlob?Math.round(pptBlob.size/1024)+'KB':'NULL')+' baris='+(j.baris||''), textOnly.namaProject, textOnly.mingguKe, textOnly.namaSM||textOnly.sm||'');
           var statusEl=document.getElementById('weekly-submit-status');
@@ -3839,6 +3874,13 @@ function _getArchiveKey(smName){
 function _getArchivedProjects(smName){
   try{ return JSON.parse(localStorage.getItem(_getArchiveKey(smName))||'[]'); }catch(e){ return []; }
 }
+function _removeFromArchive(smName, projectName){
+  var list = _getArchivedProjects(smName);
+  var i = list.indexOf(projectName);
+  if(i<0) return;
+  list.splice(i,1);
+  try{ localStorage.setItem(_getArchiveKey(smName), JSON.stringify(list)); }catch(e){}
+}
 function _addToArchive(smName, projectName){
   var list = _getArchivedProjects(smName);
   if(list.indexOf(projectName)===-1){ list.push(projectName); }
@@ -4211,7 +4253,7 @@ function _uploadViaIframeForm(blob, fileName, namaProject, mingguKe, namaSM, row
 
 
 // ── [v4-48] Jejak upload: versi form, log ke server (UploadLog), pesan gagal yang tidak pernah diam ──
-var SM_FORM_VERSION='v4-50';
+var SM_FORM_VERSION='v4-51';
 function _clientLog(stage, detail, p, w, sm){
   try{
     var url=(document.getElementById('sheets-url')||{}).value||localStorage.getItem('sheets_url')||'';
