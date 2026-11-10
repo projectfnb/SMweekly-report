@@ -306,6 +306,11 @@ input[type=checkbox]{accent-color:var(--green)}
       <select id="projectSel" onchange="handleProjectSel(this)" style="width:100%;margin-bottom:4px">
         <option value="">-- Pilih SM dulu --</option>
       </select>
+      <!-- [v4-52] Project selesai/diarsip (mode revisi) disembunyikan dari dropdown, muncul hanya jika dicentang -->
+      <label id="revisi-toggle-row" style="display:none;align-items:center;gap:6px;font-size:10px;color:var(--muted);font-family:var(--mono);margin:2px 0 6px;cursor:pointer">
+        <input type="checkbox" id="chkShowRevisi" onchange="toggleRevisiList()" style="width:auto;margin:0"/>
+        <span>✏️ Tampilkan project selesai / diarsip untuk revisi (<span id="revisi-count">0</span>)</span>
+      </label>
       <!-- Loading state -->
       <div id="project-loading" style="display:none;font-size:9px;color:var(--muted);font-family:var(--mono);margin-top:3px;padding:4px 8px;background:var(--surface2);border-radius:5px">
         ⏳ Mengambil daftar project dari server...
@@ -559,7 +564,7 @@ input[type=checkbox]{accent-color:var(--green)}
     <button class="btn btn-submit" id="btn-submit-laporan" onclick="submitLaporan()">
       Submit Laporan ke Google Sheets
     </button>
-    <div id="form-version" style="font-size:9px;color:var(--muted);text-align:right;margin-top:6px">Form SM v4-51</div>
+    <div id="form-version" style="font-size:9px;color:var(--muted);text-align:right;margin-top:6px">Form SM v4-52</div>
     <div id="weekly-submit-status" style="display:none;margin-top:8px;padding:8px 10px;border-radius:7px;font-size:10px;font-family:var(--mono)"></div>
   </div>
   <!-- [v4-14] URL GAS di-hardcode, card Konfigurasi disembunyikan -->
@@ -1278,6 +1283,7 @@ function populateProjectDropdown(smName){
 
   // Reset cache saat SM ganti
   _gasProjectCache = {};
+  _lastRender = null; _syncRevisiToggle(0);   // [v4-52] checkbox revisi di-reset saat SM ganti
 
   if(!smName){
     sel.innerHTML = '<option value="">-- Pilih SM dulu --</option>';
@@ -1389,7 +1395,25 @@ function populateProjectDropdown(smName){
 
 // Render opsi project ke select dari array nama project
 // Tambahkan info tanggal terakhir draft dari localStorage jika ada
+var _lastRender = null;   // [v4-52] argumen render terakhir, dipakai saat checkbox revisi di-toggle
+function _revisiChecked(){ var c=document.getElementById('chkShowRevisi'); return !!(c && c.checked); }
+function _syncRevisiToggle(n){
+  var row=document.getElementById('revisi-toggle-row'), cnt=document.getElementById('revisi-count'), c=document.getElementById('chkShowRevisi');
+  if(cnt) cnt.textContent = n;
+  if(row) row.style.display = n>0 ? 'flex' : 'none';
+  if(!n && c) c.checked = false;
+}
+function toggleRevisiList(){
+  var sel=document.getElementById('projectSel');
+  if(!sel || !_lastRender) return;
+  var cur = sel.value;
+  _renderProjectOptions(_lastRender.sel, _lastRender.projectNames, _lastRender.smName, _lastRender.doneNames);
+  sel.value = cur;
+  // project revisi yang sedang dipilih tidak boleh hilang saat checkbox dimatikan → tetap tampil sendirian
+  if(cur && sel.value !== cur){ _appendRevisiGroup(sel, [cur]); sel.value = cur; }
+}
 function _renderProjectOptions(sel, projectNames, smName, doneNames){
+  _lastRender = {sel:sel, projectNames:projectNames, smName:smName, doneNames:doneNames};
   sel.innerHTML = '<option value="">-- Pilih Project --</option>';
   sel.disabled = false;
 
@@ -1420,13 +1444,15 @@ function _renderProjectOptions(sel, projectNames, smName, doneNames){
     if(nm && revNames.indexOf(nm)<0 && filtered.indexOf(nm)<0) revNames.push(nm);
   });
   revNames.sort();
+  _syncRevisiToggle(revNames.length);
+  var _showRev = _revisiChecked();
 
   if(filtered.length === 0){
     var oEmpty = document.createElement('option');
     oEmpty.value=''; oEmpty.disabled=true;
     oEmpty.textContent = '— Tidak ada project aktif —';
     sel.appendChild(oEmpty);
-    _appendRevisiGroup(sel, revNames);
+    if(_showRev) _appendRevisiGroup(sel, revNames);
     return;
   }
 
@@ -1439,7 +1465,7 @@ function _renderProjectOptions(sel, projectNames, smName, doneNames){
     sel.appendChild(o);
   });
 
-  _appendRevisiGroup(sel, revNames);
+  if(_showRev) _appendRevisiGroup(sel, revNames);
 }
 
 // [v4-51] Grup "Revisi" di dropdown project: project selesai / diarsip, khusus untuk memperbaiki laporan lama.
@@ -4253,7 +4279,7 @@ function _uploadViaIframeForm(blob, fileName, namaProject, mingguKe, namaSM, row
 
 
 // ── [v4-48] Jejak upload: versi form, log ke server (UploadLog), pesan gagal yang tidak pernah diam ──
-var SM_FORM_VERSION='v4-51';
+var SM_FORM_VERSION='v4-52';
 function _clientLog(stage, detail, p, w, sm){
   try{
     var url=(document.getElementById('sheets-url')||{}).value||localStorage.getItem('sheets_url')||'';
